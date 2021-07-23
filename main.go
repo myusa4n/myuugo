@@ -35,10 +35,25 @@ type Token struct {
 	str  string    // トークン文字列
 }
 
+// ユーザーからの入力プログラム
+var userInput string
+
 // 現在着目しているトークン以降のトークン列
 var tokens []Token
 
 func madden(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintln(os.Stderr, "")
+	os.Exit(1)
+}
+
+func errorAt(str string, format string, args ...interface{}) {
+	fmt.Fprintln(os.Stderr, userInput)
+	pos := len(userInput) - len(str)
+	if pos > 0 {
+		fmt.Fprintf(os.Stderr, "%*s", pos, " ")
+	}
+	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr, "")
 	os.Exit(1)
@@ -60,7 +75,7 @@ func consume(op rune) bool {
 func expect(op rune) {
 	token := tokens[0]
 	if token.kind != Reserved || runeAt(token.str, 0) != op {
-		madden("'%c'ではありません", op)
+		errorAt(token.str, "'%c'ではありません", op)
 	}
 	tokens = tokens[1:]
 }
@@ -70,7 +85,7 @@ func expect(op rune) {
 func expectNumber() int {
 	token := tokens[0]
 	if token.kind != Number {
-		madden("数ではありません")
+		errorAt(token.str, "数ではありません")
 	}
 	var val = token.val
 	tokens = tokens[1:]
@@ -86,6 +101,7 @@ func newToken(kind TokenKind, str string) Token {
 }
 
 func tokenize(input string) []Token {
+	userInput = input
 	var tokens []Token = make([]Token, 0)
 
 	for input != "" {
@@ -105,7 +121,7 @@ func tokenize(input string) []Token {
 			tokens = append(tokens, token)
 			continue
 		}
-		madden("トークナイズできません")
+		errorAt(input, "トークナイズできません")
 	}
 	tokens = append(tokens, newToken(Eof, ""))
 	return tokens
