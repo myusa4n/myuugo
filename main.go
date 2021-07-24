@@ -35,6 +35,67 @@ type Token struct {
 	str  string    // トークン文字列
 }
 
+type NodeKind string
+
+const (
+	NodeAdd NodeKind = "ADD" // +
+	NodeSub NodeKind = "SUB" // -
+	NodeMul NodeKind = "MUL" // *
+	NodeDiv NodeKind = "DIV" // /
+	NodeNum NodeKind = "NUM" // 整数
+)
+
+type Node struct {
+	kind NodeKind // ノードの型
+	lhs  *Node    // 左辺
+	rhs  *Node    // 右辺
+	val  int      // kindがNodeNumの場合にのみ使う
+}
+
+func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
+	return &Node{kind: kind, lhs: lhs, rhs: rhs}
+}
+
+func newNodeNum(val int) *Node {
+	return &Node{kind: NodeNum, val: val}
+}
+
+func expr() *Node {
+	var n = mul()
+	for {
+		if consume('+') {
+			n = newNode(NodeAdd, n, mul())
+		} else if consume('-') {
+			n = newNode(NodeSub, n, mul())
+		} else {
+			return n
+		}
+	}
+}
+
+func mul() *Node {
+	var n = primary()
+	for {
+		if consume('*') {
+			n = newNode(NodeMul, n, primary())
+		} else if consume('/') {
+			n = newNode(NodeDiv, n, primary())
+		} else {
+			return n
+		}
+	}
+}
+
+func primary() *Node {
+	// 次のトークンが "(" なら、"(" expr ")" のはず
+	if consume('(') {
+		var n = expr()
+		expect(')')
+		return n
+	}
+	return newNodeNum(expectNumber())
+}
+
 // ユーザーからの入力プログラム
 var userInput string
 
@@ -101,7 +162,6 @@ func newToken(kind TokenKind, str string) Token {
 }
 
 func tokenize(input string) []Token {
-	userInput = input
 	var tokens []Token = make([]Token, 0)
 
 	for input != "" {
@@ -127,28 +187,51 @@ func tokenize(input string) []Token {
 	return tokens
 }
 
+func gen(node *Node) {
+	if node.kind == NodeNum {
+		fmt.Printf("  push %d\n", node.val)
+		return
+	}
+	gen(node.lhs)
+	gen(node.rhs)
+
+	fmt.Println("  pop rdi")
+	fmt.Println("  pop rax")
+
+	switch node.kind {
+	case NodeAdd:
+		fmt.Println("  add rax, rdi")
+	case NodeSub:
+		fmt.Println("  sub rax, rdi")
+	case NodeMul:
+		fmt.Println("  imul rax, rdi")
+	case NodeDiv:
+		fmt.Println("  cqo")
+		fmt.Println("  idiv rdi")
+	}
+	fmt.Println("  push rax")
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Fprintln(os.Stderr, "引数の個数が正しくありません")
 		os.Exit(1)
 	}
 
-	tokens = tokenize(os.Args[1])
+	userInput = os.Args[1]
+	tokens = tokenize(userInput)
+	var node = expr()
 
 	// アセンブリの前半部分
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".globl main")
 	fmt.Println("main:")
 
-	fmt.Printf("  mov rax, %d\n", expectNumber())
+	// 抽象構文木を下りながらコード生成
+	gen(node)
 
-	for !atEof() {
-		if consume('+') {
-			fmt.Printf("  add rax, %d\n", expectNumber())
-		}
-		expect('-')
-		fmt.Printf("  sub rax, %d\n", expectNumber())
-	}
-
+	// スタックトップに式全体の値が残っているはずなので
+	// それをRAXにロードして関数からの返り値とする
+	fmt.Println("  pop rax")
 	fmt.Println("  ret")
 }
