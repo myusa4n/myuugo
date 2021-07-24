@@ -170,7 +170,7 @@ func tokenize(input string) []Token {
 			input = input[1:]
 			continue
 		}
-		if c == '+' || c == '-' {
+		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
 			tokens = append(tokens, newToken(Reserved, input))
 			input = input[1:]
 			continue
