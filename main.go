@@ -40,11 +40,17 @@ type Token struct {
 type NodeKind string
 
 const (
-	NodeAdd NodeKind = "ADD" // +
-	NodeSub NodeKind = "SUB" // -
-	NodeMul NodeKind = "MUL" // *
-	NodeDiv NodeKind = "DIV" // /
-	NodeNum NodeKind = "NUM" // 整数
+	NodeAdd        NodeKind = "ADD"         // +
+	NodeSub        NodeKind = "SUB"         // -
+	NodeMul        NodeKind = "MUL"         // *
+	NodeDiv        NodeKind = "DIV"         // /
+	NodeEql        NodeKind = "EQL"         // ==
+	NodeNotEql     NodeKind = "NOT EQL"     // !=
+	NodeLess       NodeKind = "LESS"        // <
+	NodeLessEql    NodeKind = "LESS EQL"    // <=
+	NodeGreater    NodeKind = "GREATER"     // >
+	NodeGreaterEql NodeKind = "GREATER EQL" // >=
+	NodeNum        NodeKind = "NUM"         // 整数
 )
 
 type Node struct {
@@ -63,6 +69,40 @@ func newNodeNum(val int) *Node {
 }
 
 func expr() *Node {
+	return equality()
+}
+
+func equality() *Node {
+	var n = relational()
+	for {
+		if consume("==") {
+			n = newNode(NodeEql, n, relational())
+		} else if consume("!=") {
+			n = newNode(NodeNotEql, n, relational())
+		} else {
+			return n
+		}
+	}
+}
+
+func relational() *Node {
+	var n = add()
+	for {
+		if consume("<") {
+			n = newNode(NodeLess, n, add())
+		} else if consume("<=") {
+			n = newNode(NodeLessEql, n, add())
+		} else if consume(">") {
+			n = newNode(NodeGreater, n, add())
+		} else if consume(">=") {
+			n = newNode(NodeGreaterEql, n, add())
+		} else {
+			return n
+		}
+	}
+}
+
+func add() *Node {
 	var n = mul()
 	for {
 		if consume("+") {
@@ -148,7 +188,7 @@ func consume(op string) bool {
 func expect(op string) {
 	token := tokens[0]
 	if token.kind != TokenReserved || token.str != op {
-		errorAt(token.str, "'%c'ではありません", op)
+		errorAt(token.str, "'%s'ではありません", op)
 	}
 	tokens = tokens[1:]
 }
