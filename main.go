@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"unicode"
 )
 
@@ -33,6 +34,7 @@ type Token struct {
 	kind TokenKind // トークンの型
 	val  int       // kindがNumberの場合、その数値
 	str  string    // トークン文字列
+	rest string    // 自信を含めた残りすべてのトークン文字列
 }
 
 type NodeKind string
@@ -63,9 +65,9 @@ func newNodeNum(val int) *Node {
 func expr() *Node {
 	var n = mul()
 	for {
-		if consume('+') {
+		if consume("+") {
 			n = newNode(NodeAdd, n, mul())
-		} else if consume('-') {
+		} else if consume("-") {
 			n = newNode(NodeSub, n, mul())
 		} else {
 			return n
@@ -76,9 +78,9 @@ func expr() *Node {
 func mul() *Node {
 	var n = unary()
 	for {
-		if consume('*') {
+		if consume("*") {
 			n = newNode(NodeMul, n, unary())
-		} else if consume('/') {
+		} else if consume("/") {
 			n = newNode(NodeDiv, n, unary())
 		} else {
 			return n
@@ -87,10 +89,10 @@ func mul() *Node {
 }
 
 func unary() *Node {
-	if consume('+') {
+	if consume("+") {
 		return primary()
 	}
-	if consume('-') {
+	if consume("-") {
 		return newNode(NodeSub, newNodeNum(0), primary())
 	}
 	return primary()
@@ -98,9 +100,9 @@ func unary() *Node {
 
 func primary() *Node {
 	// 次のトークンが "(" なら、"(" expr ")" のはず
-	if consume('(') {
+	if consume("(") {
 		var n = expr()
-		expect(')')
+		expect(")")
 		return n
 	}
 	return newNodeNum(expectNumber())
@@ -132,9 +134,9 @@ func errorAt(str string, format string, args ...interface{}) {
 
 // 次のトークンが期待している記号の時には、トークンを1つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
-func consume(op rune) bool {
+func consume(op string) bool {
 	token := tokens[0]
-	if token.kind != TokenReserved || []rune(token.str)[0] != op {
+	if token.kind != TokenReserved || token.str != op {
 		return false
 	}
 	tokens = tokens[1:]
@@ -143,9 +145,9 @@ func consume(op rune) bool {
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
-func expect(op rune) {
+func expect(op string) {
 	token := tokens[0]
-	if token.kind != TokenReserved || runeAt(token.str, 0) != op {
+	if token.kind != TokenReserved || token.str != op {
 		errorAt(token.str, "'%c'ではありません", op)
 	}
 	tokens = tokens[1:]
@@ -167,8 +169,8 @@ func atEof() bool {
 	return tokens[0].kind == TokenEof
 }
 
-func newToken(kind TokenKind, str string) Token {
-	return Token{kind: kind, str: str}
+func newToken(kind TokenKind, str string, rest string) Token {
+	return Token{kind: kind, str: str, rest: rest}
 }
 
 func tokenize(input string) []Token {
@@ -181,19 +183,20 @@ func tokenize(input string) []Token {
 			continue
 		}
 		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
-			tokens = append(tokens, newToken(TokenReserved, input))
+			tokens = append(tokens, newToken(TokenReserved, string(c), input))
 			input = input[1:]
 			continue
 		}
 		if unicode.IsDigit(c) {
-			var token = newToken(TokenNumber, input)
+			var token = newToken(TokenNumber, "", input)
 			token.val, input = strtoi(input)
+			token.str = strconv.Itoa(token.val)
 			tokens = append(tokens, token)
 			continue
 		}
 		errorAt(input, "トークナイズできません")
 	}
-	tokens = append(tokens, newToken(TokenEof, ""))
+	tokens = append(tokens, newToken(TokenEof, "", ""))
 	return tokens
 }
 
