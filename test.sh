@@ -28,5 +28,11 @@ assert 5 '10 + -5'
 assert 4 '-10 + -7 * -2'
 assert 1 '1 + 1 == 2'
 assert 0 '1 - 5 * 2 == 9'
+assert 0 '4 * -3 != -12'
+assert 1 '1 - 5 * 2 != 9'
+assert 1 '5 * 10 * -1 < 7 * -7'
+assert 0 '2+3 < 5'
+assert 1 '2+3<=5'
+assert 1 '4*3<=5*7'
 
 echo OK
