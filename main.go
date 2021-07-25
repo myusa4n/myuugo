@@ -74,16 +74,26 @@ func expr() *Node {
 }
 
 func mul() *Node {
-	var n = primary()
+	var n = unary()
 	for {
 		if consume('*') {
-			n = newNode(NodeMul, n, primary())
+			n = newNode(NodeMul, n, unary())
 		} else if consume('/') {
-			n = newNode(NodeDiv, n, primary())
+			n = newNode(NodeDiv, n, unary())
 		} else {
 			return n
 		}
 	}
+}
+
+func unary() *Node {
+	if consume('+') {
+		return primary()
+	}
+	if consume('-') {
+		return newNode(NodeSub, newNodeNum(0), primary())
+	}
+	return primary()
 }
 
 func primary() *Node {
