@@ -24,9 +24,9 @@ func runeAt(s string, i int) rune {
 type TokenKind string
 
 const (
-	Reserved TokenKind = "RESERVED"
-	Number   TokenKind = "NUMBER"
-	Eof      TokenKind = "EOF"
+	TokenReserved TokenKind = "RESERVED"
+	TokenNumber   TokenKind = "NUMBER"
+	TokenEof      TokenKind = "EOF"
 )
 
 type Token struct {
@@ -134,7 +134,7 @@ func errorAt(str string, format string, args ...interface{}) {
 // それ以外の場合には偽を返す。
 func consume(op rune) bool {
 	token := tokens[0]
-	if token.kind != Reserved || []rune(token.str)[0] != op {
+	if token.kind != TokenReserved || []rune(token.str)[0] != op {
 		return false
 	}
 	tokens = tokens[1:]
@@ -145,7 +145,7 @@ func consume(op rune) bool {
 // それ以外の場合にはエラーを報告する。
 func expect(op rune) {
 	token := tokens[0]
-	if token.kind != Reserved || runeAt(token.str, 0) != op {
+	if token.kind != TokenReserved || runeAt(token.str, 0) != op {
 		errorAt(token.str, "'%c'ではありません", op)
 	}
 	tokens = tokens[1:]
@@ -155,7 +155,7 @@ func expect(op rune) {
 // それ以外の場合にはエラーを報告する。
 func expectNumber() int {
 	token := tokens[0]
-	if token.kind != Number {
+	if token.kind != TokenNumber {
 		errorAt(token.str, "数ではありません")
 	}
 	var val = token.val
@@ -164,7 +164,7 @@ func expectNumber() int {
 }
 
 func atEof() bool {
-	return tokens[0].kind == Eof
+	return tokens[0].kind == TokenEof
 }
 
 func newToken(kind TokenKind, str string) Token {
@@ -181,19 +181,19 @@ func tokenize(input string) []Token {
 			continue
 		}
 		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' {
-			tokens = append(tokens, newToken(Reserved, input))
+			tokens = append(tokens, newToken(TokenReserved, input))
 			input = input[1:]
 			continue
 		}
 		if unicode.IsDigit(c) {
-			var token = newToken(Number, input)
+			var token = newToken(TokenNumber, input)
 			token.val, input = strtoi(input)
 			tokens = append(tokens, token)
 			continue
 		}
 		errorAt(input, "トークナイズできません")
 	}
-	tokens = append(tokens, newToken(Eof, ""))
+	tokens = append(tokens, newToken(TokenEof, ""))
 	return tokens
 }
 
