@@ -217,6 +217,15 @@ func tokenize(input string) []Token {
 	var tokens []Token = make([]Token, 0)
 
 	for input != "" {
+		if len(input) >= 2 {
+			var head2 = input[:2]
+			if head2 == "==" {
+				tokens = append(tokens, newToken(TokenReserved, head2, input))
+				input = input[2:]
+				continue
+			}
+		}
+
 		var c = runeAt(input, 0)
 		if unicode.IsSpace(c) {
 			input = input[1:]
@@ -261,6 +270,10 @@ func gen(node *Node) {
 	case NodeDiv:
 		fmt.Println("  cqo")
 		fmt.Println("  idiv rdi")
+	case NodeEql:
+		fmt.Println("  cmp rax, rdi")
+		fmt.Println("  sete al")
+		fmt.Println("  movzb rax, al")
 	}
 	fmt.Println("  push rax")
 }

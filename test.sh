@@ -26,5 +26,7 @@ assert 15 '5*(9-6)'
 assert 4 '(3+5) / 2'
 assert 5 '10 + -5'
 assert 4 '-10 + -7 * -2'
+assert 1 '1 + 1 == 2'
+assert 0 '1 - 5 * 2 == 9'
 
 echo OK
