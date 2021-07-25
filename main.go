@@ -219,7 +219,7 @@ func tokenize(input string) []Token {
 	for input != "" {
 		if len(input) >= 2 {
 			var head2 = input[:2]
-			if head2 == "==" || head2 == "!=" || head2 == "<=" {
+			if head2 == "==" || head2 == "!=" || head2 == "<=" || head2 == ">=" {
 				tokens = append(tokens, newToken(TokenReserved, head2, input))
 				input = input[2:]
 				continue
@@ -231,7 +231,7 @@ func tokenize(input string) []Token {
 			input = input[1:]
 			continue
 		}
-		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' {
+		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' || c == '>' {
 			tokens = append(tokens, newToken(TokenReserved, string(c), input))
 			input = input[1:]
 			continue
@@ -284,6 +284,14 @@ func gen(node *Node) {
 		fmt.Println("  movzb rax, al")
 	case NodeLessEql:
 		fmt.Println("  cmp rax, rdi")
+		fmt.Println("  setle al")
+		fmt.Println("  movzb rax, al")
+	case NodeGreater:
+		fmt.Println("  cmp rdi, rax")
+		fmt.Println("  setl al")
+		fmt.Println("  movzb rax, al")
+	case NodeGreaterEql:
+		fmt.Println("  cmp rdi, rax")
 		fmt.Println("  setle al")
 		fmt.Println("  movzb rax, al")
 	}
