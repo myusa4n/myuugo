@@ -1,7 +1,8 @@
 CFLAGS=-std=c11 -g -static
+SRCS=$(wildcard *.go)
 
-main: main.go
-	go build main.go
+main: $(SRCS)
+	go build $(SRCS)
 
 test: main
 	./test.sh
