@@ -2,9 +2,35 @@ package main
 
 import "fmt"
 
+func genLvalue(node *Node) {
+	if node.kind != NodeLocalVar {
+		madden("代入の左辺値が変数ではありません")
+	}
+	fmt.Println("  mov rax, rbp")
+	fmt.Printf("  sub rax, %d\n", node.offset)
+	fmt.Println("  push rax")
+}
+
 func gen(node *Node) {
 	if node.kind == NodeNum {
 		fmt.Printf("  push %d\n", node.val)
+		return
+	}
+	if node.kind == NodeLocalVar {
+		genLvalue(node)
+		fmt.Println("  pop rax")
+		fmt.Println("  mov rax, [rax]")
+		fmt.Println("  push rax")
+		return
+	}
+	if node.kind == NodeAssign {
+		genLvalue(node.lhs)
+		gen(node.rhs)
+
+		fmt.Println("  pop rdi")
+		fmt.Println("  pop rax")
+		fmt.Println("  mov [rax], rdi")
+		fmt.Println("  push rdi")
 		return
 	}
 	gen(node.lhs)

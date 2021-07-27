@@ -13,18 +13,30 @@ func main() {
 
 	userInput = os.Args[1]
 	tokens = tokenize(userInput)
-	var node = expr()
+	program()
 
 	// アセンブリの前半部分
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".globl main")
 	fmt.Println("main:")
 
-	// 抽象構文木を下りながらコード生成
-	gen(node)
+	// プロローグ
+	// 変数26個分の領域を確保する
+	fmt.Println("  push rbp")
+	fmt.Println("  mov rbp, rsp")
+	fmt.Println("  sub rsp, 208")
 
-	// スタックトップに式全体の値が残っているはずなので
-	// それをRAXにロードして関数からの返り値とする
-	fmt.Println("  pop rax")
+	for i := 0; code[i] != nil; i++ {
+		// 抽象構文木を下りながらコード生成
+		gen(code[i])
+
+		// 式の評価結果としてスタックに一つの値が残っているはずなので、スタックが溢れないようにポップしておく
+		fmt.Println("  pop rax")
+	}
+
+	// エピローグ
+	// 最後の式の結果がRAXに残っているのでそれが返り値になる
+	fmt.Println("  mov rsp, rbp")
+	fmt.Println("  pop rbp")
 	fmt.Println("  ret")
 }

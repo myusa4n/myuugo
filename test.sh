@@ -38,5 +38,14 @@ assert 0 '5 * 10 * -1 > 7 * -7'
 assert 0 '2+3 > 5'
 assert 1 '2+3>=5'
 assert 0 '4*3>=5*7'
+assert 4 "
+a = 3
+a + 1
+"
+assert 7 "z = 20; a = 13; x = z - a; x"
+assert 21 "a = 5
+a + 3;
+4 * a+1
+"
 
 echo OK

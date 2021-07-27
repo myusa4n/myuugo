@@ -25,9 +25,10 @@ func runeAt(s string, i int) rune {
 type TokenKind string
 
 const (
-	TokenReserved TokenKind = "RESERVED"
-	TokenNumber   TokenKind = "NUMBER"
-	TokenEof      TokenKind = "EOF"
+	TokenReserved   TokenKind = "RESERVED"
+	TokenNumber     TokenKind = "NUMBER"
+	TokenIdentifier TokenKind = "IDENTIFIER"
+	TokenEof        TokenKind = "EOF"
 )
 
 type Token struct {
@@ -70,6 +71,18 @@ func consume(op string) bool {
 	}
 	tokens = tokens[1:]
 	return true
+}
+
+// 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
+// この時、返り値の二番目の値は真になる。
+// 逆に識別子でない場合は、偽になる。
+func consumeIdentifier() (Token, bool) {
+	token := tokens[0]
+	if token.kind == TokenIdentifier {
+		tokens = tokens[1:]
+		return token, true
+	}
+	return Token{}, false
 }
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
@@ -116,12 +129,17 @@ func tokenize(input string) []Token {
 		}
 
 		var c = runeAt(input, 0)
-		if unicode.IsSpace(c) {
+		if 'a' <= c && c <= 'z' {
+			tokens = append(tokens, newToken(TokenIdentifier, string(c), input))
 			input = input[1:]
 			continue
 		}
-		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' || c == '>' {
+		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' || c == '>' || c == ';' || c == '\n' || c == '=' {
 			tokens = append(tokens, newToken(TokenReserved, string(c), input))
+			input = input[1:]
+			continue
+		}
+		if unicode.IsSpace(c) {
 			input = input[1:]
 			continue
 		}
@@ -151,14 +169,17 @@ const (
 	NodeLessEql    NodeKind = "LESS EQL"    // <=
 	NodeGreater    NodeKind = "GREATER"     // >
 	NodeGreaterEql NodeKind = "GREATER EQL" // >=
+	NodeAssign     NodeKind = "ASSIGN"      // =
+	NodeLocalVar   NodeKind = "Local Var"   // ローカル変数
 	NodeNum        NodeKind = "NUM"         // 整数
 )
 
 type Node struct {
-	kind NodeKind // ノードの型
-	lhs  *Node    // 左辺
-	rhs  *Node    // 右辺
-	val  int      // kindがNodeNumの場合にのみ使う
+	kind   NodeKind // ノードの型
+	lhs    *Node    // 左辺
+	rhs    *Node    // 右辺
+	val    int      // kindがNodeNumの場合にのみ使う
+	offset int      // kindがNodeLocalVarの場合にのみ使う
 }
 
 func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
@@ -167,6 +188,35 @@ func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
 
 func newNodeNum(val int) *Node {
 	return &Node{kind: NodeNum, val: val}
+}
+
+var code [100]*Node
+
+func program() {
+	var i = 0
+	for !atEof() {
+		var s = stmt()
+		if s != nil {
+			code[i] = s
+			i += 1
+		}
+	}
+	code[i] = nil
+}
+
+func stmt() *Node {
+	if consume(";") || consume("\n") {
+		return nil
+	}
+	var e = expr()
+	if consume("=") {
+		// 代入文
+		var f = expr()
+		return newNode(NodeAssign, e, f)
+	}
+	if consume(";") || consume("\n") {
+	}
+	return e
 }
 
 func expr() *Node {
@@ -245,6 +295,12 @@ func primary() *Node {
 		var n = expr()
 		expect(")")
 		return n
+	}
+	var tok, ok = consumeIdentifier()
+	if ok {
+		var node = newNode(NodeLocalVar, nil, nil)
+		node.offset = (int(runeAt(tok.str, 0)) - 'a' + 1) * 8
+		return node
 	}
 	return newNodeNum(expectNumber())
 }
