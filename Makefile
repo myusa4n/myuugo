@@ -1,4 +1,3 @@
-CFLAGS=-std=c11 -g -static
 SRCS=$(wildcard *.go)
 
 main: $(SRCS)
