@@ -45,6 +45,7 @@ const (
 	TokenNumber     TokenKind = "NUMBER"
 	TokenIdentifier TokenKind = "IDENTIFIER"
 	TokenEof        TokenKind = "EOF"
+	TokenReturn     TokenKind = "return"
 )
 
 type Token struct {
@@ -83,6 +84,17 @@ func errorAt(str string, format string, args ...interface{}) {
 func consume(op string) bool {
 	token := tokens[0]
 	if token.kind != TokenReserved || token.str != op {
+		return false
+	}
+	tokens = tokens[1:]
+	return true
+}
+
+// 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
+// それ以外の場合には偽を返す。
+func consumeKind(kind TokenKind) bool {
+	token := tokens[0]
+	if token.kind != kind {
 		return false
 	}
 	tokens = tokens[1:]
@@ -149,6 +161,10 @@ func tokenize(input string) []Token {
 			// input から 識別子を取り出す
 			var token = newToken(TokenIdentifier, "", input)
 			token.str, input = getIdentifier(input)
+			if token.str == string(TokenReturn) {
+				token.kind = TokenReturn
+			}
+
 			tokens = append(tokens, token)
 			continue
 		}
@@ -188,6 +204,7 @@ const (
 	NodeGreater    NodeKind = "GREATER"     // >
 	NodeGreaterEql NodeKind = "GREATER EQL" // >=
 	NodeAssign     NodeKind = "ASSIGN"      // =
+	NodeReturn     NodeKind = "RETURN"      // return
 	NodeLocalVar   NodeKind = "Local Var"   // ローカル変数
 	NodeNum        NodeKind = "NUM"         // 整数
 )
@@ -226,15 +243,22 @@ func stmt() *Node {
 	if consume(";") || consume("\n") {
 		return nil
 	}
-	var e = expr()
-	if consume("=") {
-		// 代入文
-		var f = expr()
-		return newNode(NodeAssign, e, f)
+
+	var n *Node
+	if consumeKind(TokenReturn) {
+		n = newNode(NodeReturn, expr(), nil)
+	} else {
+		n = expr()
+		if consume("=") {
+			// 代入文
+			var e = expr()
+			return newNode(NodeAssign, n, e)
+		}
 	}
 	if consume(";") || consume("\n") {
+		// 何もしない
 	}
-	return e
+	return n
 }
 
 func expr() *Node {

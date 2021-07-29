@@ -51,5 +51,9 @@ assert 222 "hello = 5 * 4 + 2
 world = hello * 20 / 2
 world + 2
 "
+assert 5 "return 5"
+assert 10 "abc = 2
+return 5*abc
+"
 
 echo OK

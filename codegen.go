@@ -16,6 +16,14 @@ func gen(node *Node) {
 		fmt.Printf("  push %d\n", node.val)
 		return
 	}
+	if node.kind == NodeReturn {
+		gen(node.lhs)
+		fmt.Println("  pop rax")
+		fmt.Println("  mov rsp, rbp")
+		fmt.Println("  pop rbp")
+		fmt.Println("  ret")
+		return
+	}
 	if node.kind == NodeLocalVar {
 		genLvalue(node)
 		fmt.Println("  pop rax")
