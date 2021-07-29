@@ -1,7 +1,7 @@
 SRCS=$(wildcard *.go)
 
 main: $(SRCS)
-	go build $(SRCS)
+	go build -o main $(SRCS)
 
 test: main
 	./test.sh
