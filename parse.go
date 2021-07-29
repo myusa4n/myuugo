@@ -18,8 +18,24 @@ func strtoi(s string) (int, string) {
 	return res, ""
 }
 
+func isAlpha(c rune) bool {
+	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+}
+
 func runeAt(s string, i int) rune {
 	return []rune(s)[i]
+}
+
+// (先頭の識別子, 識別子を切り出して得られた残りの文字列)  を返す
+func getIdentifier(s string) (string, string) {
+	var res = ""
+	for i, c := range s {
+		if (i == 0 && unicode.IsDigit(c)) || !(isAlpha(c) || (c == '_')) {
+			return res, s[i:]
+		}
+		res += string(c)
+	}
+	return res, ""
 }
 
 type TokenKind string
@@ -129,9 +145,11 @@ func tokenize(input string) []Token {
 		}
 
 		var c = runeAt(input, 0)
-		if 'a' <= c && c <= 'z' {
-			tokens = append(tokens, newToken(TokenIdentifier, string(c), input))
-			input = input[1:]
+		if isAlpha(c) || (c == '_') {
+			// input から 識別子を取り出す
+			var token = newToken(TokenIdentifier, "", input)
+			token.str, input = getIdentifier(input)
+			tokens = append(tokens, token)
 			continue
 		}
 		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' || c == '>' || c == ';' || c == '\n' || c == '=' {
@@ -299,7 +317,21 @@ func primary() *Node {
 	var tok, ok = consumeIdentifier()
 	if ok {
 		var node = newNode(NodeLocalVar, nil, nil)
-		node.offset = (int(runeAt(tok.str, 0)) - 'a' + 1) * 8
+		lvar, ok := findLocalVar(tok)
+
+		if ok {
+			node.offset = lvar.offset
+			return node
+		}
+
+		lvar = LocalVar{name: tok.str}
+		if len(locals) == 0 {
+			lvar.offset = 0 + 8
+		} else {
+			lvar.offset = locals[len(locals)-1].offset + 8
+		}
+		node.offset = lvar.offset
+		locals = append(locals, lvar)
 		return node
 	}
 	return newNodeNum(expectNumber())

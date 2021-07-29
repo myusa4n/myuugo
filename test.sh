@@ -47,5 +47,9 @@ assert 21 "a = 5
 a + 3;
 4 * a+1
 "
+assert 222 "hello = 5 * 4 + 2
+world = hello * 20 / 2
+world + 2
+"
 
 echo OK
