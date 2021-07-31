@@ -223,15 +223,21 @@ const (
 
 type Node struct {
 	kind     NodeKind // ノードの型
-	lhs      *Node    // 左辺
-	rhs      *Node    // 右辺
 	val      int      // kindがNodeNumの場合にのみ使う
 	offset   int      // kindがNodeLocalVarの場合にのみ使う
-	children []*Node  // kindがNodeStmtListの場合にのみ使う
+	children []*Node  // 子。lhs, rhsの順でchildrenに格納される
 }
 
-func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{kind: kind, lhs: lhs, rhs: rhs}
+func newNode(kind NodeKind, children []*Node) *Node {
+	return &Node{kind: kind, children: children}
+}
+
+func newBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
+	return &Node{kind: kind, children: []*Node{lhs, rhs}}
+}
+
+func newLeafNode(kind NodeKind) *Node {
+	return &Node{kind: kind}
 }
 
 func newNodeNum(val int) *Node {
@@ -253,7 +259,7 @@ func stmtList() *Node {
 			stmts = append(stmts, s)
 		}
 	}
-	var node = newNode(NodeStmtList, nil, nil)
+	var node = newNode(NodeStmtList, stmts)
 	node.children = stmts
 	return node
 }
@@ -270,13 +276,13 @@ func stmt() *Node {
 
 	var n *Node
 	if consumeKind(TokenReturn) {
-		n = newNode(NodeReturn, expr(), nil)
+		n = newNode(NodeReturn, []*Node{expr()})
 	} else {
 		n = expr()
 		if consume("=") {
 			// 代入文
 			var e = expr()
-			n = newNode(NodeAssign, n, e)
+			n = newBinaryNode(NodeAssign, n, e)
 		}
 	}
 	consumeEndLine()
@@ -292,30 +298,28 @@ func metaIfStmt() *Node {
 	var ifNode = ifStmt()
 	if currentToken().kind == TokenElse {
 		var elseNode = elseStmt()
-		return newNode(NodeMetaIf, ifNode, elseNode)
+		return newBinaryNode(NodeMetaIf, ifNode, elseNode)
 	}
-	return newNode(NodeMetaIf, ifNode, nil)
+	return newNode(NodeMetaIf, []*Node{ifNode})
 }
 
 func ifStmt() *Node {
-	var node = newNode(NodeIf, nil, nil)
 	expectKind(TokenIf)
-	node.lhs = expr()
+	var lhs = expr()
 	expect("{")
-	node.rhs = stmtList()
+	var rhs = stmtList()
 	expect("}")
 	consumeEndLine()
-	return node
+	return newBinaryNode(NodeIf, lhs, rhs)
 }
 
 func elseStmt() *Node {
-	var node = newNode(NodeElse, nil, nil)
 	expectKind(TokenElse)
 	expect("{")
-	node.lhs = stmtList()
+	var stmts = stmtList()
 	expect("}")
 	consumeEndLine()
-	return node
+	return newNode(NodeElse, []*Node{stmts})
 }
 
 func expr() *Node {
@@ -326,9 +330,9 @@ func equality() *Node {
 	var n = relational()
 	for {
 		if consume("==") {
-			n = newNode(NodeEql, n, relational())
+			n = newBinaryNode(NodeEql, n, relational())
 		} else if consume("!=") {
-			n = newNode(NodeNotEql, n, relational())
+			n = newBinaryNode(NodeNotEql, n, relational())
 		} else {
 			return n
 		}
@@ -339,13 +343,13 @@ func relational() *Node {
 	var n = add()
 	for {
 		if consume("<") {
-			n = newNode(NodeLess, n, add())
+			n = newBinaryNode(NodeLess, n, add())
 		} else if consume("<=") {
-			n = newNode(NodeLessEql, n, add())
+			n = newBinaryNode(NodeLessEql, n, add())
 		} else if consume(">") {
-			n = newNode(NodeGreater, n, add())
+			n = newBinaryNode(NodeGreater, n, add())
 		} else if consume(">=") {
-			n = newNode(NodeGreaterEql, n, add())
+			n = newBinaryNode(NodeGreaterEql, n, add())
 		} else {
 			return n
 		}
@@ -356,9 +360,9 @@ func add() *Node {
 	var n = mul()
 	for {
 		if consume("+") {
-			n = newNode(NodeAdd, n, mul())
+			n = newBinaryNode(NodeAdd, n, mul())
 		} else if consume("-") {
-			n = newNode(NodeSub, n, mul())
+			n = newBinaryNode(NodeSub, n, mul())
 		} else {
 			return n
 		}
@@ -369,9 +373,9 @@ func mul() *Node {
 	var n = unary()
 	for {
 		if consume("*") {
-			n = newNode(NodeMul, n, unary())
+			n = newBinaryNode(NodeMul, n, unary())
 		} else if consume("/") {
-			n = newNode(NodeDiv, n, unary())
+			n = newBinaryNode(NodeDiv, n, unary())
 		} else {
 			return n
 		}
@@ -383,7 +387,7 @@ func unary() *Node {
 		return primary()
 	}
 	if consume("-") {
-		return newNode(NodeSub, newNodeNum(0), primary())
+		return newBinaryNode(NodeSub, newNodeNum(0), primary())
 	}
 	return primary()
 }
@@ -397,7 +401,7 @@ func primary() *Node {
 	}
 	var tok, ok = consumeIdentifier()
 	if ok {
-		var node = newNode(NodeLocalVar, nil, nil)
+		var node = newLeafNode(NodeLocalVar)
 		lvar, ok := findLocalVar(tok)
 
 		if ok {

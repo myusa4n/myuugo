@@ -31,7 +31,7 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeReturn {
-		gen(node.lhs)
+		gen(node.children[0])
 		fmt.Println("  pop rax")
 		fmt.Println("  mov rsp, rbp")
 		fmt.Println("  pop rbp")
@@ -46,8 +46,8 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeAssign {
-		genLvalue(node.lhs)
-		gen(node.rhs)
+		genLvalue(node.children[0]) // lhs
+		gen(node.children[1])       // rhs
 
 		fmt.Println("  pop rdi")
 		fmt.Println("  pop rax")
@@ -59,10 +59,10 @@ func gen(node *Node) {
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
-		gen(node.lhs)
+		gen(node.children[0]) // if
 		fmt.Println(elseLabel + ":")
-		if node.rhs != nil {
-			gen(node.rhs)
+		if len(node.children) == 2 {
+			gen(node.children[1]) // else
 		}
 		fmt.Println(endLabel + ":")
 		labelNumber += 1
@@ -72,21 +72,21 @@ func gen(node *Node) {
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
-		gen(node.lhs)
+		gen(node.children[0]) // lhs
 		fmt.Println("  pop rax")
 		fmt.Println("  cmp rax, 0")
 		fmt.Println("  je " + elseLabel)
-		gen(node.rhs)
+		gen(node.children[1]) // rhs
 		fmt.Println("  jmp " + endLabel)
 		return
 	}
 	if node.kind == NodeElse {
-		gen(node.lhs)
+		gen(node.children[0])
 		return
 	}
 
-	gen(node.lhs)
-	gen(node.rhs)
+	gen(node.children[0]) // lhs
+	gen(node.children[1]) // rhs
 
 	fmt.Println("  pop rdi")
 	fmt.Println("  pop rax")
