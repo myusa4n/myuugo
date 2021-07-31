@@ -65,5 +65,12 @@ if a != 2 {
   a = 6
 }
 a"
+assert 4 "test = 10
+if test < 10 {
+  test = 100
+} else {
+  test = test -6
+}
+test"
 
 echo OK

@@ -46,15 +46,33 @@ func gen(node *Node) {
 		fmt.Println("  push rdi")
 		return
 	}
-	if node.kind == NodeIf {
-		var label = ".Lend" + strconv.Itoa(labelNumber)
+	if node.kind == NodeMetaIf {
+		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
+		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
+
+		gen(node.lhs)
+		fmt.Println(elseLabel + ":")
+		if node.rhs != nil {
+			gen(node.rhs)
+		}
+		fmt.Println(endLabel + ":")
 		labelNumber += 1
+		return
+	}
+	if node.kind == NodeIf {
+		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
+		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
+
 		gen(node.lhs)
 		fmt.Println("  pop rax")
 		fmt.Println("  cmp rax, 0")
-		fmt.Println("  je " + label)
+		fmt.Println("  je " + elseLabel)
 		gen(node.rhs)
-		fmt.Println(label + ":")
+		fmt.Println("  jmp " + endLabel)
+		return
+	}
+	if node.kind == NodeElse {
+		gen(node.lhs)
 		return
 	}
 

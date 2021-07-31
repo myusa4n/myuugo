@@ -28,6 +28,7 @@ const (
 	TokenEof        TokenKind = "EOF"
 	TokenReturn     TokenKind = "return"
 	TokenIf         TokenKind = "if"
+	TokenElse       TokenKind = "else"
 )
 
 type Token struct {
@@ -167,6 +168,8 @@ func tokenize(input string) []Token {
 				token.kind = TokenReturn
 			} else if token.str == string(TokenIf) {
 				token.kind = TokenIf
+			} else if token.str == string(TokenElse) {
+				token.kind = TokenElse
 			}
 
 			tokens = append(tokens, token)
@@ -212,7 +215,9 @@ const (
 	NodeReturn     NodeKind = "RETURN"      // return
 	NodeLocalVar   NodeKind = "Local Var"   // ローカル変数
 	NodeNum        NodeKind = "NUM"         // 整数
+	NodeMetaIf     NodeKind = "META IF"     // if ... else ...
 	NodeIf         NodeKind = "IF"          // if
+	NodeElse       NodeKind = "ELSE"        // else
 )
 
 type Node struct {
@@ -252,7 +257,7 @@ func stmt() *Node {
 	}
 	// if文
 	if currentToken().kind == TokenIf {
-		return ifStmt()
+		return metaIfStmt()
 	}
 
 	var n *Node
@@ -270,6 +275,20 @@ func stmt() *Node {
 	return n
 }
 
+func metaIfStmt() *Node {
+	token := currentToken()
+	if token.kind != TokenIf {
+		errorAt(token.str, "'%s'ではありません", TokenIf)
+	}
+
+	var ifNode = ifStmt()
+	if currentToken().kind == TokenElse {
+		var elseNode = elseStmt()
+		return newNode(NodeMetaIf, ifNode, elseNode)
+	}
+	return newNode(NodeMetaIf, ifNode, nil)
+}
+
 func ifStmt() *Node {
 	var node = newNode(NodeIf, nil, nil)
 	expectKind(TokenIf)
@@ -278,6 +297,19 @@ func ifStmt() *Node {
 	if !consume("}") {
 		consumeEndLine()
 		node.rhs = stmt()
+		expect("}")
+	}
+	consumeEndLine()
+	return node
+}
+
+func elseStmt() *Node {
+	var node = newNode(NodeElse, nil, nil)
+	expectKind(TokenElse)
+	expect("{")
+	if !consume("}") {
+		consumeEndLine()
+		node.lhs = stmt()
 		expect("}")
 	}
 	consumeEndLine()
