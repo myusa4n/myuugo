@@ -7,25 +7,6 @@ import (
 	"unicode"
 )
 
-func strtoi(s string) (int, string) {
-	var res = 0
-	for i, c := range s {
-		if !unicode.IsDigit(c) {
-			return res, s[i:]
-		}
-		res = res*10 + int(c) - int('0')
-	}
-	return res, ""
-}
-
-func isAlpha(c rune) bool {
-	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
-}
-
-func runeAt(s string, i int) rune {
-	return []rune(s)[i]
-}
-
 // (先頭の識別子, 識別子を切り出して得られた残りの文字列)  を返す
 func getIdentifier(s string) (string, string) {
 	var res = ""
@@ -61,12 +42,6 @@ var userInput string
 
 // 現在着目しているトークン以降のトークン列
 var tokens []Token
-
-func madden(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, args...)
-	fmt.Fprintln(os.Stderr, "")
-	os.Exit(1)
-}
 
 func errorAt(str string, format string, args ...interface{}) {
 	fmt.Fprintln(os.Stderr, userInput)
