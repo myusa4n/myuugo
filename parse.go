@@ -222,9 +222,7 @@ const (
 	NodeIf         NodeKind = "IF"          // if
 	NodeElse       NodeKind = "ELSE"        // else
 	NodeStmtList   NodeKind = "STMT LIST"   // stmt*
-	NodeForOnly    NodeKind = "FOR ONLY"    // for { ... }
-	NodeForWhile   NodeKind = "FOR WHILE"   // for cond { ... }
-	NodeFor        NodeKind = "FOR"         // for ; ; { ... }
+	NodeFor        NodeKind = "FOR"         // for
 )
 
 type Node struct {
@@ -303,29 +301,33 @@ func stmt() *Node {
 func forStmt() *Node {
 	expectKind(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
+	var node = newNode(NodeFor, []*Node{nil, nil, nil, nil})
+
 	if consume("{") {
 		// 無限ループ
-		var node = newNode(NodeForOnly, []*Node{stmtList()})
+		node.children[3] = stmtList()
 		expect("}")
 		consumeEndLine()
 		return node
 	}
 
-	var stmt1 = stmt()
+	var s = stmt()
 	if consume("{") {
 		// while文
-		var node = newNode(NodeForWhile, []*Node{stmt1, stmtList()})
+		node.children[1] = s
+		node.children[3] = stmtList()
 		expect("}")
 		consumeEndLine()
 		return node
 	}
 
 	// 通常のfor文
-	var stmt2 = stmt()
-	var stmt3 = stmt()
+	node.children[0] = s
+	node.children[1] = stmt()
+	node.children[2] = stmt()
 
 	expect("{")
-	var node = newNode(NodeFor, []*Node{stmt1, stmt2, stmt3, stmtList()})
+	node.children[3] = stmtList()
 	expect("}")
 	consumeEndLine()
 	return node

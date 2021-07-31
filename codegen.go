@@ -84,45 +84,25 @@ func gen(node *Node) {
 		gen(node.children[0])
 		return
 	}
-	if node.kind == NodeForOnly {
-		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
-		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
-		labelNumber += 1
-
-		fmt.Println(beginLabel + ":")
-		gen(node.children[0])
-		fmt.Println("  jmp " + beginLabel)
-		fmt.Println(endLabel + ":")
-		return
-	}
-	if node.kind == NodeForWhile {
-		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
-		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
-		labelNumber += 1
-
-		fmt.Println(beginLabel + ":")
-		gen(node.children[0]) // 条件
-		fmt.Println("  pop rax")
-		fmt.Println("  cmp rax, 0")
-		fmt.Println("  je " + endLabel)
-		gen(node.children[1])
-		fmt.Println("  jmp " + beginLabel)
-		fmt.Println(endLabel + ":")
-		return
-	}
 	if node.kind == NodeFor {
 		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		labelNumber += 1
 
-		gen(node.children[0])
+		if node.children[0] != nil {
+			gen(node.children[0])
+		}
 		fmt.Println(beginLabel + ":")
-		gen(node.children[1]) // 条件
-		fmt.Println("  pop rax")
-		fmt.Println("  cmp rax, 0")
-		fmt.Println("  je " + endLabel)
+		if node.children[1] != nil {
+			gen(node.children[1]) // 条件
+			fmt.Println("  pop rax")
+			fmt.Println("  cmp rax, 0")
+			fmt.Println("  je " + endLabel)
+		}
 		gen(node.children[3])
-		gen(node.children[2])
+		if node.children[2] != nil {
+			gen(node.children[2])
+		}
 		fmt.Println("  jmp " + beginLabel)
 		fmt.Println(endLabel + ":")
 		return
