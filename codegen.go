@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
+
+var labelNumber = 0
 
 func genLvalue(node *Node) {
 	if node.kind != NodeLocalVar {
@@ -41,6 +46,18 @@ func gen(node *Node) {
 		fmt.Println("  push rdi")
 		return
 	}
+	if node.kind == NodeIf {
+		var label = ".Lend" + strconv.Itoa(labelNumber)
+		labelNumber += 1
+		gen(node.lhs)
+		fmt.Println("  pop rax")
+		fmt.Println("  cmp rax, 0")
+		fmt.Println("  je " + label)
+		gen(node.rhs)
+		fmt.Println(label + ":")
+		return
+	}
+
 	gen(node.lhs)
 	gen(node.rhs)
 

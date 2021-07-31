@@ -46,6 +46,7 @@ const (
 	TokenIdentifier TokenKind = "IDENTIFIER"
 	TokenEof        TokenKind = "EOF"
 	TokenReturn     TokenKind = "return"
+	TokenIf         TokenKind = "if"
 )
 
 type Token struct {
@@ -77,6 +78,16 @@ func errorAt(str string, format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr, "")
 	os.Exit(1)
+}
+
+// 現在のトークンを返す
+func currentToken() Token {
+	return tokens[0]
+}
+
+// 次のトークンを先読みする
+func prefetch() Token {
+	return tokens[1]
 }
 
 // 次のトークンが期待している記号の時には、トークンを1つ読み進めて真を返す。
@@ -123,6 +134,16 @@ func expect(op string) {
 	tokens = tokens[1:]
 }
 
+// 次のトークンが期待している種類の時にはトークンを1つ読み進める。
+// それ以外の場合にはエラーを報告する。
+func expectKind(kind TokenKind) {
+	token := tokens[0]
+	if token.kind != kind {
+		errorAt(token.str, "'%s'ではありません", kind)
+	}
+	tokens = tokens[1:]
+}
+
 // 次のトークンが数値の場合、トークンを1つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
 func expectNumber() int {
@@ -163,12 +184,15 @@ func tokenize(input string) []Token {
 			token.str, input = getIdentifier(input)
 			if token.str == string(TokenReturn) {
 				token.kind = TokenReturn
+			} else if token.str == string(TokenIf) {
+				token.kind = TokenIf
 			}
 
 			tokens = append(tokens, token)
 			continue
 		}
-		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' || c == '>' || c == ';' || c == '\n' || c == '=' {
+		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' ||
+			c == '>' || c == ';' || c == '\n' || c == '=' || c == '{' || c == '}' {
 			tokens = append(tokens, newToken(TokenReserved, string(c), input))
 			input = input[1:]
 			continue
@@ -207,6 +231,7 @@ const (
 	NodeReturn     NodeKind = "RETURN"      // return
 	NodeLocalVar   NodeKind = "Local Var"   // ローカル変数
 	NodeNum        NodeKind = "NUM"         // 整数
+	NodeIf         NodeKind = "IF"          // if
 )
 
 type Node struct {
@@ -240,6 +265,10 @@ func program() {
 }
 
 func stmt() *Node {
+	if currentToken().kind == TokenIf {
+		return ifStmt()
+	}
+
 	if consume(";") || consume("\n") {
 		return nil
 	}
@@ -252,13 +281,29 @@ func stmt() *Node {
 		if consume("=") {
 			// 代入文
 			var e = expr()
-			return newNode(NodeAssign, n, e)
+			n = newNode(NodeAssign, n, e)
 		}
 	}
 	if consume(";") || consume("\n") {
 		// 何もしない
 	}
 	return n
+}
+
+func ifStmt() *Node {
+	var node = newNode(NodeIf, nil, nil)
+	expectKind(TokenIf)
+	node.lhs = expr()
+	expect("{")
+	if !consume("}") {
+		consume("\n")
+		node.rhs = stmt()
+		expect("}")
+	}
+	if consume(";") || consume("\n") {
+		// 何もしない
+	}
+	return node
 }
 
 func expr() *Node {

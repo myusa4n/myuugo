@@ -55,5 +55,15 @@ assert 5 "return 5"
 assert 10 "abc = 2
 return 5*abc
 "
+assert 6 "a = 2
+if a == 2 {
+  a = a * 3
+}
+a"
+assert 2 "a = 2
+if a != 2 {
+  a = 6
+}
+a"
 
 echo OK
