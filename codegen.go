@@ -110,9 +110,11 @@ func gen(node *Node) {
 	if node.kind == NodeFunctionCall {
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 		// やばい気がする
-		for i, argument := range node.children {
+		for _, argument := range node.children {
 			gen(argument)
-			fmt.Println("  pop " + registers[i])
+		}
+		for i := range node.children {
+			fmt.Println("  pop " + registers[len(node.children)-i-1])
 		}
 		fmt.Println("  call " + node.label)
 		fmt.Println("  push rax")
