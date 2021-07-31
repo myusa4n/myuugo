@@ -29,6 +29,7 @@ const (
 	TokenReturn     TokenKind = "return"
 	TokenIf         TokenKind = "if"
 	TokenElse       TokenKind = "else"
+	TokenFor        TokenKind = "for"
 )
 
 type Token struct {
@@ -61,9 +62,9 @@ func currentToken() Token {
 	return tokens[0]
 }
 
-// 次のトークンを先読みする
-func prefetch() Token {
-	return tokens[1]
+// n個先のトークンを先読みする
+func prefetch(n int) Token {
+	return tokens[n]
 }
 
 // 次のトークンが期待している記号の時には、トークンを1つ読み進めて真を返す。
@@ -170,6 +171,8 @@ func tokenize(input string) []Token {
 				token.kind = TokenIf
 			} else if token.str == string(TokenElse) {
 				token.kind = TokenElse
+			} else if token.str == string(TokenFor) {
+				token.kind = TokenFor
 			}
 
 			tokens = append(tokens, token)
@@ -219,6 +222,9 @@ const (
 	NodeIf         NodeKind = "IF"          // if
 	NodeElse       NodeKind = "ELSE"        // else
 	NodeStmtList   NodeKind = "STMT LIST"   // stmt*
+	NodeForOnly    NodeKind = "FOR ONLY"    // for { ... }
+	NodeForWhile   NodeKind = "FOR WHILE"   // for cond { ... }
+	NodeFor        NodeKind = "FOR"         // for ; ; { ... }
 )
 
 type Node struct {
@@ -273,6 +279,10 @@ func stmt() *Node {
 	if currentToken().kind == TokenIf {
 		return metaIfStmt()
 	}
+	// for文
+	if currentToken().kind == TokenFor {
+		return forStmt()
+	}
 
 	var n *Node
 	if consumeKind(TokenReturn) {
@@ -287,6 +297,38 @@ func stmt() *Node {
 	}
 	consumeEndLine()
 	return n
+}
+
+// range は未対応
+func forStmt() *Node {
+	expectKind(TokenFor)
+	// 初期化, ループ条件, 更新式, 繰り返す文
+	if consume("{") {
+		// 無限ループ
+		var node = newNode(NodeForOnly, []*Node{stmtList()})
+		expect("}")
+		consumeEndLine()
+		return node
+	}
+
+	var stmt1 = stmt()
+	if consume("{") {
+		// while文
+		var node = newNode(NodeForWhile, []*Node{stmt1, stmtList()})
+		expect("}")
+		consumeEndLine()
+		return node
+	}
+
+	// 通常のfor文
+	var stmt2 = stmt()
+	var stmt3 = stmt()
+
+	expect("{")
+	var node = newNode(NodeFor, []*Node{stmt1, stmt2, stmt3, stmtList()})
+	expect("}")
+	consumeEndLine()
+	return node
 }
 
 func metaIfStmt() *Node {

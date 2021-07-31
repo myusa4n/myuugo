@@ -84,6 +84,17 @@ func gen(node *Node) {
 		gen(node.children[0])
 		return
 	}
+	if node.kind == NodeForOnly {
+		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
+		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
+		labelNumber += 1
+
+		fmt.Println(beginLabel + ":")
+		gen(node.children[0])
+		fmt.Println("  jmp " + beginLabel)
+		fmt.Println(endLabel + ":")
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs

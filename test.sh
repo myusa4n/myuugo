@@ -78,5 +78,15 @@ if test < 10 {
   test = 3 * test + 4
 }
 test"
+assert 15 "i = 1
+sum = 0
+for {
+  sum = sum + i
+  if i == 5 {
+    return sum
+  }
+  i = i + 1
+}
+"
 
 echo OK
