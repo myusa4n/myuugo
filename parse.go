@@ -218,14 +218,16 @@ const (
 	NodeMetaIf     NodeKind = "META IF"     // if ... else ...
 	NodeIf         NodeKind = "IF"          // if
 	NodeElse       NodeKind = "ELSE"        // else
+	NodeStmtList   NodeKind = "STMT LIST"   // stmt*
 )
 
 type Node struct {
-	kind   NodeKind // ノードの型
-	lhs    *Node    // 左辺
-	rhs    *Node    // 右辺
-	val    int      // kindがNodeNumの場合にのみ使う
-	offset int      // kindがNodeLocalVarの場合にのみ使う
+	kind     NodeKind // ノードの型
+	lhs      *Node    // 左辺
+	rhs      *Node    // 右辺
+	val      int      // kindがNodeNumの場合にのみ使う
+	offset   int      // kindがNodeLocalVarの場合にのみ使う
+	children []*Node  // kindがNodeStmtListの場合にのみ使う
 }
 
 func newNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
@@ -236,18 +238,24 @@ func newNodeNum(val int) *Node {
 	return &Node{kind: NodeNum, val: val}
 }
 
-var code [100]*Node
+var code []*Node
 
 func program() {
-	var i = 0
-	for !atEof() {
+	code = stmtList().children
+}
+
+func stmtList() *Node {
+	var stmts = make([]*Node, 0)
+
+	for !atEof() && !(currentToken().kind == TokenReserved && currentToken().str == "}") {
 		var s = stmt()
 		if s != nil {
-			code[i] = s
-			i += 1
+			stmts = append(stmts, s)
 		}
 	}
-	code[i] = nil
+	var node = newNode(NodeStmtList, nil, nil)
+	node.children = stmts
+	return node
 }
 
 func stmt() *Node {

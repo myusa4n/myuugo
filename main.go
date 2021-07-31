@@ -27,9 +27,9 @@ func main() {
 	fmt.Println("  mov rbp, rsp")
 	fmt.Println("  sub rsp, 208")
 
-	for i := 0; code[i] != nil; i++ {
+	for _, c := range code {
 		// 抽象構文木を下りながらコード生成
-		gen(code[i])
+		gen(c)
 
 		// 式の評価結果としてスタックに一つの値が残っているはずなので、スタックが溢れないようにポップしておく
 		fmt.Println("  pop rax")
