@@ -55,9 +55,12 @@ assert 5 "return 5"
 assert 10 "abc = 2
 return 5*abc
 "
-assert 6 "a = 2
+assert 1 "a = 2
 if a == 2 {
   a = a * 3
+  a = 1
+  return a
+  a = 5
 }
 a"
 assert 2 "a = 2
@@ -65,11 +68,14 @@ if a != 2 {
   a = 6
 }
 a"
-assert 4 "test = 10
+assert 34 "test = 16
 if test < 10 {
   test = 100
+  test = test + 21
 } else {
-  test = test -6
+  test = test - 5
+  test = test - 1
+  test = 3 * test + 4
 }
 test"
 

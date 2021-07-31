@@ -302,11 +302,8 @@ func ifStmt() *Node {
 	expectKind(TokenIf)
 	node.lhs = expr()
 	expect("{")
-	if !consume("}") {
-		consumeEndLine()
-		node.rhs = stmt()
-		expect("}")
-	}
+	node.rhs = stmtList()
+	expect("}")
 	consumeEndLine()
 	return node
 }
@@ -315,11 +312,8 @@ func elseStmt() *Node {
 	var node = newNode(NodeElse, nil, nil)
 	expectKind(TokenElse)
 	expect("{")
-	if !consume("}") {
-		consumeEndLine()
-		node.lhs = stmt()
-		expect("}")
-	}
+	node.lhs = stmtList()
+	expect("}")
 	consumeEndLine()
 	return node
 }

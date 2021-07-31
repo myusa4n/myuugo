@@ -21,6 +21,15 @@ func gen(node *Node) {
 		fmt.Printf("  push %d\n", node.val)
 		return
 	}
+	if node.kind == NodeStmtList {
+		for i, stmt := range node.children {
+			if i > 0 {
+				fmt.Println("  pop rax")
+			}
+			gen(stmt)
+		}
+		return
+	}
 	if node.kind == NodeReturn {
 		gen(node.lhs)
 		fmt.Println("  pop rax")
