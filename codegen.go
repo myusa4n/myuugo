@@ -107,6 +107,17 @@ func gen(node *Node) {
 		fmt.Println(endLabel + ":")
 		return
 	}
+	if node.kind == NodeFunctionCall {
+		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+		// やばい気がする
+		for i, argument := range node.children {
+			gen(argument)
+			fmt.Println("  pop " + registers[i])
+		}
+		fmt.Println("  call " + node.label)
+		fmt.Println("  push rax")
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs

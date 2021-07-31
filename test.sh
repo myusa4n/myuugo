@@ -5,7 +5,8 @@ assert() {
   input="$2"
 
   ./main "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -c test.c
+  gcc -o tmp tmp.s test.o
   ./tmp
   actual="$?"
 
@@ -102,5 +103,8 @@ for i = 0; i < 6; i = i+1 {
 }
 sum
 "
+assert 5 "a = 3
+foo(a, 2)"
+assert 0 "bar(4)"
 
 echo OK

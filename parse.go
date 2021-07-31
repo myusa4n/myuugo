@@ -179,7 +179,7 @@ func tokenize(input string) []Token {
 			continue
 		}
 		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' ||
-			c == '>' || c == ';' || c == '\n' || c == '=' || c == '{' || c == '}' {
+			c == '>' || c == ';' || c == '\n' || c == '=' || c == '{' || c == '}' || c == ',' {
 			tokens = append(tokens, newToken(TokenReserved, string(c), input))
 			input = input[1:]
 			continue
@@ -204,31 +204,33 @@ func tokenize(input string) []Token {
 type NodeKind string
 
 const (
-	NodeAdd        NodeKind = "ADD"         // +
-	NodeSub        NodeKind = "SUB"         // -
-	NodeMul        NodeKind = "MUL"         // *
-	NodeDiv        NodeKind = "DIV"         // /
-	NodeEql        NodeKind = "EQL"         // ==
-	NodeNotEql     NodeKind = "NOT EQL"     // !=
-	NodeLess       NodeKind = "LESS"        // <
-	NodeLessEql    NodeKind = "LESS EQL"    // <=
-	NodeGreater    NodeKind = "GREATER"     // >
-	NodeGreaterEql NodeKind = "GREATER EQL" // >=
-	NodeAssign     NodeKind = "ASSIGN"      // =
-	NodeReturn     NodeKind = "RETURN"      // return
-	NodeLocalVar   NodeKind = "Local Var"   // ローカル変数
-	NodeNum        NodeKind = "NUM"         // 整数
-	NodeMetaIf     NodeKind = "META IF"     // if ... else ...
-	NodeIf         NodeKind = "IF"          // if
-	NodeElse       NodeKind = "ELSE"        // else
-	NodeStmtList   NodeKind = "STMT LIST"   // stmt*
-	NodeFor        NodeKind = "FOR"         // for
+	NodeAdd          NodeKind = "ADD"           // +
+	NodeSub          NodeKind = "SUB"           // -
+	NodeMul          NodeKind = "MUL"           // *
+	NodeDiv          NodeKind = "DIV"           // /
+	NodeEql          NodeKind = "EQL"           // ==
+	NodeNotEql       NodeKind = "NOT EQL"       // !=
+	NodeLess         NodeKind = "LESS"          // <
+	NodeLessEql      NodeKind = "LESS EQL"      // <=
+	NodeGreater      NodeKind = "GREATER"       // >
+	NodeGreaterEql   NodeKind = "GREATER EQL"   // >=
+	NodeAssign       NodeKind = "ASSIGN"        // =
+	NodeReturn       NodeKind = "RETURN"        // return
+	NodeLocalVar     NodeKind = "Local Var"     // ローカル変数
+	NodeNum          NodeKind = "NUM"           // 整数
+	NodeMetaIf       NodeKind = "META IF"       // if ... else ...
+	NodeIf           NodeKind = "IF"            // if
+	NodeElse         NodeKind = "ELSE"          // else
+	NodeStmtList     NodeKind = "STMT LIST"     // stmt*
+	NodeFor          NodeKind = "FOR"           // for
+	NodeFunctionCall NodeKind = "FUNCTION CALL" // fn()
 )
 
 type Node struct {
 	kind     NodeKind // ノードの型
 	val      int      // kindがNodeNumの場合にのみ使う
 	offset   int      // kindがNodeLocalVarの場合にのみ使う
+	label    string   // kindがNodeFunctionCallの場合にのみ使う
 	children []*Node  // 子。lhs, rhsの順でchildrenに格納される
 }
 
@@ -444,24 +446,36 @@ func primary() *Node {
 		return n
 	}
 	var tok, ok = consumeIdentifier()
-	if ok {
-		var node = newLeafNode(NodeLocalVar)
-		lvar, ok := findLocalVar(tok)
+	if !ok {
+		return newNodeNum(expectNumber())
+	}
 
-		if ok {
-			node.offset = lvar.offset
-			return node
+	if consume("(") {
+		// 関数呼び出し
+		var node = newNode(NodeFunctionCall, make([]*Node, 0))
+		node.label = tok.str
+		for !consume(")") {
+			consume(",")
+			node.children = append(node.children, expr())
 		}
-
-		lvar = LocalVar{name: tok.str}
-		if len(locals) == 0 {
-			lvar.offset = 0 + 8
-		} else {
-			lvar.offset = locals[len(locals)-1].offset + 8
-		}
-		node.offset = lvar.offset
-		locals = append(locals, lvar)
 		return node
 	}
-	return newNodeNum(expectNumber())
+
+	var node = newLeafNode(NodeLocalVar)
+	lvar, ok := findLocalVar(tok)
+
+	if ok {
+		node.offset = lvar.offset
+		return node
+	}
+
+	lvar = LocalVar{name: tok.str}
+	if len(locals) == 0 {
+		lvar.offset = 0 + 8
+	} else {
+		lvar.offset = locals[len(locals)-1].offset + 8
+	}
+	node.offset = lvar.offset
+	locals = append(locals, lvar)
+	return node
 }
