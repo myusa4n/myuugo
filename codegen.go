@@ -110,6 +110,23 @@ func gen(node *Node) {
 		fmt.Println(endLabel + ":")
 		return
 	}
+	if node.kind == NodeFor {
+		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
+		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
+		labelNumber += 1
+
+		gen(node.children[0])
+		fmt.Println(beginLabel + ":")
+		gen(node.children[1]) // 条件
+		fmt.Println("  pop rax")
+		fmt.Println("  cmp rax, 0")
+		fmt.Println("  je " + endLabel)
+		gen(node.children[3])
+		gen(node.children[2])
+		fmt.Println("  jmp " + beginLabel)
+		fmt.Println(endLabel + ":")
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs
