@@ -88,5 +88,13 @@ for {
   i = i + 1
 }
 "
+assert 15 "i = 1
+sum = 0
+for i < 6 {
+  sum = sum + i
+  i = i + 1
+}
+sum
+"
 
 echo OK
