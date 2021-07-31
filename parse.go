@@ -101,6 +101,12 @@ func consume(op string) bool {
 	return true
 }
 
+// 文の終端記号であるトークンを1つ読み進めて真を返す。
+// それ以外の場合には偽を返す。
+func consumeEndLine() bool {
+	return consume(";") || consume("\n")
+}
+
 // 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
 func consumeKind(kind TokenKind) bool {
@@ -265,12 +271,13 @@ func program() {
 }
 
 func stmt() *Node {
+	// 空文
+	if consumeEndLine() {
+		return nil
+	}
+	// if文
 	if currentToken().kind == TokenIf {
 		return ifStmt()
-	}
-
-	if consume(";") || consume("\n") {
-		return nil
 	}
 
 	var n *Node
@@ -284,9 +291,7 @@ func stmt() *Node {
 			n = newNode(NodeAssign, n, e)
 		}
 	}
-	if consume(";") || consume("\n") {
-		// 何もしない
-	}
+	consumeEndLine()
 	return n
 }
 
@@ -296,13 +301,11 @@ func ifStmt() *Node {
 	node.lhs = expr()
 	expect("{")
 	if !consume("}") {
-		consume("\n")
+		consumeEndLine()
 		node.rhs = stmt()
 		expect("}")
 	}
-	if consume(";") || consume("\n") {
-		// 何もしない
-	}
+	consumeEndLine()
 	return node
 }
 
