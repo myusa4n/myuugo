@@ -61,7 +61,7 @@ func gen(node *Node) {
 
 		gen(node.children[0]) // if
 		fmt.Println(elseLabel + ":")
-		if len(node.children) == 2 {
+		if node.children[1] != nil {
 			gen(node.children[1]) // else
 		}
 		fmt.Println(endLabel + ":")

@@ -300,7 +300,7 @@ func metaIfStmt() *Node {
 		var elseNode = elseStmt()
 		return newBinaryNode(NodeMetaIf, ifNode, elseNode)
 	}
-	return newNode(NodeMetaIf, []*Node{ifNode})
+	return newBinaryNode(NodeMetaIf, ifNode, nil)
 }
 
 func ifStmt() *Node {
