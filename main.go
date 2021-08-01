@@ -12,7 +12,7 @@ func main() {
 	}
 
 	userInput = os.Args[1]
-	locals = make([]LocalVar, 0)
+	localVarTable = make(map[string][]LocalVar)
 	tokens = tokenize(userInput)
 	program()
 

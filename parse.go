@@ -481,6 +481,7 @@ func primary() *Node {
 		expect(")")
 		return n
 	}
+
 	var tok, ok = consumeIdentifier()
 	if !ok {
 		return newNodeNum(expectNumber())
@@ -498,20 +499,7 @@ func primary() *Node {
 	}
 
 	var node = newLeafNode(NodeLocalVar)
-	lvar, ok := findLocalVar(tok)
-
-	if ok {
-		node.offset = lvar.offset
-		return node
-	}
-
-	lvar = LocalVar{name: tok.str}
-	if len(locals) == 0 {
-		lvar.offset = 0 + 8
-	} else {
-		lvar.offset = locals[len(locals)-1].offset + 8
-	}
+	lvar := addLocalVar("main", tok)
 	node.offset = lvar.offset
-	locals = append(locals, lvar)
 	return node
 }
