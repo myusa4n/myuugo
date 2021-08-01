@@ -30,6 +30,7 @@ const (
 	TokenIf         TokenKind = "if"
 	TokenElse       TokenKind = "else"
 	TokenFor        TokenKind = "for"
+	TokenFunc       TokenKind = "func"
 )
 
 type Token struct {
@@ -107,6 +108,18 @@ func consumeIdentifier() (Token, bool) {
 	return Token{}, false
 }
 
+// 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
+// そうでない場合はエラーを報告する。
+func expectIdentifier() Token {
+	token := tokens[0]
+	if token.kind == TokenIdentifier {
+		tokens = tokens[1:]
+		return token
+	}
+	errorAt(token.str, "識別子ではありません")
+	return token // 到達しない
+}
+
 // 次のトークンが期待している記号のときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
 func expect(op string) {
@@ -173,8 +186,9 @@ func tokenize(input string) []Token {
 				token.kind = TokenElse
 			} else if token.str == string(TokenFor) {
 				token.kind = TokenFor
+			} else if token.str == string(TokenFunc) {
+				token.kind = TokenFunc
 			}
-
 			tokens = append(tokens, token)
 			continue
 		}
@@ -224,6 +238,7 @@ const (
 	NodeStmtList     NodeKind = "STMT LIST"     // stmt*
 	NodeFor          NodeKind = "FOR"           // for
 	NodeFunctionCall NodeKind = "FUNCTION CALL" // fn()
+	NodeFunctionDef  NodeKind = "FUNCTION DEF"  // func fn() { ... }
 )
 
 type Node struct {
@@ -283,6 +298,10 @@ func stmt() *Node {
 	if currentToken().kind == TokenFor {
 		return forStmt()
 	}
+	// 関数定義
+	if currentToken().kind == TokenFunc {
+		return funcDefinition()
+	}
 
 	var n *Node
 	if consumeKind(TokenReturn) {
@@ -297,6 +316,23 @@ func stmt() *Node {
 	}
 	consumeEndLine()
 	return n
+}
+
+func funcDefinition() *Node {
+	expectKind(TokenFunc)
+	identifier := expectIdentifier()
+
+	expect("(")
+	expect(")")
+	expect("{")
+
+	var node = newNode(NodeFunctionDef, make([]*Node, 0))
+	node.label = identifier.str
+	node.children = append(node.children, stmtList())
+
+	expect("}")
+	consumeEndLine()
+	return node
 }
 
 // range は未対応

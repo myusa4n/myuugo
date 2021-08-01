@@ -109,7 +109,6 @@ func gen(node *Node) {
 	}
 	if node.kind == NodeFunctionCall {
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
-		// やばい気がする
 		for _, argument := range node.children {
 			gen(argument)
 		}
@@ -118,6 +117,25 @@ func gen(node *Node) {
 		}
 		fmt.Println("  call " + node.label)
 		fmt.Println("  push rax")
+		return
+	}
+	if node.kind == NodeFunctionDef {
+		fmt.Println(node.label + ":")
+
+		// プロローグ
+		// 変数26個分の領域を確保する
+		fmt.Println("  push rbp")
+		fmt.Println("  mov rbp, rsp")
+		fmt.Println("  sub rsp, 208")
+
+		gen(node.children[0]) // 関数本体
+
+		// エピローグ
+		// 最後の式の結果がRAXに残っているのでそれが返り値になる
+		fmt.Println("  mov rsp, rbp")
+		fmt.Println("  pop rbp")
+		fmt.Println("  ret")
+
 		return
 	}
 

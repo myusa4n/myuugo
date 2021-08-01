@@ -18,93 +18,188 @@ assert() {
   fi
 }
 
-assert 0 0
-assert 42 42
-assert 21 "5+20-4"
-assert 41 "12 + 34 - 5"
-assert 47 '5 + 6*7'
-assert 15 '5*(9-6)'
-assert 4 '(3+5) / 2'
-assert 5 '10 + -5'
-assert 4 '-10 + -7 * -2'
-assert 1 '1 + 1 == 2'
-assert 0 '1 - 5 * 2 == 9'
-assert 0 '4 * -3 != -12'
-assert 1 '1 - 5 * 2 != 9'
-assert 1 '5 * 10 * -1 < 7 * -7'
-assert 0 '2+3 < 5'
-assert 1 '2+3<=5'
-assert 1 '4*3<=5*7'
-assert 0 '5 * 10 * -1 > 7 * -7'
-assert 0 '2+3 > 5'
-assert 1 '2+3>=5'
-assert 0 '4*3>=5*7'
+assert 21 "
+func main() {
+  5+20-4
+}"
+assert 41 "
+func main() {
+  12 + 34 - 5
+}"
+assert 47 '
+func main() {
+  5 + 6*7
+}'
+assert 15 '
+func main() {
+  5*(9-6)
+}'
+assert 4 '
+func main() {
+  (3+5) / 2
+}'
+assert 5 '
+func main() {
+  10 + -5
+}'
+assert 4 '
+func main() {
+  -10 + -7 * -2
+}'
+assert 1 '
+func main() {
+  1 + 1 == 2
+}'
+assert 0 '
+func main() {
+  1 - 5 * 2 == 9
+}
+'
+assert 0 '
+func main() {
+  4 * -3 != -12
+}'
+assert 1 '
+func main() {
+  1 - 5 * 2 != 9
+}'
+assert 1 '
+func main() {
+  5 * 10 * -1 < 7 * -7
+}'
+assert 0 '
+func main() {
+  2+3 < 5
+}'
+assert 1 '
+func main() {
+  2+3<=5
+}'
+assert 1 '
+func main() {
+  4*3<=5*7
+}'
+assert 0 '
+func main() {
+  5 * 10 * -1 > 7 * -7
+}'
+assert 0 '
+func main() {
+  2+3 > 5
+}'
+assert 1 '
+func main() {
+  2+3>=5
+}'
+assert 0 '
+func main() {
+  4*3>=5*7
+}'
 assert 4 "
-a = 3
-a + 1
+func main() {
+  a = 3
+  a + 1
+}
 "
-assert 7 "z = 20; a = 13; x = z - a; x"
-assert 21 "a = 5
-a + 3;
-4 * a+1
-"
-assert 222 "hello = 5 * 4 + 2
-world = hello * 20 / 2
-world + 2
-"
-assert 5 "return 5"
-assert 10 "abc = 2
-return 5*abc
-"
-assert 1 "a = 2
-if a == 2 {
-  a = a * 3
-  a = 1
-  return a
+assert 7 "func main() { z = 20; a = 13; x = z - a; x }"
+assert 21 "
+func main() {
   a = 5
+  a + 3;
+  4 * a+1
+}"
+assert 222 "
+func main() {
+  hello = 5 * 4 + 2
+  world = hello * 20 / 2
+  world + 2
 }
-a"
-assert 2 "a = 2
-if a != 2 {
-  a = 6
+"
+assert 5 "
+func main() {
+  return 5
+}"
+assert 10 "
+func main() {
+  abc = 2
+  return 5*abc
 }
-a"
-assert 34 "test = 16
-if test < 10 {
-  test = 100
-  test = test + 21
-} else {
-  test = test - 5
-  test = test - 1
-  test = 3 * test + 4
-}
-test"
-assert 15 "i = 1
-sum = 0
-for {
-  sum = sum + i
-  if i == 5 {
-    return sum
+"
+assert 1 "
+func main() {
+  a = 2
+  if a == 2 {
+    a = a * 3
+    a = 1
+    return a
+    a = 5
   }
-  i = i + 1
+  a
 }
 "
-assert 15 "i = 1
-sum = 0
-for i < 6 {
-  sum = sum + i
-  i = i + 1
+assert 2 "
+func main() {
+  a = 2
+  if a != 2 {
+    a = 6
+  }
+  a
 }
-sum
 "
-assert 15 "sum = 0
-for i = 0; i < 6; i = i+1 {
-  sum = sum + i
+assert 34 "
+func main() {
+  test = 16
+  if test < 10 {
+    test = 100
+    test = test + 21
+  } else {
+    test = test - 5
+    test = test - 1
+    test = 3 * test + 4
+  }
+  test
+}"
+assert 15 "
+func main() {
+  i = 1
+  sum = 0
+  for {
+    sum = sum + i
+    if i == 5 {
+      return sum
+    }
+    i = i + 1
+  }
 }
-sum
 "
-assert 5 "a = 3
-foo(a, 2)"
-assert 0 "bar(4)"
+assert 15 "
+func main() {
+  i = 1
+  sum = 0
+  for i < 6 {
+    sum = sum + i
+    i = i + 1
+  }
+  sum
+}
+"
+assert 15 "
+func main() {
+  sum = 0
+  for i = 0; i < 6; i = i+1 {
+    sum = sum + i
+  }
+  sum
+}
+"
+assert 5 "
+func main() {
+  a = 3
+  foo(a, 2)
+}"
+assert 0 "
+func main() {
+  bar(4)
+}"
 
 echo OK
