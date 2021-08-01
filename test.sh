@@ -5,8 +5,7 @@ assert() {
   input="$2"
 
   ./main "$input" > tmp.s
-  gcc -c test.c
-  gcc -o tmp tmp.s test.o
+  gcc -o tmp tmp.s
   ./tmp
   actual="$?"
 
@@ -192,14 +191,26 @@ func main() {
   sum
 }
 "
-assert 5 "
+assert 3 "
+func foo(a, b) {
+  return a + b
+}
+
 func main() {
-  a = 3
-  foo(a, 2)
-}"
-assert 0 "
+  foo(2, 1)
+}
+"
+assert 8 "
+func fib(n) {
+  if n <= 1 {
+    return 1
+  }
+  return fib(n - 1) + fib(n - 2)
+}
+
 func main() {
-  bar(4)
-}"
+  return fib(5)
+}
+"
 
 echo OK

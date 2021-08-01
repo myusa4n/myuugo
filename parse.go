@@ -270,6 +270,7 @@ func newNodeNum(val int) *Node {
 }
 
 var code []*Node
+var currentFuncLabel = ""
 
 func program() {
 	code = stmtList().children
@@ -326,6 +327,9 @@ func funcDefinition() *Node {
 	expectKind(TokenFunc)
 	identifier := expectIdentifier()
 
+	var prevFuncLabel = currentFuncLabel
+	currentFuncLabel = identifier.str
+
 	var parameters = make([]*Node, 0)
 
 	expect("(")
@@ -344,6 +348,9 @@ func funcDefinition() *Node {
 
 	expect("}")
 	consumeEndLine()
+
+	currentFuncLabel = prevFuncLabel
+
 	return node
 }
 
@@ -518,7 +525,7 @@ func primary() *Node {
 func variable() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
-	lvar := addLocalVar("main", tok)
+	lvar := addLocalVar(currentFuncLabel, tok)
 	node.offset = lvar.offset
 	return node
 }

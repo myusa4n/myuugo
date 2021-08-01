@@ -128,6 +128,14 @@ func gen(node *Node) {
 		fmt.Println("  mov rbp, rsp")
 		fmt.Println("  sub rsp, 208")
 
+		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+
+		for i, param := range node.children[1:] {
+			genLvalue(param)
+			fmt.Println("  pop rax")
+			fmt.Println("  mov [rax], " + registers[i])
+		}
+
 		gen(node.children[0]) // 関数本体
 
 		// エピローグ
