@@ -40,6 +40,10 @@ type Token struct {
 	rest string    // 自信を含めた残りすべてのトークン文字列
 }
 
+func (t Token) test(kind TokenKind, str string) bool {
+	return t.kind == kind && t.str == str
+}
+
 // ユーザーからの入力プログラム
 var userInput string
 
@@ -322,13 +326,21 @@ func funcDefinition() *Node {
 	expectKind(TokenFunc)
 	identifier := expectIdentifier()
 
+	var parameters = make([]*Node, 0)
+
 	expect("(")
-	expect(")")
+	for !consume(")") {
+		if len(parameters) > 0 {
+			expect(",")
+		}
+		parameters = append(parameters, variable())
+	}
 	expect("{")
 
 	var node = newNode(NodeFunctionDef, make([]*Node, 0))
 	node.label = identifier.str
 	node.children = append(node.children, stmtList())
+	node.children = append(node.children, parameters...)
 
 	expect("}")
 	consumeEndLine()
@@ -482,22 +494,29 @@ func primary() *Node {
 		return n
 	}
 
-	var tok, ok = consumeIdentifier()
-	if !ok {
+	if currentToken().kind != TokenIdentifier {
 		return newNodeNum(expectNumber())
 	}
 
-	if consume("(") {
+	if prefetch(1).test(TokenReserved, "(") {
 		// 関数呼び出し
+		var tok = expectIdentifier()
+		expect("(")
 		var node = newNode(NodeFunctionCall, make([]*Node, 0))
 		node.label = tok.str
 		for !consume(")") {
-			consume(",")
+			if len(node.children) > 0 {
+				expect(",")
+			}
 			node.children = append(node.children, expr())
 		}
 		return node
 	}
+	return variable()
+}
 
+func variable() *Node {
+	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
 	lvar := addLocalVar("main", tok)
 	node.offset = lvar.offset
