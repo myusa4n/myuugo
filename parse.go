@@ -338,8 +338,12 @@ func varStmt() *Node {
 	var v = variableDeclaration()
 
 	// trueの時、型が明示されているが今回は特に何もしない
-	consumeIdentifier()
-
+	_, ok := consumeIdentifier()
+	if !ok {
+		// 型が明示されていないときは初期化が必須
+		expect("=")
+		return newBinaryNode(NodeVarStmt, v, expr())
+	}
 	if consume("=") {
 		return newBinaryNode(NodeVarStmt, v, expr())
 	}

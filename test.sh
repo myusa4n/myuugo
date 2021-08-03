@@ -185,7 +185,7 @@ func main() {
 assert 15 "
 func main() {
   var sum = 0
-  var i
+  var i int
   for i = 0; i < 6; i = i+1 {
     sum = sum + i
   }

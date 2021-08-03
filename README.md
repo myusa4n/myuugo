@@ -16,7 +16,7 @@ func fib(n) {
 
 func main() {
   var ans = 0
-  var n
+  var n int
   for n = 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
