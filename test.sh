@@ -222,5 +222,11 @@ assert 10 "func main() {
   b = 4
   *(&b + 8)
 }"
+assert 22 "func main() {
+  var a = 3
+  var b
+  b = 19
+  a + b
+}"
 
 echo OK

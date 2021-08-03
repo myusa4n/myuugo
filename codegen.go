@@ -157,6 +157,19 @@ func gen(node *Node) {
 		fmt.Println("  push rax")
 		return
 	}
+	if node.kind == NodeVarStmt {
+		if len(node.children) == 2 {
+			genLvalue(node.children[0]) // lhs
+			gen(node.children[1])       // rhs
+
+			fmt.Println("  pop rdi")
+			fmt.Println("  pop rax")
+			fmt.Println("  mov [rax], rdi")
+			fmt.Println("  push rdi")
+			return
+		}
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs

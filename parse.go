@@ -31,6 +31,7 @@ const (
 	TokenElse       TokenKind = "else"
 	TokenFor        TokenKind = "for"
 	TokenFunc       TokenKind = "func"
+	TokenVar        TokenKind = "var"
 )
 
 type Token struct {
@@ -192,6 +193,8 @@ func tokenize(input string) []Token {
 				token.kind = TokenFor
 			} else if token.str == string(TokenFunc) {
 				token.kind = TokenFunc
+			} else if token.str == string(TokenVar) {
+				token.kind = TokenVar
 			}
 			tokens = append(tokens, token)
 			continue
@@ -245,6 +248,7 @@ const (
 	NodeFunctionDef  NodeKind = "FUNCTION DEF"  // func fn() { ... }
 	NodeAddr         NodeKind = "ADDR"          // &
 	NodeDeref        NodeKind = "DEREF"         // *addr
+	NodeVarStmt      NodeKind = "VAR STMT"      // var ...
 )
 
 type Node struct {
@@ -309,6 +313,10 @@ func stmt() *Node {
 	if currentToken().kind == TokenFunc {
 		return funcDefinition()
 	}
+	// var文
+	if currentToken().kind == TokenVar {
+		return varStmt()
+	}
 
 	var n *Node
 	if consumeKind(TokenReturn) {
@@ -325,6 +333,19 @@ func stmt() *Node {
 	return n
 }
 
+func varStmt() *Node {
+	expectKind(TokenVar)
+	var v = variableDeclaration()
+
+	// trueの時、型が明示されているが今回は特に何もしない
+	consumeIdentifier()
+
+	if consume("=") {
+		return newBinaryNode(NodeVarStmt, v, expr())
+	}
+	return newNode(NodeVarStmt, []*Node{v})
+}
+
 func funcDefinition() *Node {
 	expectKind(TokenFunc)
 	identifier := expectIdentifier()
@@ -339,7 +360,7 @@ func funcDefinition() *Node {
 		if len(parameters) > 0 {
 			expect(",")
 		}
-		parameters = append(parameters, variable())
+		parameters = append(parameters, variableShort())
 	}
 	expect("{")
 
@@ -527,12 +548,24 @@ func primary() *Node {
 		}
 		return node
 	}
-	return variable()
+	return variableShort()
 }
 
-func variable() *Node {
+func variableShort() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
+	lvar := addLocalVar(currentFuncLabel, tok)
+	node.offset = lvar.offset
+	return node
+}
+
+func variableDeclaration() *Node {
+	var tok = expectIdentifier()
+	var node = newLeafNode(NodeLocalVar)
+	_, ok := findLocalVar(currentFuncLabel, tok)
+	if ok {
+		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
+	}
 	lvar := addLocalVar(currentFuncLabel, tok)
 	node.offset = lvar.offset
 	return node
