@@ -5,7 +5,7 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/08/01更新)
+## 現状(2021/08/04更新)
 ```go
 func fib(n) {
   if n <= 1 {
@@ -15,8 +15,9 @@ func fib(n) {
 }
 
 func main() {
-  ans = 0
-  for n = 1; n <= 10; n++ {
+  var ans = 0
+  var n
+  for n = 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
   return ans
