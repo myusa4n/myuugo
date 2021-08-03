@@ -551,14 +551,6 @@ func primary() *Node {
 	return variableRef()
 }
 
-func variableShort() *Node {
-	var tok = expectIdentifier()
-	var node = newLeafNode(NodeLocalVar)
-	lvar := addLocalVar(currentFuncLabel, tok)
-	node.offset = lvar.offset
-	return node
-}
-
 func variableRef() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
