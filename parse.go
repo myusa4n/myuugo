@@ -360,7 +360,7 @@ func funcDefinition() *Node {
 		if len(parameters) > 0 {
 			expect(",")
 		}
-		parameters = append(parameters, variableShort())
+		parameters = append(parameters, variableDeclaration())
 	}
 	expect("{")
 
@@ -548,13 +548,24 @@ func primary() *Node {
 		}
 		return node
 	}
-	return variableShort()
+	return variableRef()
 }
 
 func variableShort() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
 	lvar := addLocalVar(currentFuncLabel, tok)
+	node.offset = lvar.offset
+	return node
+}
+
+func variableRef() *Node {
+	var tok = expectIdentifier()
+	var node = newLeafNode(NodeLocalVar)
+	lvar, ok := findLocalVar(currentFuncLabel, tok)
+	if !ok {
+		errorAt(tok.rest, "未定義の変数です %s", tok.str)
+	}
 	node.offset = lvar.offset
 	return node
 }

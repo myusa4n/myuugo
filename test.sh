@@ -96,21 +96,21 @@ func main() {
 }'
 assert 4 "
 func main() {
-  a = 3
+  var a = 3
   a + 1
 }
 "
-assert 7 "func main() { z = 20; a = 13; x = z - a; x }"
+assert 7 "func main() { var z = 20; var a = 13; var x = z - a; x }"
 assert 21 "
 func main() {
-  a = 5
+  var a = 5
   a + 3;
   4 * a+1
 }"
 assert 222 "
 func main() {
-  hello = 5 * 4 + 2
-  world = hello * 20 / 2
+  var hello = 5 * 4 + 2
+  var world = hello * 20 / 2
   world + 2
 }
 "
@@ -120,13 +120,13 @@ func main() {
 }"
 assert 10 "
 func main() {
-  abc = 2
+  var abc = 2
   return 5*abc
 }
 "
 assert 1 "
 func main() {
-  a = 2
+  var a = 2
   if a == 2 {
     a = a * 3
     a = 1
@@ -138,7 +138,7 @@ func main() {
 "
 assert 2 "
 func main() {
-  a = 2
+  var a = 2
   if a != 2 {
     a = 6
   }
@@ -147,7 +147,7 @@ func main() {
 "
 assert 34 "
 func main() {
-  test = 16
+  var test = 16
   if test < 10 {
     test = 100
     test = test + 21
@@ -160,8 +160,8 @@ func main() {
 }"
 assert 15 "
 func main() {
-  i = 1
-  sum = 0
+  var i = 1
+  var sum = 0
   for {
     sum = sum + i
     if i == 5 {
@@ -173,8 +173,8 @@ func main() {
 "
 assert 15 "
 func main() {
-  i = 1
-  sum = 0
+  var i = 1
+  var sum = 0
   for i < 6 {
     sum = sum + i
     i = i + 1
@@ -184,7 +184,8 @@ func main() {
 "
 assert 15 "
 func main() {
-  sum = 0
+  var sum = 0
+  var i
   for i = 0; i < 6; i = i+1 {
     sum = sum + i
   }
@@ -213,18 +214,18 @@ func main() {
 }
 "
 assert 4 "func main() {
-  str = 4
+  var str = 4
   *&str
 }
 "
 assert 10 "func main() {
-  a = 10
-  b = 4
+  var a = 10
+  var b = 4
   *(&b + 8)
 }"
 assert 22 "func main() {
-  var a = 3
-  var b
+  var a int = 3
+  var b int
   b = 19
   a + b
 }"
