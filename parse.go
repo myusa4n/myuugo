@@ -197,7 +197,7 @@ func tokenize(input string) []Token {
 			continue
 		}
 		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' ||
-			c == '>' || c == ';' || c == '\n' || c == '=' || c == '{' || c == '}' || c == ',' {
+			c == '>' || c == ';' || c == '\n' || c == '=' || c == '{' || c == '}' || c == ',' || c == '&' {
 			tokens = append(tokens, newToken(TokenReserved, string(c), input))
 			input = input[1:]
 			continue
@@ -243,6 +243,8 @@ const (
 	NodeFor          NodeKind = "FOR"           // for
 	NodeFunctionCall NodeKind = "FUNCTION CALL" // fn()
 	NodeFunctionDef  NodeKind = "FUNCTION DEF"  // func fn() { ... }
+	NodeAddr         NodeKind = "ADDR"          // &
+	NodeDeref        NodeKind = "DEREF"         // *addr
 )
 
 type Node struct {
@@ -489,6 +491,12 @@ func unary() *Node {
 	}
 	if consume("-") {
 		return newBinaryNode(NodeSub, newNodeNum(0), primary())
+	}
+	if consume("*") {
+		return newNode(NodeDeref, []*Node{unary()})
+	}
+	if consume("&") {
+		return newNode(NodeAddr, []*Node{unary()})
 	}
 	return primary()
 }

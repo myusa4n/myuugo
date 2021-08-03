@@ -212,5 +212,15 @@ func main() {
   return fib(5)
 }
 "
+assert 4 "func main() {
+  str = 4
+  *&str
+}
+"
+assert 10 "func main() {
+  a = 10
+  b = 4
+  *(&b + 8)
+}"
 
 echo OK

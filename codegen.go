@@ -146,6 +146,17 @@ func gen(node *Node) {
 
 		return
 	}
+	if node.kind == NodeAddr {
+		genLvalue(node.children[0])
+		return
+	}
+	if node.kind == NodeDeref {
+		gen(node.children[0])
+		fmt.Println("  pop rax")
+		fmt.Println("  mov rax, [rax]")
+		fmt.Println("  push rax")
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs
