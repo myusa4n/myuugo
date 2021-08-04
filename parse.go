@@ -32,6 +32,7 @@ const (
 	TokenFor        TokenKind = "for"
 	TokenFunc       TokenKind = "func"
 	TokenVar        TokenKind = "var"
+	TokenPackage    TokenKind = "package"
 )
 
 type Token struct {
@@ -88,6 +89,12 @@ func consume(op string) bool {
 // それ以外の場合には偽を返す。
 func consumeEndLine() bool {
 	return consume(";") || consume("\n")
+}
+
+func expectEndLine() {
+	if !consumeEndLine() {
+		madden("文の終端記号ではありません")
+	}
 }
 
 // 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
@@ -195,6 +202,8 @@ func tokenize(input string) []Token {
 				token.kind = TokenFunc
 			} else if token.str == string(TokenVar) {
 				token.kind = TokenVar
+			} else if token.str == string(TokenPackage) {
+				token.kind = TokenPackage
 			}
 			tokens = append(tokens, token)
 			continue
@@ -282,13 +291,14 @@ const (
 	NodeAddr         NodeKind = "ADDR"          // &
 	NodeDeref        NodeKind = "DEREF"         // *addr
 	NodeVarStmt      NodeKind = "VAR STMT"      // var ...
+	NodePackageStmt  NodeKind = "PACKAGE STMT"  // package ...
 )
 
 type Node struct {
 	kind     NodeKind  // ノードの型
 	val      int       // kindがNodeNumの場合にのみ使う
 	lvar     *LocalVar // kindがNodeLocalVarの場合にのみ使う
-	label    string    // kindがNodeFunctionCallの場合にのみ使う
+	label    string    // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
 	children []*Node   // 子。lhs, rhsの順でchildrenに格納される
 }
 
@@ -312,7 +322,22 @@ var code []*Node
 var currentFuncLabel = ""
 
 func program() {
-	code = stmtList().children
+	for consumeEndLine() {
+	}
+
+	code = []*Node{packageStmt()}
+	expectEndLine()
+
+	code = append(code, stmtList().children...)
+}
+
+func packageStmt() *Node {
+	var n = newLeafNode(NodePackageStmt)
+
+	expectKind(TokenPackage)
+	n.label = expectIdentifier().str
+
+	return n
 }
 
 func stmtList() *Node {

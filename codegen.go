@@ -21,6 +21,10 @@ func genLvalue(node *Node) {
 }
 
 func gen(node *Node) {
+	if node.kind == NodePackageStmt {
+		// 何もしない
+		return
+	}
 	if node.kind == NodeNum {
 		fmt.Printf("  push %d\n", node.val)
 		return

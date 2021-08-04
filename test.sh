@@ -18,96 +18,140 @@ assert() {
 }
 
 assert 21 "
+package main
+
 func main() {
   5+20-4
 }"
 assert 41 "
+package main
+
 func main() {
   12 + 34 - 5
 }"
 assert 47 '
+package main
+
 func main() {
   5 + 6*7
 }'
 assert 15 '
+package main
+
 func main() {
   5*(9-6)
 }'
 assert 4 '
+package main
+
 func main() {
   (3+5) / 2
 }'
 assert 5 '
+package main
+
 func main() {
   10 + -5
 }'
 assert 4 '
+package main
+
 func main() {
   -10 + -7 * -2
 }'
 assert 1 '
+package main
+
 func main() {
   1 + 1 == 2
 }'
 assert 0 '
+package main
+
 func main() {
   1 - 5 * 2 == 9
 }
 '
 assert 0 '
+package main
+
 func main() {
   4 * -3 != -12
 }'
 assert 1 '
+package main
+
 func main() {
   1 - 5 * 2 != 9
 }'
 assert 1 '
+package main
+
 func main() {
   5 * 10 * -1 < 7 * -7
 }'
 assert 0 '
+package main
+
 func main() {
   2+3 < 5
 }'
 assert 1 '
+package main
+
 func main() {
   2+3<=5
 }'
 assert 1 '
+package main
+
 func main() {
   4*3<=5*7
 }'
 assert 0 '
+package main
+
 func main() {
   5 * 10 * -1 > 7 * -7
 }'
 assert 0 '
+package main
+
 func main() {
   2+3 > 5
 }'
 assert 1 '
+package main
+
 func main() {
   2+3>=5
 }'
 assert 0 '
+package main
+
 func main() {
   4*3>=5*7
 }'
 assert 4 "
+package main
+
 func main() {
   var a = 3
   a + 1
 }
 "
-assert 7 "func main() { var z = 20; var a = 13; var x = z - a; x }"
+assert 7 "package main; func main() { var z = 20; var a = 13; var x = z - a; x }"
 assert 21 "
+package main
+
 func main() {
   var a = 5
   a + 3;
   4 * a+1
 }"
 assert 222 "
+package main
+
 func main() {
   var hello = 5 * 4 + 2
   var world = hello * 20 / 2
@@ -115,16 +159,22 @@ func main() {
 }
 "
 assert 5 "
+package main
+
 func main() {
   return 5
 }"
 assert 10 "
+package main
+
 func main() {
   var abc = 2
   return 5*abc
 }
 "
 assert 1 "
+package main
+
 func main() {
   var a = 2
   if a == 2 {
@@ -137,6 +187,8 @@ func main() {
 }
 "
 assert 2 "
+package main
+
 func main() {
   var a = 2
   if a != 2 {
@@ -146,6 +198,8 @@ func main() {
 }
 "
 assert 34 "
+package main
+
 func main() {
   var test = 16
   if test < 10 {
@@ -159,6 +213,8 @@ func main() {
   test
 }"
 assert 15 "
+package main
+
 func main() {
   var i = 1
   var sum = 0
@@ -172,6 +228,8 @@ func main() {
 }
 "
 assert 15 "
+package main
+
 func main() {
   var i = 1
   var sum = 0
@@ -183,6 +241,8 @@ func main() {
 }
 "
 assert 15 "
+package main
+
 func main() {
   var sum = 0
   var i int
@@ -193,6 +253,8 @@ func main() {
 }
 "
 assert 3 "
+package main
+
 func foo(a int, b int) int {
   return a + b
 }
@@ -202,6 +264,8 @@ func main() {
 }
 "
 assert 8 "
+package main
+
 func fib(n int) int {
   if n <= 1 {
     return 1
@@ -213,23 +277,33 @@ func main() {
   return fib(5)
 }
 "
-assert 4 "func main() {
+assert 4 "package main
+func main() {
+
   var str = 4
   *&str
 }
 "
-assert 10 "func main() {
+assert 10 "
+package main
+
+func main() {
   var a = 10
   var b = 4
   *(&b + 8)
 }"
-assert 22 "func main() {
+assert 22 "
+package main
+func main() {
   var a int = 3
   var b int
   b = 19
   a + b
 }"
-assert 3 "func main() {
+assert 3 "
+package main
+
+func main() {
   var x int
   var y *int
 
@@ -237,7 +311,10 @@ assert 3 "func main() {
   *y = 3
   return x
 }"
-assert 12 "func main() {
+assert 12 "
+package main
+
+func main() {
   var x1 int = 1
   var x11 int = 11
   return x1 + x11
