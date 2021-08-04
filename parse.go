@@ -374,13 +374,18 @@ func varStmt() *Node {
 	if !ok {
 		// 型が明示されていないときは初期化が必須
 		expect("=")
-		return newBinaryNode(NodeVarStmt, v, expr())
+		var e = expr()
+		consumeEndLine()
+		return newBinaryNode(NodeVarStmt, v, e)
 	} else {
 		v.lvar.varType = ty
 	}
 	if consume("=") {
-		return newBinaryNode(NodeVarStmt, v, expr())
+		var e = expr()
+		consumeEndLine()
+		return newBinaryNode(NodeVarStmt, v, e)
 	}
+	consumeEndLine()
 	return newNode(NodeVarStmt, []*Node{v})
 }
 
