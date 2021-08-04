@@ -229,5 +229,13 @@ assert 22 "func main() {
   b = 19
   a + b
 }"
+assert 3 "func main() {
+  var x int
+  var y *int
+
+  y = &x
+  *y = 3
+  return x
+}"
 
 echo OK

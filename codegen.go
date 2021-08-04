@@ -8,12 +8,16 @@ import (
 var labelNumber = 0
 
 func genLvalue(node *Node) {
-	if node.kind != NodeLocalVar {
-		madden("代入の左辺値が変数ではありません")
+	if node.kind == NodeDeref {
+		gen(node.children[0])
+		return
+	} else if node.kind == NodeLocalVar {
+		fmt.Println("  mov rax, rbp")
+		fmt.Printf("  sub rax, %d\n", node.lvar.offset)
+		fmt.Println("  push rax")
+		return
 	}
-	fmt.Println("  mov rax, rbp")
-	fmt.Printf("  sub rax, %d\n", node.lvar.offset)
-	fmt.Println("  push rax")
+	madden("代入の左辺値が変数またはポインタ参照ではありません")
 }
 
 func gen(node *Node) {
