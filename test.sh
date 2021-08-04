@@ -193,7 +193,7 @@ func main() {
 }
 "
 assert 3 "
-func foo(a, b) {
+func foo(a int, b int) int {
   return a + b
 }
 
@@ -202,7 +202,7 @@ func main() {
 }
 "
 assert 8 "
-func fib(n) {
+func fib(n int) int {
   if n <= 1 {
     return 1
   }

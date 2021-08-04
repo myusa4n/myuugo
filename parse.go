@@ -365,7 +365,10 @@ func funcDefinition() *Node {
 			expect(",")
 		}
 		parameters = append(parameters, variableDeclaration())
+		expectIdentifier() // 引数の型
 	}
+	consumeIdentifier()
+
 	expect("{")
 
 	var node = newNode(NodeFunctionDef, make([]*Node, 0))
