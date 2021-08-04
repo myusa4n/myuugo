@@ -12,7 +12,7 @@ func genLvalue(node *Node) {
 		madden("代入の左辺値が変数ではありません")
 	}
 	fmt.Println("  mov rax, rbp")
-	fmt.Printf("  sub rax, %d\n", node.offset)
+	fmt.Printf("  sub rax, %d\n", node.lvar.offset)
 	fmt.Println("  push rax")
 }
 

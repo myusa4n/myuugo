@@ -222,6 +222,39 @@ func tokenize(input string) []Token {
 	return tokens
 }
 
+func expectType() Type {
+	var varType Type = Type{}
+	if consume("*") {
+		varType.kind = TypePtr
+		ty := expectType()
+		varType.ptrTo = &ty
+		return varType
+	}
+	tok := expectIdentifier()
+	if tok.str == "int" {
+		return Type{kind: TypeInt}
+	}
+	return varType
+}
+
+func consumeType() (Type, bool) {
+	var varType Type = Type{}
+	if consume("*") {
+		varType.kind = TypePtr
+		ty := expectType()
+		varType.ptrTo = &ty
+		return varType, true
+	}
+	tok, ok := consumeIdentifier()
+	if !ok {
+		return Type{}, false
+	}
+	if tok.str == "int" {
+		return Type{kind: TypeInt}, true
+	}
+	return varType, true
+}
+
 type NodeKind string
 
 const (
@@ -252,11 +285,11 @@ const (
 )
 
 type Node struct {
-	kind     NodeKind // ノードの型
-	val      int      // kindがNodeNumの場合にのみ使う
-	offset   int      // kindがNodeLocalVarの場合にのみ使う
-	label    string   // kindがNodeFunctionCallの場合にのみ使う
-	children []*Node  // 子。lhs, rhsの順でchildrenに格納される
+	kind     NodeKind  // ノードの型
+	val      int       // kindがNodeNumの場合にのみ使う
+	lvar     *LocalVar // kindがNodeLocalVarの場合にのみ使う
+	label    string    // kindがNodeFunctionCallの場合にのみ使う
+	children []*Node   // 子。lhs, rhsの順でchildrenに格納される
 }
 
 func newNode(kind NodeKind, children []*Node) *Node {
@@ -336,13 +369,14 @@ func stmt() *Node {
 func varStmt() *Node {
 	expectKind(TokenVar)
 	var v = variableDeclaration()
+	ty, ok := consumeType()
 
-	// trueの時、型が明示されているが今回は特に何もしない
-	_, ok := consumeIdentifier()
 	if !ok {
 		// 型が明示されていないときは初期化が必須
 		expect("=")
 		return newBinaryNode(NodeVarStmt, v, expr())
+	} else {
+		v.lvar.varType = ty
 	}
 	if consume("=") {
 		return newBinaryNode(NodeVarStmt, v, expr())
@@ -364,10 +398,12 @@ func funcDefinition() *Node {
 		if len(parameters) > 0 {
 			expect(",")
 		}
-		parameters = append(parameters, variableDeclaration())
-		expectIdentifier() // 引数の型
+		lvar := variableDeclaration()
+		parameters = append(parameters, lvar)
+		lvar.lvar.varType = expectType()
 	}
-	consumeIdentifier()
+
+	consumeType()
 
 	expect("{")
 
@@ -561,22 +597,20 @@ func primary() *Node {
 func variableRef() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
-	lvar, ok := findLocalVar(currentFuncLabel, tok)
-	if !ok {
+	node.lvar = findLocalVar(currentFuncLabel, tok)
+	if node.lvar == nil {
 		errorAt(tok.rest, "未定義の変数です %s", tok.str)
 	}
-	node.offset = lvar.offset
 	return node
 }
 
 func variableDeclaration() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
-	_, ok := findLocalVar(currentFuncLabel, tok)
-	if ok {
+	lvar := findLocalVar(currentFuncLabel, tok)
+	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
 	}
-	lvar := addLocalVar(currentFuncLabel, tok)
-	node.offset = lvar.offset
+	node.lvar = addLocalVar(currentFuncLabel, tok)
 	return node
 }
