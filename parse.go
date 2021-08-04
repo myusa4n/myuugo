@@ -317,11 +317,20 @@ func program() {
 
 func stmtList() *Node {
 	var stmts = make([]*Node, 0)
+	var endLineRequired = false
 
 	for !atEof() && !(currentToken().kind == TokenReserved && currentToken().str == "}") {
-		var s = stmt()
-		if s != nil {
-			stmts = append(stmts, s)
+		if endLineRequired {
+			errorAt(currentToken().rest, "文の区切り文字が必要です")
+		}
+		if consumeEndLine() {
+			continue
+		}
+		stmts = append(stmts, stmt())
+
+		endLineRequired = true
+		if consumeEndLine() {
+			endLineRequired = false
 		}
 	}
 	var node = newNode(NodeStmtList, stmts)
@@ -330,10 +339,6 @@ func stmtList() *Node {
 }
 
 func stmt() *Node {
-	// 空文
-	if consumeEndLine() {
-		return nil
-	}
 	// if文
 	if currentToken().kind == TokenIf {
 		return metaIfStmt()
@@ -362,7 +367,6 @@ func stmt() *Node {
 			n = newBinaryNode(NodeAssign, n, e)
 		}
 	}
-	consumeEndLine()
 	return n
 }
 
@@ -374,18 +378,13 @@ func varStmt() *Node {
 	if !ok {
 		// 型が明示されていないときは初期化が必須
 		expect("=")
-		var e = expr()
-		consumeEndLine()
-		return newBinaryNode(NodeVarStmt, v, e)
+		return newBinaryNode(NodeVarStmt, v, expr())
 	} else {
 		v.lvar.varType = ty
 	}
 	if consume("=") {
-		var e = expr()
-		consumeEndLine()
-		return newBinaryNode(NodeVarStmt, v, e)
+		return newBinaryNode(NodeVarStmt, v, expr())
 	}
-	consumeEndLine()
 	return newNode(NodeVarStmt, []*Node{v})
 }
 
@@ -403,9 +402,9 @@ func funcDefinition() *Node {
 		if len(parameters) > 0 {
 			expect(",")
 		}
-		lvar := variableDeclaration()
-		parameters = append(parameters, lvar)
-		lvar.lvar.varType = expectType()
+		lvarNode := variableDeclaration()
+		parameters = append(parameters, lvarNode)
+		lvarNode.lvar.varType = expectType()
 	}
 
 	consumeType()
@@ -418,8 +417,6 @@ func funcDefinition() *Node {
 	node.children = append(node.children, parameters...)
 
 	expect("}")
-	consumeEndLine()
-
 	currentFuncLabel = prevFuncLabel
 
 	return node
@@ -435,7 +432,6 @@ func forStmt() *Node {
 		// 無限ループ
 		node.children[3] = stmtList()
 		expect("}")
-		consumeEndLine()
 		return node
 	}
 
@@ -445,19 +441,19 @@ func forStmt() *Node {
 		node.children[1] = s
 		node.children[3] = stmtList()
 		expect("}")
-		consumeEndLine()
 		return node
 	}
 
 	// 通常のfor文
 	node.children[0] = s
+	expect(";")
 	node.children[1] = stmt()
+	expect(";")
 	node.children[2] = stmt()
 
 	expect("{")
 	node.children[3] = stmtList()
 	expect("}")
-	consumeEndLine()
 	return node
 }
 
@@ -481,7 +477,6 @@ func ifStmt() *Node {
 	expect("{")
 	var rhs = stmtList()
 	expect("}")
-	consumeEndLine()
 	return newBinaryNode(NodeIf, lhs, rhs)
 }
 
@@ -490,7 +485,6 @@ func elseStmt() *Node {
 	expect("{")
 	var stmts = stmtList()
 	expect("}")
-	consumeEndLine()
 	return newNode(NodeElse, []*Node{stmts})
 }
 
