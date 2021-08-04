@@ -14,12 +14,19 @@ func fib(n int) int {
   return fib(n - 1) + fib(n - 2)
 }
 
+func add10(n int) {
+  *n = *n + 10
+}
+
 func main() {
   var ans = 0
   var n int
+
   for n = 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
+
+  add10(&ans)
   return ans
 }
 ```
