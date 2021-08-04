@@ -7,7 +7,7 @@
 
 ## 現状(2021/08/04更新)
 ```go
-func fib(n) {
+func fib(n int) int {
   if n <= 1 {
     return 1
   }
