@@ -11,7 +11,7 @@ import (
 func getIdentifier(s string) (string, string) {
 	var res = ""
 	for i, c := range s {
-		if (i == 0 && unicode.IsDigit(c)) || !(isAlpha(c) || (c == '_')) {
+		if (i == 0 && unicode.IsDigit(c)) || !(isAlnum(c) || (c == '_')) {
 			return res, s[i:]
 		}
 		res += string(c)

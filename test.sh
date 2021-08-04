@@ -237,5 +237,10 @@ assert 3 "func main() {
   *y = 3
   return x
 }"
+assert 12 "func main() {
+  var x1 int = 1
+  var x11 int = 11
+  return x1 + x11
+}"
 
 echo OK

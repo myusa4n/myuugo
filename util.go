@@ -17,6 +17,10 @@ func strtoi(s string) (int, string) {
 	return res, ""
 }
 
+func isAlnum(c rune) bool {
+	return isAlpha(c) || unicode.IsDigit(c)
+}
+
 func isAlpha(c rune) bool {
 	return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 }
