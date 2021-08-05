@@ -30,10 +30,7 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeStmtList {
-		for i, stmt := range node.children {
-			if i > 0 {
-				fmt.Println("  pop rax")
-			}
+		for _, stmt := range node.children {
 			gen(stmt)
 		}
 		return
@@ -60,7 +57,6 @@ func gen(node *Node) {
 		fmt.Println("  pop rdi")
 		fmt.Println("  pop rax")
 		fmt.Println("  mov [rax], rdi")
-		fmt.Println("  push rdi")
 		return
 	}
 	if node.kind == NodeMetaIf {
@@ -83,7 +79,6 @@ func gen(node *Node) {
 		gen(node.children[0]) // lhs
 		fmt.Println("  pop rax")
 		fmt.Println("  cmp rax, 0")
-		fmt.Println("  push rax") // 比較結果をスタックに
 		fmt.Println("  je " + elseLabel)
 		gen(node.children[1]) // rhs
 		fmt.Println("  jmp " + endLabel)
@@ -93,7 +88,6 @@ func gen(node *Node) {
 		gen(node.children[0])
 		return
 	}
-	// TODO: 文が終わった後に何らかの値が1個スタックに積まれていることを保証する
 	if node.kind == NodeFor {
 		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
@@ -152,7 +146,6 @@ func gen(node *Node) {
 		gen(node.children[0]) // 関数本体
 
 		// エピローグ
-		// 最後の式の結果がRAXに残っているのでそれが返り値になる
 		fmt.Println("  mov rsp, rbp")
 		fmt.Println("  pop rbp")
 		fmt.Println("  ret")
@@ -178,10 +171,12 @@ func gen(node *Node) {
 			fmt.Println("  pop rdi")
 			fmt.Println("  pop rax")
 			fmt.Println("  mov [rax], rdi")
-			fmt.Println("  push rdi")
 			return
 		}
-		genLvalue(node.children[0])
+		return
+	}
+	if node.kind == NodeExprStmt {
+		gen(node.children[0])
 		return
 	}
 

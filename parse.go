@@ -292,6 +292,7 @@ const (
 	NodeDeref        NodeKind = "DEREF"         // *addr
 	NodeVarStmt      NodeKind = "VAR STMT"      // var ...
 	NodePackageStmt  NodeKind = "PACKAGE STMT"  // package ...
+	NodeExprStmt     NodeKind = "EXPR STMT"     // 式文
 )
 
 type Node struct {
@@ -380,18 +381,17 @@ func stmt() *Node {
 		return varStmt()
 	}
 
-	var n *Node
 	if consumeKind(TokenReturn) {
-		n = newNode(NodeReturn, []*Node{expr()})
+		return newNode(NodeReturn, []*Node{expr()})
 	} else {
-		n = expr()
+		var n = expr()
 		if consume("=") {
 			// 代入文
 			var e = expr()
-			n = newBinaryNode(NodeAssign, n, e)
+			return newBinaryNode(NodeAssign, n, e)
 		}
+		return newNode(NodeExprStmt, []*Node{n})
 	}
-	return n
 }
 
 func varStmt() *Node {
