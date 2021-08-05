@@ -83,6 +83,7 @@ func gen(node *Node) {
 		gen(node.children[0]) // lhs
 		fmt.Println("  pop rax")
 		fmt.Println("  cmp rax, 0")
+		fmt.Println("  push rax") // 比較結果をスタックに
 		fmt.Println("  je " + elseLabel)
 		gen(node.children[1]) // rhs
 		fmt.Println("  jmp " + endLabel)
@@ -92,10 +93,13 @@ func gen(node *Node) {
 		gen(node.children[0])
 		return
 	}
+	// TODO: 文が終わった後に何らかの値が1個スタックに積まれていることを保証する
 	if node.kind == NodeFor {
 		var beginLabel = ".Lbegin" + strconv.Itoa(labelNumber)
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		labelNumber += 1
+
+		// children := (初期化, 条件, 更新)
 
 		if node.children[0] != nil {
 			gen(node.children[0])
@@ -134,11 +138,12 @@ func gen(node *Node) {
 		// 変数26個分の領域を確保する
 		fmt.Println("  push rbp")
 		fmt.Println("  mov rbp, rsp")
-		fmt.Println("  sub rsp, 208")
+
+		fmt.Printf("  sub rsp, %d\n", getFrameSize(node.label))
 
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
-		for i, param := range node.children[1:] {
+		for i, param := range node.children[1:] { // 引数
 			genLvalue(param)
 			fmt.Println("  pop rax")
 			fmt.Println("  mov [rax], " + registers[i])
@@ -176,6 +181,7 @@ func gen(node *Node) {
 			fmt.Println("  push rdi")
 			return
 		}
+		genLvalue(node.children[0])
 		return
 	}
 

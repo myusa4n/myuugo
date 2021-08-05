@@ -186,6 +186,7 @@ func main() {
   a
 }
 "
+
 assert 2 "
 package main
 

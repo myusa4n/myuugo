@@ -324,7 +324,6 @@ var currentFuncLabel = ""
 func program() {
 	for consumeEndLine() {
 	}
-
 	code = []*Node{packageStmt()}
 	expectEndLine()
 
@@ -419,6 +418,8 @@ func funcDefinition() *Node {
 
 	var prevFuncLabel = currentFuncLabel
 	currentFuncLabel = identifier.str
+
+	registerFunc(currentFuncLabel)
 
 	var parameters = make([]*Node, 0)
 
