@@ -17,137 +17,144 @@ assert() {
   fi
 }
 
+assert 0 "
+package main
+
+func main() {
+  22
+}
+"
 assert 21 "
 package main
 
 func main() {
-  5+20-4
+  return 5+20-4
 }"
 assert 41 "
 package main
 
 func main() {
-  12 + 34 - 5
+  return 12 + 34 - 5
 }"
 assert 47 '
 package main
 
 func main() {
-  5 + 6*7
+  return 5 + 6*7
 }'
 assert 15 '
 package main
 
 func main() {
-  5*(9-6)
+  return 5*(9-6)
 }'
 assert 4 '
 package main
 
 func main() {
-  (3+5) / 2
+  return (3+5) / 2
 }'
 assert 5 '
 package main
 
 func main() {
-  10 + -5
+  return 10 + -5
 }'
 assert 4 '
 package main
 
 func main() {
-  -10 + -7 * -2
+  return -10 + -7 * -2
 }'
 assert 1 '
 package main
 
 func main() {
-  1 + 1 == 2
+  return 1 + 1 == 2
 }'
 assert 0 '
 package main
 
 func main() {
-  1 - 5 * 2 == 9
+  return 1 - 5 * 2 == 9
 }
 '
 assert 0 '
 package main
 
 func main() {
-  4 * -3 != -12
+  return 4 * -3 != -12
 }'
 assert 1 '
 package main
 
 func main() {
-  1 - 5 * 2 != 9
+  return 1 - 5 * 2 != 9
 }'
 assert 1 '
 package main
 
 func main() {
-  5 * 10 * -1 < 7 * -7
+  return 5 * 10 * -1 < 7 * -7
 }'
 assert 0 '
 package main
 
 func main() {
-  2+3 < 5
+  return 2+3 < 5
 }'
 assert 1 '
 package main
 
 func main() {
-  2+3<=5
+  return 2+3<=5
 }'
 assert 1 '
 package main
 
 func main() {
-  4*3<=5*7
+  return 4*3<=5*7
 }'
 assert 0 '
 package main
 
 func main() {
-  5 * 10 * -1 > 7 * -7
+  return 5 * 10 * -1 > 7 * -7
 }'
 assert 0 '
 package main
 
 func main() {
-  2+3 > 5
+  return 2+3 > 5
 }'
 assert 1 '
 package main
 
 func main() {
-  2+3>=5
+  return 2+3>=5
 }'
 assert 0 '
 package main
 
 func main() {
-  4*3>=5*7
+  return 4*3>=5*7
 }'
 assert 4 "
 package main
 
 func main() {
   var a = 3
-  a + 1
+  return a + 1
 }
 "
-assert 7 "package main; func main() { var z = 20; var a = 13; var x = z - a; x }"
+assert 7 "package main; func main() { var z = 20; var a = 13; var x = z - a; return x }"
 assert 21 "
 package main
 
 func main() {
   var a = 5
   a + 3;
-  4 * a+1
+  return 4 * a+1
 }"
 assert 222 "
 package main
@@ -155,7 +162,7 @@ package main
 func main() {
   var hello = 5 * 4 + 2
   var world = hello * 20 / 2
-  world + 2
+  return world + 2
 }
 "
 assert 5 "
@@ -183,7 +190,7 @@ func main() {
     return a
     a = 5
   }
-  a
+  return a
 }
 "
 
@@ -195,7 +202,7 @@ func main() {
   if a != 2 {
     a = 6
   }
-  a
+  return a
 }
 "
 assert 34 "
@@ -211,7 +218,7 @@ func main() {
     test = test - 1
     test = 3 * test + 4
   }
-  test
+  return test
 }"
 assert 15 "
 package main
@@ -238,7 +245,7 @@ func main() {
     sum = sum + i
     i = i + 1
   }
-  sum
+  return sum
 }
 "
 assert 15 "
@@ -250,7 +257,7 @@ func main() {
   for i = 0; i < 6; i = i+1 {
     sum = sum + i
   }
-  sum
+  return sum
 }
 "
 assert 3 "
@@ -261,7 +268,7 @@ func foo(a int, b int) int {
 }
 
 func main() {
-  foo(2, 1)
+  return foo(2, 1)
 }
 "
 assert 8 "
@@ -282,7 +289,7 @@ assert 4 "package main
 func main() {
 
   var str = 4
-  *&str
+  return *&str
 }
 "
 assert 10 "
@@ -291,7 +298,7 @@ package main
 func main() {
   var a = 10
   var b = 4
-  *(&b + 8)
+  return *(&b + 8)
 }"
 assert 22 "
 package main
@@ -299,7 +306,7 @@ func main() {
   var a int = 3
   var b int
   b = 19
-  a + b
+  return a + b
 }"
 assert 3 "
 package main

@@ -146,6 +146,8 @@ func gen(node *Node) {
 		gen(node.children[0]) // 関数本体
 
 		// エピローグ
+		// 関数の返り値の型が void 型だと仮定する
+		fmt.Println("  mov rax, 0")
 		fmt.Println("  mov rsp, rbp")
 		fmt.Println("  pop rbp")
 		fmt.Println("  ret")
@@ -177,6 +179,7 @@ func gen(node *Node) {
 	}
 	if node.kind == NodeExprStmt {
 		gen(node.children[0])
+		fmt.Println("  pop rax")
 		return
 	}
 

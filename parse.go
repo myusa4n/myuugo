@@ -464,7 +464,10 @@ func forStmt() *Node {
 	var s = stmt()
 	if consume("{") {
 		// while文
-		node.children[1] = s
+		if s.kind != NodeExprStmt {
+			madden("for文の条件に式以外が書かれています")
+		}
+		node.children[1] = s.children[0] // expr
 		node.children[3] = stmtList()
 		expect("}")
 		return node
@@ -473,7 +476,7 @@ func forStmt() *Node {
 	// 通常のfor文
 	node.children[0] = s
 	expect(";")
-	node.children[1] = stmt()
+	node.children[1] = stmt().children[0] // expr
 	expect(";")
 	node.children[2] = stmt()
 
