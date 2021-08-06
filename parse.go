@@ -321,8 +321,11 @@ func newNodeNum(val int) *Node {
 
 var code []*Node
 var currentFuncLabel = ""
+var Env *Environment
 
 func program() {
+	Env = NewEnvironment()
+
 	for consumeEndLine() {
 	}
 	code = []*Node{packageStmt()}
@@ -418,8 +421,7 @@ func funcDefinition() *Node {
 
 	var prevFuncLabel = currentFuncLabel
 	currentFuncLabel = identifier.str
-
-	registerFunc(currentFuncLabel)
+	var fn = Env.RegisterFunc(currentFuncLabel)
 
 	var parameters = make([]*Node, 0)
 
@@ -431,9 +433,14 @@ func funcDefinition() *Node {
 		lvarNode := variableDeclaration()
 		parameters = append(parameters, lvarNode)
 		lvarNode.lvar.varType = expectType()
+		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.lvar.varType)
 	}
 
-	consumeType()
+	fn.ReturnValueType = NewType(TypeVoid)
+	var ty, ok = consumeType()
+	if ok {
+		fn.ReturnValueType = ty
+	}
 
 	expect("{")
 
@@ -443,6 +450,7 @@ func funcDefinition() *Node {
 	node.children = append(node.children, parameters...)
 
 	expect("}")
+
 	currentFuncLabel = prevFuncLabel
 
 	return node
@@ -625,7 +633,7 @@ func primary() *Node {
 func variableRef() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
-	node.lvar = findLocalVar(currentFuncLabel, tok)
+	node.lvar = Env.FindLocalVar(currentFuncLabel, tok)
 	if node.lvar == nil {
 		errorAt(tok.rest, "未定義の変数です %s", tok.str)
 	}
@@ -635,10 +643,10 @@ func variableRef() *Node {
 func variableDeclaration() *Node {
 	var tok = expectIdentifier()
 	var node = newLeafNode(NodeLocalVar)
-	lvar := findLocalVar(currentFuncLabel, tok)
+	lvar := Env.FindLocalVar(currentFuncLabel, tok)
 	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
 	}
-	node.lvar = addLocalVar(currentFuncLabel, tok)
+	node.lvar = Env.AddLocalVar(currentFuncLabel, tok)
 	return node
 }

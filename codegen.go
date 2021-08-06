@@ -133,7 +133,7 @@ func gen(node *Node) {
 		fmt.Println("  push rbp")
 		fmt.Println("  mov rbp, rsp")
 
-		fmt.Printf("  sub rsp, %d\n", getFrameSize(node.label))
+		fmt.Printf("  sub rsp, %d\n", Env.GetFrameSize(node.label))
 
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 

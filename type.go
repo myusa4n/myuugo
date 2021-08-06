@@ -5,12 +5,17 @@ type TypeKind string
 const (
 	TypeInt       TypeKind = "[TYPE] INT"
 	TypePtr       TypeKind = "[TYPE] PTR"
+	TypeVoid      TypeKind = "[TYPE] VOID"
 	TypeUndefined TypeKind = "[TYPE] UNDEFINED" // まだ型を決めることができていない
 )
 
 type Type struct {
 	kind  TypeKind
 	ptrTo *Type
+}
+
+func NewType(kind TypeKind) Type {
+	return Type{kind: kind}
 }
 
 func sizeof(kind TypeKind) int {
