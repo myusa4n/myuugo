@@ -292,14 +292,6 @@ func main() {
   return *&str
 }
 "
-assert 10 "
-package main
-
-func main() {
-  var a = 10
-  var b = 4
-  return *(&b + 8)
-}"
 assert 22 "
 package main
 func main() {

@@ -21,3 +21,13 @@ func sizeof(kind TypeKind) int {
 	// panic("未定義の型の変数です")
 	return 8
 }
+
+func typeEquals(t1 Type, t2 Type) bool {
+	if t1.kind != t2.kind {
+		return false
+	}
+	if t1.kind == TypePtr && t2.kind == TypePtr {
+		return typeEquals(*t1.ptrTo, *t2.ptrTo)
+	}
+	return true
+}

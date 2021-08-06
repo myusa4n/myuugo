@@ -15,6 +15,7 @@ func main() {
 	localVarTable = make(map[string][]*LocalVar)
 	tokens = tokenize(userInput)
 	program()
+	pipeline(code)
 
 	// アセンブリの前半部分
 	fmt.Println(".intel_syntax noprefix")
