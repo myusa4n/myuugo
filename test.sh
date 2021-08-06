@@ -320,4 +320,18 @@ func main() {
   return x1 + x11
 }"
 
+assert 100 "
+package main
+
+func Mul5(n int) int {
+  return n * 5
+}
+
+func main() {
+  var n = Mul5(10) * 2
+  var m int = n
+  return m
+}
+"
+
 echo OK

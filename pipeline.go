@@ -80,11 +80,20 @@ func traverse(node *Node) Type {
 		return *ty.ptrTo
 	}
 	if node.kind == NodeFunctionCall {
-		for _, argument := range node.children {
-			traverse(argument)
+		fn, ok := Env.FunctionTable[node.label]
+
+		if !ok {
+			madden("関数%sは定義されていません", fn.Label)
 		}
-		// TODO: 本当は関数の返り値の型を返したい
-		return stmtType
+		if len(fn.ParameterTypes) != len(node.children) {
+			madden("関数%sの引数の数が正しくありません", fn.Label)
+		}
+		for i, argument := range node.children {
+			if !typeEquals(fn.ParameterTypes[i], traverse(argument)) {
+				madden("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
+			}
+		}
+		return fn.ReturnValueType
 	}
 	if node.kind == NodeVarStmt {
 		if len(node.children) == 2 {
