@@ -5,7 +5,7 @@ assert() {
   input="$2"
 
   ./main "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -no-pie -o tmp tmp.s
   ./tmp
   actual="$?"
 
@@ -331,6 +331,44 @@ func main() {
   var n = Mul5(10) * 2
   var m int = n
   return m
+}
+"
+assert 22 "
+package main
+
+var number int
+
+func main() {
+  number = 5
+  return 10 * number / 2 - 3 
+}
+"
+assert 4 "
+package main
+
+var number int
+
+func foo(number int) {
+  return number
+}
+
+func main() {
+  number = 5
+  return foo(4)
+}
+"
+assert 20 "
+package main
+
+var number int
+
+func foo(n int) {
+  return number * n
+}
+
+func main() {
+  number = 5
+  return foo(4)
 }
 "
 

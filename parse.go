@@ -182,7 +182,7 @@ func topLevelStmt() *Node {
 	}
 	// var文
 	if tokenizer.Test(TokenVar) {
-		return varStmt()
+		return topLevelVarStmt()
 	}
 
 	// 許可されていないもの
@@ -229,7 +229,7 @@ func localStmt() *Node {
 	}
 	// var文
 	if tokenizer.Test(TokenVar) {
-		return varStmt()
+		return localVarStmt()
 	}
 
 	if tokenizer.Consume(TokenReturn) {
@@ -245,22 +245,30 @@ func localStmt() *Node {
 	}
 }
 
-func varStmt() *Node {
+// トップレベル変数は初期化式は与えないことにする
+func topLevelVarStmt() *Node {
 	tokenizer.Expect(TokenVar)
-	var v = variableDeclaration()
+	var v = topLevelVariableDeclaration()
+	v.variable.varType = tokenizer.expectType()
+	return NewNode(NodeTopLevelVarStmt, []*Node{v})
+}
+
+func localVarStmt() *Node {
+	tokenizer.Expect(TokenVar)
+	var v = localVariableDeclaration()
 	ty, ok := tokenizer.consumeType()
 
 	if !ok {
 		// 型が明示されていないときは初期化が必須
 		tokenizer.Expect(TokenEqual)
-		return NewBinaryNode(NodeVarStmt, v, expr())
+		return NewBinaryNode(NodeLocalVarStmt, v, expr())
 	} else {
-		v.lvar.varType = ty
+		v.variable.varType = ty
 	}
 	if tokenizer.Consume(TokenEqual) {
-		return NewBinaryNode(NodeVarStmt, v, expr())
+		return NewBinaryNode(NodeLocalVarStmt, v, expr())
 	}
-	return NewNode(NodeVarStmt, []*Node{v})
+	return NewNode(NodeLocalVarStmt, []*Node{v})
 }
 
 func funcDefinition() *Node {
@@ -278,10 +286,10 @@ func funcDefinition() *Node {
 		if len(parameters) > 0 {
 			tokenizer.Expect(TokenComma)
 		}
-		lvarNode := variableDeclaration()
+		lvarNode := localVariableDeclaration()
 		parameters = append(parameters, lvarNode)
-		lvarNode.lvar.varType = tokenizer.expectType()
-		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.lvar.varType)
+		lvarNode.variable.varType = tokenizer.expectType()
+		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.variable.varType)
 	}
 
 	// 本当はvoid型が正しいけれど、テストを簡単にするためしばらくはint型で定義
@@ -481,21 +489,32 @@ func primary() *Node {
 
 func variableRef() *Node {
 	var tok = tokenizer.expectIdentifier()
-	var node = NewLeafNode(NodeLocalVar)
-	node.lvar = Env.FindLocalVar(currentFuncLabel, tok)
-	if node.lvar == nil {
+	var node = NewLeafNode(NodeVariable)
+	node.variable = Env.FindVar(currentFuncLabel, tok)
+	if node.variable == nil {
 		errorAt(tok.rest, "未定義の変数です %s", tok.str)
 	}
 	return node
 }
 
-func variableDeclaration() *Node {
+func localVariableDeclaration() *Node {
 	var tok = tokenizer.expectIdentifier()
-	var node = NewLeafNode(NodeLocalVar)
+	var node = NewLeafNode(NodeVariable)
 	lvar := Env.FindLocalVar(currentFuncLabel, tok)
 	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
 	}
-	node.lvar = Env.AddLocalVar(currentFuncLabel, tok)
+	node.variable = Env.AddLocalVar(currentFuncLabel, tok)
+	return node
+}
+
+func topLevelVariableDeclaration() *Node {
+	var tok = tokenizer.expectIdentifier()
+	var node = NewLeafNode(NodeVariable)
+	lvar := Env.FindTopLevelVar(tok)
+	if lvar != nil {
+		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
+	}
+	node.variable = Env.AddTopLevelVar(tok)
 	return node
 }

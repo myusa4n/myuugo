@@ -11,10 +11,15 @@ func genLvalue(node *Node) {
 	if node.kind == NodeDeref {
 		gen(node.children[0])
 		return
-	} else if node.kind == NodeLocalVar {
-		fmt.Println("  mov rax, rbp")
-		fmt.Printf("  sub rax, %d\n", node.lvar.offset)
-		fmt.Println("  push rax")
+	} else if node.kind == NodeVariable {
+		if node.variable.kind == VariableLocal {
+			fmt.Println("  mov rax, rbp")
+			fmt.Printf("  sub rax, %d\n", node.variable.offset)
+			fmt.Println("  push rax")
+		} else {
+			fmt.Printf("  mov rax, OFFSET FLAT:%s\n", node.variable.name)
+			fmt.Println("  push rax")
+		}
 		return
 	}
 	madden("代入の左辺値が変数またはポインタ参照ではありません")
@@ -43,7 +48,7 @@ func gen(node *Node) {
 		fmt.Println("  ret")
 		return
 	}
-	if node.kind == NodeLocalVar {
+	if node.kind == NodeVariable {
 		genLvalue(node)
 		fmt.Println("  pop rax")
 		fmt.Println("  mov rax, [rax]")
@@ -165,7 +170,7 @@ func gen(node *Node) {
 		fmt.Println("  push rax")
 		return
 	}
-	if node.kind == NodeVarStmt {
+	if node.kind == NodeLocalVarStmt {
 		if len(node.children) == 2 {
 			genLvalue(node.children[0]) // lhs
 			gen(node.children[1])       // rhs
@@ -175,6 +180,14 @@ func gen(node *Node) {
 			fmt.Println("  mov [rax], rdi")
 			return
 		}
+		return
+	}
+	if node.kind == NodeTopLevelVarStmt {
+		fmt.Println(".data")
+		var tvar = node.children[0]
+		fmt.Println(tvar.variable.name + ":")
+		fmt.Printf("  .zero %d\n", sizeof(tvar.variable.varType.kind))
+		fmt.Println(".text")
 		return
 	}
 	if node.kind == NodeExprStmt {

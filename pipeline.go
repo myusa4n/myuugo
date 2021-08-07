@@ -95,13 +95,13 @@ func traverse(node *Node) Type {
 		}
 		return fn.ReturnValueType
 	}
-	if node.kind == NodeVarStmt {
+	if node.kind == NodeLocalVarStmt || node.kind == NodeTopLevelVarStmt {
 		if len(node.children) == 2 {
 			var lvarType = traverse(node.children[0])
 			var valueType = traverse(node.children[1])
 
 			if lvarType.kind == TypeUndefined {
-				node.children[0].lvar.varType = valueType
+				node.children[0].variable.varType = valueType
 				lvarType = valueType
 			}
 			if !typeEquals(lvarType, valueType) {
@@ -117,8 +117,8 @@ func traverse(node *Node) Type {
 	if node.kind == NodeNum {
 		return Type{kind: TypeInt}
 	}
-	if node.kind == NodeLocalVar {
-		return node.lvar.varType
+	if node.kind == NodeVariable {
+		return node.variable.varType
 	}
 
 	var lhsType = traverse(node.children[0])

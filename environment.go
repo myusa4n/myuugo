@@ -1,12 +1,14 @@
 package main
 
 type Environment struct {
+	TopLevelVars  []*Variable
 	LocalVarTable map[string][]*Variable
 	FunctionTable map[string]*Function
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
+		TopLevelVars:  []*Variable{},
 		LocalVarTable: map[string][]*Variable{},
 		FunctionTable: map[string]*Function{},
 	}
@@ -48,6 +50,41 @@ func (e *Environment) FindLocalVar(fnLabel string, token Token) *Variable {
 	for _, lvar := range locals {
 		if lvar.name == token.str {
 			return lvar
+		}
+	}
+	return nil
+}
+
+func (e *Environment) FindTopLevelVar(token Token) *Variable {
+	for _, tvar := range e.TopLevelVars {
+		if tvar.name == token.str {
+			return tvar
+		}
+	}
+	return nil
+}
+
+func (e *Environment) AddTopLevelVar(token Token) *Variable {
+	tvar := e.FindTopLevelVar(token)
+	if tvar != nil {
+		return tvar
+	}
+	tvar = &Variable{name: token.str, kind: VariableTopLevel, varType: Type{kind: TypeUndefined}}
+	e.TopLevelVars = append(e.TopLevelVars, tvar)
+	return tvar
+}
+
+func (e *Environment) FindVar(fnLabel string, token Token) *Variable {
+	_, ok := e.FunctionTable[fnLabel]
+	if ok {
+		lvar := e.FindLocalVar(fnLabel, token)
+		if lvar != nil {
+			return lvar
+		}
+	}
+	for _, tvar := range e.TopLevelVars {
+		if tvar.name == token.str {
+			return tvar
 		}
 	}
 	return nil
