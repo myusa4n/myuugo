@@ -18,8 +18,8 @@ func NewType(kind TypeKind) Type {
 	return Type{kind: kind}
 }
 
-func sizeof(kind TypeKind) int {
-	if kind == TypeInt || kind == TypePtr {
+func Sizeof(ty Type) int {
+	if ty.kind == TypeInt || ty.kind == TypePtr {
 		return 8
 	}
 	// 変数の型推論をまだ実装していないので、一旦8を返すようにする

@@ -186,7 +186,7 @@ func gen(node *Node) {
 		fmt.Println(".data")
 		var tvar = node.children[0]
 		fmt.Println(tvar.variable.name + ":")
-		fmt.Printf("  .zero %d\n", sizeof(tvar.variable.varType.kind))
+		fmt.Printf("  .zero %d\n", Sizeof(tvar.variable.varType))
 		fmt.Println(".text")
 		return
 	}

@@ -97,7 +97,7 @@ func (e *Environment) GetFrameSize(fnLabel string) int {
 	}
 	var size int = 0
 	for _, lvar := range locals {
-		size += sizeof(lvar.varType.kind)
+		size += Sizeof(lvar.varType)
 	}
 	return size
 }
