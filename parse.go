@@ -20,28 +20,16 @@ func errorAt(str string, format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func currentToken() Token {
-	return tokenizer.Fetch()
-}
-
-// 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
-// それ以外の場合には偽を返す。
-func consume(kind TokenKind) bool {
-	if tokenizer.Fetch().kind != kind {
-		return false
-	}
-	tokenizer.Succ()
-	return true
-}
+// トークナイザ拡張
 
 // 文の終端記号であるトークンを1つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
-func consumeEndLine() bool {
-	return consume(TokenSemicolon) || consume(TokenNewLine)
+func (t *Tokenizer) consumeEndLine() bool {
+	return t.Consume(TokenSemicolon) || t.Consume(TokenNewLine)
 }
 
-func expectEndLine() {
-	if !consumeEndLine() {
+func (t *Tokenizer) expectEndLine() {
+	if !t.consumeEndLine() {
 		madden("文の終端記号ではありません")
 	}
 }
@@ -49,9 +37,9 @@ func expectEndLine() {
 // 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
 // この時、返り値の二番目の値は真になる。
 // 逆に識別子でない場合は、偽になる。
-func consumeIdentifier() (Token, bool) {
-	token := tokenizer.Fetch()
-	if token.kind == TokenIdentifier {
+func (t *Tokenizer) consumeIdentifier() (Token, bool) {
+	token := t.Fetch()
+	if token.Test(TokenIdentifier) {
 		tokenizer.Succ()
 		return token, true
 	}
@@ -60,28 +48,19 @@ func consumeIdentifier() (Token, bool) {
 
 // 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
 // そうでない場合はエラーを報告する。
-func expectIdentifier() Token {
-	token, ok := consumeIdentifier()
+func (t *Tokenizer) expectIdentifier() Token {
+	token, ok := t.consumeIdentifier()
 	if !ok {
 		errorAt(token.str, "識別子ではありません")
 	}
 	return token
 }
 
-// 次のトークンが期待しているkindのときには、トークンを1つ読み進める。
-// それ以外の場合にはエラーを報告する。
-func expect(kind TokenKind) {
-	var token = tokenizer.Fetch()
-	if !consume(kind) {
-		errorAt(token.str, "'%s'ではありません", kind)
-	}
-}
-
 // 次のトークンが数値の場合、トークンを1つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
-func expectNumber() int {
-	token := tokenizer.Fetch()
-	if token.kind != TokenNumber {
+func (t *Tokenizer) expectNumber() int {
+	token := t.Fetch()
+	if !t.Test(TokenNumber) {
 		errorAt(token.str, "数ではありません")
 	}
 	var val = token.val
@@ -89,34 +68,34 @@ func expectNumber() int {
 	return val
 }
 
-func atEof() bool {
-	return tokenizer.Fetch().kind == TokenEof
+func (t *Tokenizer) atEof() bool {
+	return t.Test(TokenEof)
 }
 
-func expectType() Type {
+func (t *Tokenizer) expectType() Type {
 	var varType Type = Type{}
-	if consume(TokenStar) {
+	if t.Consume(TokenStar) {
 		varType.kind = TypePtr
-		ty := expectType()
+		ty := t.expectType()
 		varType.ptrTo = &ty
 		return varType
 	}
-	tok := expectIdentifier()
+	tok := t.expectIdentifier()
 	if tok.str == "int" {
 		return Type{kind: TypeInt}
 	}
 	return varType
 }
 
-func consumeType() (Type, bool) {
+func (t *Tokenizer) consumeType() (Type, bool) {
 	var varType Type = Type{}
-	if consume(TokenStar) {
+	if t.Consume(TokenStar) {
 		varType.kind = TypePtr
-		ty := expectType()
+		ty := t.expectType()
 		varType.ptrTo = &ty
 		return varType, true
 	}
-	tok, ok := consumeIdentifier()
+	tok, ok := t.consumeIdentifier()
 	if !ok {
 		return Type{}, false
 	}
@@ -133,10 +112,10 @@ var Env *Environment
 func program() {
 	Env = NewEnvironment()
 
-	for consumeEndLine() {
+	for tokenizer.consumeEndLine() {
 	}
 	code = []*Node{packageStmt()}
-	expectEndLine()
+	tokenizer.expectEndLine()
 
 	code = append(code, stmtList().children...)
 }
@@ -144,8 +123,8 @@ func program() {
 func packageStmt() *Node {
 	var n = NewLeafNode(NodePackageStmt)
 
-	expect(TokenPackage)
-	n.label = expectIdentifier().str
+	tokenizer.Expect(TokenPackage)
+	n.label = tokenizer.expectIdentifier().str
 
 	return n
 }
@@ -154,17 +133,17 @@ func stmtList() *Node {
 	var stmts = make([]*Node, 0)
 	var endLineRequired = false
 
-	for !atEof() && !(currentToken().Test(TokenRbrace)) {
+	for !tokenizer.atEof() && !(tokenizer.Test(TokenRbrace)) {
 		if endLineRequired {
-			errorAt(currentToken().rest, "文の区切り文字が必要です")
+			errorAt(tokenizer.Fetch().rest, "文の区切り文字が必要です")
 		}
-		if consumeEndLine() {
+		if tokenizer.consumeEndLine() {
 			continue
 		}
 		stmts = append(stmts, stmt())
 
 		endLineRequired = true
-		if consumeEndLine() {
+		if tokenizer.consumeEndLine() {
 			endLineRequired = false
 		}
 	}
@@ -175,27 +154,27 @@ func stmtList() *Node {
 
 func stmt() *Node {
 	// if文
-	if currentToken().kind == TokenIf {
+	if tokenizer.Test(TokenIf) {
 		return metaIfStmt()
 	}
 	// for文
-	if currentToken().kind == TokenFor {
+	if tokenizer.Test(TokenFor) {
 		return forStmt()
 	}
 	// 関数定義
-	if currentToken().kind == TokenFunc {
+	if tokenizer.Test(TokenFunc) {
 		return funcDefinition()
 	}
 	// var文
-	if currentToken().kind == TokenVar {
+	if tokenizer.Test(TokenVar) {
 		return varStmt()
 	}
 
-	if consume(TokenReturn) {
+	if tokenizer.Consume(TokenReturn) {
 		return NewNode(NodeReturn, []*Node{expr()})
 	} else {
 		var n = expr()
-		if consume(TokenEqual) {
+		if tokenizer.Consume(TokenEqual) {
 			// 代入文
 			var e = expr()
 			return NewBinaryNode(NodeAssign, n, e)
@@ -205,26 +184,26 @@ func stmt() *Node {
 }
 
 func varStmt() *Node {
-	expect(TokenVar)
+	tokenizer.Expect(TokenVar)
 	var v = variableDeclaration()
-	ty, ok := consumeType()
+	ty, ok := tokenizer.consumeType()
 
 	if !ok {
 		// 型が明示されていないときは初期化が必須
-		expect(TokenEqual)
+		tokenizer.Expect(TokenEqual)
 		return NewBinaryNode(NodeVarStmt, v, expr())
 	} else {
 		v.lvar.varType = ty
 	}
-	if consume(TokenEqual) {
+	if tokenizer.Consume(TokenEqual) {
 		return NewBinaryNode(NodeVarStmt, v, expr())
 	}
 	return NewNode(NodeVarStmt, []*Node{v})
 }
 
 func funcDefinition() *Node {
-	expect(TokenFunc)
-	identifier := expectIdentifier()
+	tokenizer.Expect(TokenFunc)
+	identifier := tokenizer.expectIdentifier()
 
 	var prevFuncLabel = currentFuncLabel
 	currentFuncLabel = identifier.str
@@ -232,32 +211,32 @@ func funcDefinition() *Node {
 
 	var parameters = make([]*Node, 0)
 
-	expect(TokenLparen)
-	for !consume(TokenRparen) {
+	tokenizer.Expect(TokenLparen)
+	for !tokenizer.Consume(TokenRparen) {
 		if len(parameters) > 0 {
-			expect(TokenComma)
+			tokenizer.Expect(TokenComma)
 		}
 		lvarNode := variableDeclaration()
 		parameters = append(parameters, lvarNode)
-		lvarNode.lvar.varType = expectType()
+		lvarNode.lvar.varType = tokenizer.expectType()
 		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.lvar.varType)
 	}
 
 	// 本当はvoid型が正しいけれど、テストを簡単にするためしばらくはint型で定義
 	fn.ReturnValueType = NewType(TypeInt)
-	var ty, ok = consumeType()
+	var ty, ok = tokenizer.consumeType()
 	if ok {
 		fn.ReturnValueType = ty
 	}
 
-	expect(TokenLbrace)
+	tokenizer.Expect(TokenLbrace)
 
 	var node = NewNode(NodeFunctionDef, make([]*Node, 0))
 	node.label = identifier.str
 	node.children = append(node.children, stmtList())
 	node.children = append(node.children, parameters...)
 
-	expect(TokenRbrace)
+	tokenizer.Expect(TokenRbrace)
 
 	currentFuncLabel = prevFuncLabel
 
@@ -266,50 +245,50 @@ func funcDefinition() *Node {
 
 // range は未対応
 func forStmt() *Node {
-	expect(TokenFor)
+	tokenizer.Expect(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
 	var node = NewNode(NodeFor, []*Node{nil, nil, nil, nil})
 
-	if consume(TokenLbrace) {
+	if tokenizer.Consume(TokenLbrace) {
 		// 無限ループ
 		node.children[3] = stmtList()
-		expect(TokenRbrace)
+		tokenizer.Expect(TokenRbrace)
 		return node
 	}
 
 	var s = stmt()
-	if consume(TokenLbrace) {
+	if tokenizer.Consume(TokenLbrace) {
 		// while文
 		if s.kind != NodeExprStmt {
 			madden("for文の条件に式以外が書かれています")
 		}
 		node.children[1] = s.children[0] // expr
 		node.children[3] = stmtList()
-		expect(TokenRbrace)
+		tokenizer.Expect(TokenRbrace)
 		return node
 	}
 
 	// 通常のfor文
 	node.children[0] = s
-	expect(TokenSemicolon)
+	tokenizer.Expect(TokenSemicolon)
 	node.children[1] = stmt().children[0] // expr
-	expect(TokenSemicolon)
+	tokenizer.Expect(TokenSemicolon)
 	node.children[2] = stmt()
 
-	expect(TokenLbrace)
+	tokenizer.Expect(TokenLbrace)
 	node.children[3] = stmtList()
-	expect(TokenRbrace)
+	tokenizer.Expect(TokenRbrace)
 	return node
 }
 
 func metaIfStmt() *Node {
-	token := currentToken()
-	if token.kind != TokenIf {
+	token := tokenizer.Fetch()
+	if !token.Test(TokenIf) {
 		errorAt(token.str, "'%s'ではありません", TokenIf)
 	}
 
 	var ifNode = ifStmt()
-	if currentToken().kind == TokenElse {
+	if tokenizer.Test(TokenElse) {
 		var elseNode = elseStmt()
 		return NewBinaryNode(NodeMetaIf, ifNode, elseNode)
 	}
@@ -317,19 +296,19 @@ func metaIfStmt() *Node {
 }
 
 func ifStmt() *Node {
-	expect(TokenIf)
+	tokenizer.Expect(TokenIf)
 	var lhs = expr()
-	expect(TokenLbrace)
+	tokenizer.Expect(TokenLbrace)
 	var rhs = stmtList()
-	expect(TokenRbrace)
+	tokenizer.Expect(TokenRbrace)
 	return NewBinaryNode(NodeIf, lhs, rhs)
 }
 
 func elseStmt() *Node {
-	expect(TokenElse)
-	expect(TokenLbrace)
+	tokenizer.Expect(TokenElse)
+	tokenizer.Expect(TokenLbrace)
 	var stmts = stmtList()
-	expect(TokenRbrace)
+	tokenizer.Expect(TokenRbrace)
 	return NewNode(NodeElse, []*Node{stmts})
 }
 
@@ -340,9 +319,9 @@ func expr() *Node {
 func equality() *Node {
 	var n = relational()
 	for {
-		if consume(TokenDoubleEqual) {
+		if tokenizer.Consume(TokenDoubleEqual) {
 			n = NewBinaryNode(NodeEql, n, relational())
-		} else if consume(TokenNotEqual) {
+		} else if tokenizer.Consume(TokenNotEqual) {
 			n = NewBinaryNode(NodeNotEql, n, relational())
 		} else {
 			return n
@@ -353,13 +332,13 @@ func equality() *Node {
 func relational() *Node {
 	var n = add()
 	for {
-		if consume(TokenLess) {
+		if tokenizer.Consume(TokenLess) {
 			n = NewBinaryNode(NodeLess, n, add())
-		} else if consume(TokenLessEqual) {
+		} else if tokenizer.Consume(TokenLessEqual) {
 			n = NewBinaryNode(NodeLessEql, n, add())
-		} else if consume(TokenGreater) {
+		} else if tokenizer.Consume(TokenGreater) {
 			n = NewBinaryNode(NodeGreater, n, add())
-		} else if consume(TokenGreaterEqual) {
+		} else if tokenizer.Consume(TokenGreaterEqual) {
 			n = NewBinaryNode(NodeGreaterEql, n, add())
 		} else {
 			return n
@@ -370,9 +349,9 @@ func relational() *Node {
 func add() *Node {
 	var n = mul()
 	for {
-		if consume(TokenPlus) {
+		if tokenizer.Consume(TokenPlus) {
 			n = NewBinaryNode(NodeAdd, n, mul())
-		} else if consume(TokenMinus) {
+		} else if tokenizer.Consume(TokenMinus) {
 			n = NewBinaryNode(NodeSub, n, mul())
 		} else {
 			return n
@@ -383,9 +362,9 @@ func add() *Node {
 func mul() *Node {
 	var n = unary()
 	for {
-		if consume(TokenStar) {
+		if tokenizer.Consume(TokenStar) {
 			n = NewBinaryNode(NodeMul, n, unary())
-		} else if consume(TokenSlash) {
+		} else if tokenizer.Consume(TokenSlash) {
 			n = NewBinaryNode(NodeDiv, n, unary())
 		} else {
 			return n
@@ -394,16 +373,16 @@ func mul() *Node {
 }
 
 func unary() *Node {
-	if consume(TokenPlus) {
+	if tokenizer.Consume(TokenPlus) {
 		return primary()
 	}
-	if consume(TokenMinus) {
+	if tokenizer.Consume(TokenMinus) {
 		return NewBinaryNode(NodeSub, NewNodeNum(0), primary())
 	}
-	if consume(TokenStar) {
+	if tokenizer.Consume(TokenStar) {
 		return NewNode(NodeDeref, []*Node{unary()})
 	}
-	if consume(TokenAmpersand) {
+	if tokenizer.Consume(TokenAmpersand) {
 		return NewNode(NodeAddr, []*Node{unary()})
 	}
 	return primary()
@@ -411,25 +390,25 @@ func unary() *Node {
 
 func primary() *Node {
 	// 次のトークンが "(" なら、"(" expr ")" のはず
-	if consume(TokenLparen) {
+	if tokenizer.Consume(TokenLparen) {
 		var n = expr()
-		expect(TokenRparen)
+		tokenizer.Expect(TokenRparen)
 		return n
 	}
 
-	if currentToken().kind != TokenIdentifier {
-		return NewNodeNum(expectNumber())
+	if !tokenizer.Test(TokenIdentifier) {
+		return NewNodeNum(tokenizer.expectNumber())
 	}
 
 	if tokenizer.Prefetch(1).Test(TokenLparen) {
 		// 関数呼び出し
-		var tok = expectIdentifier()
-		expect(TokenLparen)
+		var tok = tokenizer.expectIdentifier()
+		tokenizer.Expect(TokenLparen)
 		var node = NewNode(NodeFunctionCall, make([]*Node, 0))
 		node.label = tok.str
-		for !consume(TokenRparen) {
+		for !tokenizer.Consume(TokenRparen) {
 			if len(node.children) > 0 {
-				expect(TokenComma)
+				tokenizer.Expect(TokenComma)
 			}
 			node.children = append(node.children, expr())
 		}
@@ -439,7 +418,7 @@ func primary() *Node {
 }
 
 func variableRef() *Node {
-	var tok = expectIdentifier()
+	var tok = tokenizer.expectIdentifier()
 	var node = NewLeafNode(NodeLocalVar)
 	node.lvar = Env.FindLocalVar(currentFuncLabel, tok)
 	if node.lvar == nil {
@@ -449,7 +428,7 @@ func variableRef() *Node {
 }
 
 func variableDeclaration() *Node {
-	var tok = expectIdentifier()
+	var tok = tokenizer.expectIdentifier()
 	var node = NewLeafNode(NodeLocalVar)
 	lvar := Env.FindLocalVar(currentFuncLabel, tok)
 	if lvar != nil {

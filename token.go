@@ -159,3 +159,25 @@ func (t *Tokenizer) Prefetch(n int) Token {
 func (t *Tokenizer) Succ() {
 	t.pos = t.pos + 1
 }
+
+func (t *Tokenizer) Test(kind TokenKind) bool {
+	return t.Fetch().Test(kind)
+}
+
+// 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
+// それ以外の場合には偽を返す。
+func (t *Tokenizer) Consume(kind TokenKind) bool {
+	if t.Test(kind) {
+		t.Succ()
+		return true
+	}
+	return false
+}
+
+// 次のトークンが期待しているkindのときには、トークンを1つ読み進める。
+// それ以外の場合にはエラーを報告する。
+func (t *Tokenizer) Expect(kind TokenKind) {
+	if !t.Consume(kind) {
+		madden("'%s'ではありません", kind)
+	}
+}
