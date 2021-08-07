@@ -371,12 +371,15 @@ func main() {
   return foo(4)
 }
 "
-assert 0 "
+assert 6 "
 package main
 
 func main() {
   var arr [10]int
-  arr[4]
+  arr[0] = 1
+  arr[1] = 2
+  arr[2] = 3
+  return arr[0] + arr[1] + arr[2]
 }
 "
 

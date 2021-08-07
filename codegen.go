@@ -21,6 +21,15 @@ func genLvalue(node *Node) {
 			fmt.Println("  push rax")
 		}
 		return
+	} else if node.kind == NodeIndex {
+		genLvalue(node.children[0])
+		gen(node.children[1])
+		fmt.Println("  pop rdi")
+		fmt.Printf("  imul rdi, %d\n", Sizeof(node.children[0].variable.varType))
+		fmt.Println("  pop rax")
+		fmt.Println("  sub rax, rdi")
+		fmt.Println("  push rax")
+		return
 	}
 	madden("代入の左辺値が変数またはポインタ参照ではありません")
 }
@@ -56,6 +65,7 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeAssign {
+		// TODO: 左辺が配列だった場合は丸々コピーさせる必要がある
 		genLvalue(node.children[0]) // lhs
 		gen(node.children[1])       // rhs
 
@@ -196,13 +206,10 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeIndex {
-		genLvalue(node.children[0])
-		gen(node.children[1])
-		fmt.Println("  pop rdi")
-		fmt.Printf("  imul rdi, %d\n", Sizeof(node.children[0].variable.varType))
+		genLvalue(node)
 		fmt.Println("  pop rax")
-		fmt.Println("  sub rax, rdi")
-		fmt.Println("  push [rax]")
+		fmt.Println("  mov rax, [rax]")
+		fmt.Println("  push rax")
 		return
 	}
 
