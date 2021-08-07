@@ -5,30 +5,38 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/08/05更新)
+## 現状(2021/08/08更新)
 ```go
 package main
 
+var memo [11]int
+
 func fib(n int) int {
-  if n <= 1 {
-    return 1
+  if memo[n] != -1 {
+    return memo[n]
   }
-  return fib(n - 1) + fib(n - 2)
+  if n <= 1 {
+    memo[n] = 1
+    return memo[n]
+  }
+  memo[n] = fib(n - 1) + fib(n - 2)
+  return memo[n]
 }
 
-func add10(n int) {
-  *n = *n + 10
+func setMinusOne(n *int) {
+  *n = -1
 }
 
 func main() {
-  var ans = 0
   var n int
+  for n = 0; n <= 10; n = n + 1 {
+    setMinusOne(&memo[n])
+  }
 
+  var ans = 0
   for n = 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
-
-  add10(&ans)
   return ans
 }
 ```

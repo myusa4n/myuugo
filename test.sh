@@ -394,5 +394,16 @@ func main() {
   return zero(arr[2])
 }
 "
+assert 1 "
+package main
+
+var memo [3]int
+
+func main() {
+  memo[0] = 1
+  return memo[0] + memo[1]
+}
+"
+
 
 echo OK

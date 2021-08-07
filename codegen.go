@@ -25,9 +25,9 @@ func genLvalue(node *Node) {
 		genLvalue(node.children[0])
 		gen(node.children[1])
 		fmt.Println("  pop rdi")
-		fmt.Printf("  imul rdi, %d\n", Sizeof(node.children[0].variable.varType))
+		fmt.Printf("  imul rdi, %d\n", Sizeof(*node.children[0].variable.varType.ptrTo))
 		fmt.Println("  pop rax")
-		fmt.Println("  sub rax, rdi")
+		fmt.Println("  add rax, rdi")
 		fmt.Println("  push rax")
 		return
 	}
