@@ -1,13 +1,13 @@
 package main
 
 type Environment struct {
-	LocalVarTable map[string][]*LocalVar
+	LocalVarTable map[string][]*Variable
 	FunctionTable map[string]*Function
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
-		LocalVarTable: map[string][]*LocalVar{},
+		LocalVarTable: map[string][]*Variable{},
 		FunctionTable: map[string]*Function{},
 	}
 }
@@ -19,17 +19,17 @@ func (e *Environment) RegisterFunc(label string) *Function {
 	}
 	var fn = NewFunction(label, []Type{}, NewType(TypeUndefined))
 	e.FunctionTable[label] = fn
-	e.LocalVarTable[label] = []*LocalVar{}
+	e.LocalVarTable[label] = []*Variable{}
 	return fn
 }
 
-func (e *Environment) AddLocalVar(fnLabel string, token Token) *LocalVar {
+func (e *Environment) AddLocalVar(fnLabel string, token Token) *Variable {
 	lvar := e.FindLocalVar(fnLabel, token)
 	if lvar != nil {
 		return lvar
 	}
 	var locals = e.LocalVarTable[fnLabel]
-	lvar = &LocalVar{name: token.str, varType: Type{kind: TypeUndefined}}
+	lvar = &Variable{name: token.str, varType: Type{kind: TypeUndefined}, kind: VariableLocal}
 	if len(locals) == 0 {
 		lvar.offset = 0 + 8
 	} else {
@@ -39,7 +39,7 @@ func (e *Environment) AddLocalVar(fnLabel string, token Token) *LocalVar {
 	return lvar
 }
 
-func (e *Environment) FindLocalVar(fnLabel string, token Token) *LocalVar {
+func (e *Environment) FindLocalVar(fnLabel string, token Token) *Variable {
 	locals, ok := e.LocalVarTable[fnLabel]
 
 	if !ok {

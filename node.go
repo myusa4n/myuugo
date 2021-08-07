@@ -34,7 +34,7 @@ const (
 type Node struct {
 	kind     NodeKind  // ノードの型
 	val      int       // kindがNodeNumの場合にのみ使う
-	lvar     *LocalVar // kindがNodeLocalVarの場合にのみ使う
+	lvar     *Variable // kindがNodeLocalVarの場合にのみ使う
 	label    string    // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
 	children []*Node   // 子。lhs, rhsの順でchildrenに格納される
 }
