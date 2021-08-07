@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -20,17 +21,35 @@ func getIdentifier(s string) (string, string) {
 type TokenKind string
 
 const (
-	TokenReserved   TokenKind = "RESERVED"
-	TokenNumber     TokenKind = "NUMBER"
-	TokenIdentifier TokenKind = "IDENTIFIER"
-	TokenEof        TokenKind = "EOF"
-	TokenReturn     TokenKind = "return"
-	TokenIf         TokenKind = "if"
-	TokenElse       TokenKind = "else"
-	TokenFor        TokenKind = "for"
-	TokenFunc       TokenKind = "func"
-	TokenVar        TokenKind = "var"
-	TokenPackage    TokenKind = "package"
+	TokenNumber       TokenKind = "NUMBER"
+	TokenIdentifier   TokenKind = "IDENTIFIER"
+	TokenEof          TokenKind = "EOF"
+	TokenReturn       TokenKind = "return"
+	TokenIf           TokenKind = "if"
+	TokenElse         TokenKind = "else"
+	TokenFor          TokenKind = "for"
+	TokenFunc         TokenKind = "func"
+	TokenVar          TokenKind = "var"
+	TokenPackage      TokenKind = "package"
+	TokenEqual        TokenKind = "="
+	TokenDoubleEqual  TokenKind = "=="
+	TokenNotEqual     TokenKind = "!="
+	TokenLessEqual    TokenKind = "<="
+	TokenGreaterEqual TokenKind = ">="
+	TokenLess         TokenKind = "<"
+	TokenGreater      TokenKind = ">"
+	TokenPlus         TokenKind = "+"
+	TokenMinus        TokenKind = "-"
+	TokenStar         TokenKind = "*"
+	TokenSlash        TokenKind = "/"
+	TokenLparen       TokenKind = "("
+	TokenRparen       TokenKind = ")"
+	TokenLbrace       TokenKind = "{"
+	TokenRbrace       TokenKind = "}"
+	TokenSemicolon    TokenKind = ";"
+	TokenNewLine      TokenKind = "\n"
+	TokenComma        TokenKind = ","
+	TokenAmpersand    TokenKind = "&"
 )
 
 type Token struct {
@@ -40,8 +59,8 @@ type Token struct {
 	rest string    // 自信を含めた残りすべてのトークン文字列
 }
 
-func (t Token) Test(kind TokenKind, str string) bool {
-	return t.kind == kind && t.str == str
+func (t Token) Test(kind TokenKind) bool {
+	return t.kind == kind
 }
 
 func NewToken(kind TokenKind, str string, rest string) Token {
@@ -63,56 +82,55 @@ func (t *Tokenizer) Tokenize(input string) {
 	t.pos = 0
 	t.input = input
 
-	/*
-		var keywords = []string{
-			"package",
-			"return",
-			"func", "else",
-			"for", "var",
-			"if", "==", "!=", "<=", ">=",
-			"+", "-", "*", "/", "(", ")", "<", ">", ";", "\n", "=", "{", "}", ",", "&",
-		}
-	*/
+	var symbols = []TokenKind{
+		TokenDoubleEqual, TokenNotEqual, TokenGreaterEqual, TokenLessEqual,
+		TokenPlus, TokenMinus, TokenStar, TokenSlash, TokenLparen, TokenRparen, TokenLess, TokenGreater, TokenSemicolon, TokenNewLine, TokenEqual, TokenLbrace, TokenRbrace, TokenComma, TokenAmpersand,
+	}
+	var keywords = []TokenKind{
+		TokenPackage,
+		TokenReturn,
+		TokenFunc, TokenElse,
+		TokenFor, TokenVar,
+		TokenIf,
+	}
 
 	for input != "" {
-		if len(input) >= 2 {
-			var head2 = input[:2]
-			if head2 == "==" || head2 == "!=" || head2 == "<=" || head2 == ">=" {
-				t.tokens = append(t.tokens, NewToken(TokenReserved, head2, input))
-				input = input[2:]
-				continue
+		var isSymbol = false
+		for _, symbol := range symbols {
+			var strSymbol = string(symbol)
+			if strings.HasPrefix(input, strSymbol) {
+				isSymbol = true
+				t.tokens = append(t.tokens, NewToken(symbol, strSymbol, input))
+				input = input[len(symbol):]
+				break
 			}
+		}
+		if isSymbol {
+			continue
 		}
 
 		var c = runeAt(input, 0)
 		if isAlpha(c) || (c == '_') {
 			// input から 識別子を取り出す
-			var token = NewToken(TokenIdentifier, "", input)
-			token.str, input = getIdentifier(input)
-			if token.str == string(TokenReturn) {
-				token.kind = TokenReturn
-			} else if token.str == string(TokenIf) {
-				token.kind = TokenIf
-			} else if token.str == string(TokenElse) {
-				token.kind = TokenElse
-			} else if token.str == string(TokenFor) {
-				token.kind = TokenFor
-			} else if token.str == string(TokenFunc) {
-				token.kind = TokenFunc
-			} else if token.str == string(TokenVar) {
-				token.kind = TokenVar
-			} else if token.str == string(TokenPackage) {
-				token.kind = TokenPackage
+			var identifier, nextInput = getIdentifier(input)
+			var isKeyword = false
+
+			for _, keyword := range keywords {
+				if keyword == TokenKind(identifier) {
+					isKeyword = true
+					t.tokens = append(t.tokens, NewToken(keyword, string(keyword), input))
+					input = nextInput
+					break
+				}
 			}
-			t.tokens = append(t.tokens, token)
+			if !isKeyword {
+				var token = NewToken(TokenIdentifier, identifier, input)
+				t.tokens = append(t.tokens, token)
+				input = nextInput
+			}
 			continue
 		}
-		if c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '<' ||
-			c == '>' || c == ';' || c == '\n' || c == '=' || c == '{' || c == '}' || c == ',' || c == '&' {
-			t.tokens = append(t.tokens, NewToken(TokenReserved, string(c), input))
-			input = input[1:]
-			continue
-		}
+
 		if unicode.IsSpace(c) {
 			input = input[1:]
 			continue

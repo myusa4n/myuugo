@@ -24,10 +24,10 @@ func currentToken() Token {
 	return tokenizer.Fetch()
 }
 
-// 次のトークンが期待している記号の時には、トークンを1つ読み進めて真を返す。
+// 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
-func consume(op string) bool {
-	if !tokenizer.Fetch().Test(TokenReserved, op) {
+func consume(kind TokenKind) bool {
+	if tokenizer.Fetch().kind != kind {
 		return false
 	}
 	tokenizer.Succ()
@@ -37,23 +37,13 @@ func consume(op string) bool {
 // 文の終端記号であるトークンを1つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
 func consumeEndLine() bool {
-	return consume(";") || consume("\n")
+	return consume(TokenSemicolon) || consume(TokenNewLine)
 }
 
 func expectEndLine() {
 	if !consumeEndLine() {
 		madden("文の終端記号ではありません")
 	}
-}
-
-// 次のトークンの種類が kind だった場合にはトークンを1つ読み進めて真を返す。
-// それ以外の場合には偽を返す。
-func consumeKind(kind TokenKind) bool {
-	if tokenizer.Fetch().kind != kind {
-		return false
-	}
-	tokenizer.Succ()
-	return true
 }
 
 // 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
@@ -78,24 +68,13 @@ func expectIdentifier() Token {
 	return token
 }
 
-// 次のトークンが期待している記号のときには、トークンを1つ読み進める。
+// 次のトークンが期待しているkindのときには、トークンを1つ読み進める。
 // それ以外の場合にはエラーを報告する。
-func expect(op string) {
+func expect(kind TokenKind) {
 	var token = tokenizer.Fetch()
-	if !token.Test(TokenReserved, op) {
-		errorAt(token.str, "'%s'ではありません", op)
-	}
-	tokenizer.Succ()
-}
-
-// 次のトークンが期待している種類の時にはトークンを1つ読み進める。
-// それ以外の場合にはエラーを報告する。
-func expectKind(kind TokenKind) {
-	token := tokenizer.Fetch()
-	if token.kind != kind {
+	if !consume(kind) {
 		errorAt(token.str, "'%s'ではありません", kind)
 	}
-	tokenizer.Succ()
 }
 
 // 次のトークンが数値の場合、トークンを1つ読み進めてその数値を返す。
@@ -116,7 +95,7 @@ func atEof() bool {
 
 func expectType() Type {
 	var varType Type = Type{}
-	if consume("*") {
+	if consume(TokenStar) {
 		varType.kind = TypePtr
 		ty := expectType()
 		varType.ptrTo = &ty
@@ -131,7 +110,7 @@ func expectType() Type {
 
 func consumeType() (Type, bool) {
 	var varType Type = Type{}
-	if consume("*") {
+	if consume(TokenStar) {
 		varType.kind = TypePtr
 		ty := expectType()
 		varType.ptrTo = &ty
@@ -220,7 +199,7 @@ func program() {
 func packageStmt() *Node {
 	var n = newLeafNode(NodePackageStmt)
 
-	expectKind(TokenPackage)
+	expect(TokenPackage)
 	n.label = expectIdentifier().str
 
 	return n
@@ -230,7 +209,7 @@ func stmtList() *Node {
 	var stmts = make([]*Node, 0)
 	var endLineRequired = false
 
-	for !atEof() && !(currentToken().kind == TokenReserved && currentToken().str == "}") {
+	for !atEof() && !(currentToken().Test(TokenRbrace)) {
 		if endLineRequired {
 			errorAt(currentToken().rest, "文の区切り文字が必要です")
 		}
@@ -267,11 +246,11 @@ func stmt() *Node {
 		return varStmt()
 	}
 
-	if consumeKind(TokenReturn) {
+	if consume(TokenReturn) {
 		return newNode(NodeReturn, []*Node{expr()})
 	} else {
 		var n = expr()
-		if consume("=") {
+		if consume(TokenEqual) {
 			// 代入文
 			var e = expr()
 			return newBinaryNode(NodeAssign, n, e)
@@ -281,25 +260,25 @@ func stmt() *Node {
 }
 
 func varStmt() *Node {
-	expectKind(TokenVar)
+	expect(TokenVar)
 	var v = variableDeclaration()
 	ty, ok := consumeType()
 
 	if !ok {
 		// 型が明示されていないときは初期化が必須
-		expect("=")
+		expect(TokenEqual)
 		return newBinaryNode(NodeVarStmt, v, expr())
 	} else {
 		v.lvar.varType = ty
 	}
-	if consume("=") {
+	if consume(TokenEqual) {
 		return newBinaryNode(NodeVarStmt, v, expr())
 	}
 	return newNode(NodeVarStmt, []*Node{v})
 }
 
 func funcDefinition() *Node {
-	expectKind(TokenFunc)
+	expect(TokenFunc)
 	identifier := expectIdentifier()
 
 	var prevFuncLabel = currentFuncLabel
@@ -308,10 +287,10 @@ func funcDefinition() *Node {
 
 	var parameters = make([]*Node, 0)
 
-	expect("(")
-	for !consume(")") {
+	expect(TokenLparen)
+	for !consume(TokenRparen) {
 		if len(parameters) > 0 {
-			expect(",")
+			expect(TokenComma)
 		}
 		lvarNode := variableDeclaration()
 		parameters = append(parameters, lvarNode)
@@ -326,14 +305,14 @@ func funcDefinition() *Node {
 		fn.ReturnValueType = ty
 	}
 
-	expect("{")
+	expect(TokenLbrace)
 
 	var node = newNode(NodeFunctionDef, make([]*Node, 0))
 	node.label = identifier.str
 	node.children = append(node.children, stmtList())
 	node.children = append(node.children, parameters...)
 
-	expect("}")
+	expect(TokenRbrace)
 
 	currentFuncLabel = prevFuncLabel
 
@@ -342,39 +321,39 @@ func funcDefinition() *Node {
 
 // range は未対応
 func forStmt() *Node {
-	expectKind(TokenFor)
+	expect(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
 	var node = newNode(NodeFor, []*Node{nil, nil, nil, nil})
 
-	if consume("{") {
+	if consume(TokenLbrace) {
 		// 無限ループ
 		node.children[3] = stmtList()
-		expect("}")
+		expect(TokenRbrace)
 		return node
 	}
 
 	var s = stmt()
-	if consume("{") {
+	if consume(TokenLbrace) {
 		// while文
 		if s.kind != NodeExprStmt {
 			madden("for文の条件に式以外が書かれています")
 		}
 		node.children[1] = s.children[0] // expr
 		node.children[3] = stmtList()
-		expect("}")
+		expect(TokenRbrace)
 		return node
 	}
 
 	// 通常のfor文
 	node.children[0] = s
-	expect(";")
+	expect(TokenSemicolon)
 	node.children[1] = stmt().children[0] // expr
-	expect(";")
+	expect(TokenSemicolon)
 	node.children[2] = stmt()
 
-	expect("{")
+	expect(TokenLbrace)
 	node.children[3] = stmtList()
-	expect("}")
+	expect(TokenRbrace)
 	return node
 }
 
@@ -393,19 +372,19 @@ func metaIfStmt() *Node {
 }
 
 func ifStmt() *Node {
-	expectKind(TokenIf)
+	expect(TokenIf)
 	var lhs = expr()
-	expect("{")
+	expect(TokenLbrace)
 	var rhs = stmtList()
-	expect("}")
+	expect(TokenRbrace)
 	return newBinaryNode(NodeIf, lhs, rhs)
 }
 
 func elseStmt() *Node {
-	expectKind(TokenElse)
-	expect("{")
+	expect(TokenElse)
+	expect(TokenLbrace)
 	var stmts = stmtList()
-	expect("}")
+	expect(TokenRbrace)
 	return newNode(NodeElse, []*Node{stmts})
 }
 
@@ -416,9 +395,9 @@ func expr() *Node {
 func equality() *Node {
 	var n = relational()
 	for {
-		if consume("==") {
+		if consume(TokenDoubleEqual) {
 			n = newBinaryNode(NodeEql, n, relational())
-		} else if consume("!=") {
+		} else if consume(TokenNotEqual) {
 			n = newBinaryNode(NodeNotEql, n, relational())
 		} else {
 			return n
@@ -429,13 +408,13 @@ func equality() *Node {
 func relational() *Node {
 	var n = add()
 	for {
-		if consume("<") {
+		if consume(TokenLess) {
 			n = newBinaryNode(NodeLess, n, add())
-		} else if consume("<=") {
+		} else if consume(TokenLessEqual) {
 			n = newBinaryNode(NodeLessEql, n, add())
-		} else if consume(">") {
+		} else if consume(TokenGreater) {
 			n = newBinaryNode(NodeGreater, n, add())
-		} else if consume(">=") {
+		} else if consume(TokenGreaterEqual) {
 			n = newBinaryNode(NodeGreaterEql, n, add())
 		} else {
 			return n
@@ -446,9 +425,9 @@ func relational() *Node {
 func add() *Node {
 	var n = mul()
 	for {
-		if consume("+") {
+		if consume(TokenPlus) {
 			n = newBinaryNode(NodeAdd, n, mul())
-		} else if consume("-") {
+		} else if consume(TokenMinus) {
 			n = newBinaryNode(NodeSub, n, mul())
 		} else {
 			return n
@@ -459,9 +438,9 @@ func add() *Node {
 func mul() *Node {
 	var n = unary()
 	for {
-		if consume("*") {
+		if consume(TokenStar) {
 			n = newBinaryNode(NodeMul, n, unary())
-		} else if consume("/") {
+		} else if consume(TokenSlash) {
 			n = newBinaryNode(NodeDiv, n, unary())
 		} else {
 			return n
@@ -470,16 +449,16 @@ func mul() *Node {
 }
 
 func unary() *Node {
-	if consume("+") {
+	if consume(TokenPlus) {
 		return primary()
 	}
-	if consume("-") {
+	if consume(TokenMinus) {
 		return newBinaryNode(NodeSub, newNodeNum(0), primary())
 	}
-	if consume("*") {
+	if consume(TokenStar) {
 		return newNode(NodeDeref, []*Node{unary()})
 	}
-	if consume("&") {
+	if consume(TokenAmpersand) {
 		return newNode(NodeAddr, []*Node{unary()})
 	}
 	return primary()
@@ -487,9 +466,9 @@ func unary() *Node {
 
 func primary() *Node {
 	// 次のトークンが "(" なら、"(" expr ")" のはず
-	if consume("(") {
+	if consume(TokenLparen) {
 		var n = expr()
-		expect(")")
+		expect(TokenRparen)
 		return n
 	}
 
@@ -497,15 +476,15 @@ func primary() *Node {
 		return newNodeNum(expectNumber())
 	}
 
-	if tokenizer.Prefetch(1).Test(TokenReserved, "(") {
+	if tokenizer.Prefetch(1).Test(TokenLparen) {
 		// 関数呼び出し
 		var tok = expectIdentifier()
-		expect("(")
+		expect(TokenLparen)
 		var node = newNode(NodeFunctionCall, make([]*Node, 0))
 		node.label = tok.str
-		for !consume(")") {
+		for !consume(TokenRparen) {
 			if len(node.children) > 0 {
-				expect(",")
+				expect(TokenComma)
 			}
 			node.children = append(node.children, expr())
 		}
