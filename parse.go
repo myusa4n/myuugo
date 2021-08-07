@@ -117,7 +117,7 @@ func program() {
 	code = []*Node{packageStmt()}
 	tokenizer.expectEndLine()
 
-	code = append(code, stmtList().children...)
+	code = append(code, topLevelStmtList().children...)
 }
 
 func packageStmt() *Node {
@@ -129,18 +129,18 @@ func packageStmt() *Node {
 	return n
 }
 
-func stmtList() *Node {
+func localStmtList() *Node {
 	var stmts = make([]*Node, 0)
 	var endLineRequired = false
 
-	for !tokenizer.atEof() && !(tokenizer.Test(TokenRbrace)) {
+	for !(tokenizer.Test(TokenRbrace)) {
 		if endLineRequired {
 			errorAt(tokenizer.Fetch().rest, "文の区切り文字が必要です")
 		}
 		if tokenizer.consumeEndLine() {
 			continue
 		}
-		stmts = append(stmts, stmt())
+		stmts = append(stmts, localStmt())
 
 		endLineRequired = true
 		if tokenizer.consumeEndLine() {
@@ -152,7 +152,73 @@ func stmtList() *Node {
 	return node
 }
 
-func stmt() *Node {
+func topLevelStmtList() *Node {
+	var stmts = make([]*Node, 0)
+	var endLineRequired = false
+
+	for !tokenizer.atEof() && !(tokenizer.Test(TokenRbrace)) {
+		if endLineRequired {
+			errorAt(tokenizer.Fetch().rest, "文の区切り文字が必要です")
+		}
+		if tokenizer.consumeEndLine() {
+			continue
+		}
+		stmts = append(stmts, topLevelStmt())
+
+		endLineRequired = true
+		if tokenizer.consumeEndLine() {
+			endLineRequired = false
+		}
+	}
+	var node = NewNode(NodeStmtList, stmts)
+	node.children = stmts
+	return node
+}
+
+func topLevelStmt() *Node {
+	// 関数定義
+	if tokenizer.Test(TokenFunc) {
+		return funcDefinition()
+	}
+	// var文
+	if tokenizer.Test(TokenVar) {
+		return varStmt()
+	}
+
+	// 許可されていないもの
+	if tokenizer.Test(TokenIf) {
+		madden("if文はトップレベルでは使用できません")
+	}
+	if tokenizer.Test(TokenFor) {
+		madden("for文はトップレベルでは使用できません")
+	}
+	if tokenizer.Test(TokenReturn) {
+		madden("return文はトップレベルでは使用できません")
+	}
+
+	var n = expr()
+	if tokenizer.Consume(TokenEqual) {
+		// 代入文
+		var e = expr()
+		return NewBinaryNode(NodeAssign, n, e)
+	}
+	return NewNode(NodeExprStmt, []*Node{n})
+}
+
+func simpleStmt() *Node {
+	if tokenizer.Test(TokenNewLine) || tokenizer.Test(TokenSemicolon) {
+		return nil
+	}
+	var n = expr()
+	if tokenizer.Consume(TokenEqual) {
+		// 代入文
+		var e = expr()
+		return NewBinaryNode(NodeAssign, n, e)
+	}
+	return NewNode(NodeExprStmt, []*Node{n})
+}
+
+func localStmt() *Node {
 	// if文
 	if tokenizer.Test(TokenIf) {
 		return metaIfStmt()
@@ -160,10 +226,6 @@ func stmt() *Node {
 	// for文
 	if tokenizer.Test(TokenFor) {
 		return forStmt()
-	}
-	// 関数定義
-	if tokenizer.Test(TokenFunc) {
-		return funcDefinition()
 	}
 	// var文
 	if tokenizer.Test(TokenVar) {
@@ -233,7 +295,7 @@ func funcDefinition() *Node {
 
 	var node = NewNode(NodeFunctionDef, make([]*Node, 0))
 	node.label = identifier.str
-	node.children = append(node.children, stmtList())
+	node.children = append(node.children, localStmtList())
 	node.children = append(node.children, parameters...)
 
 	tokenizer.Expect(TokenRbrace)
@@ -251,19 +313,19 @@ func forStmt() *Node {
 
 	if tokenizer.Consume(TokenLbrace) {
 		// 無限ループ
-		node.children[3] = stmtList()
+		node.children[3] = localStmtList()
 		tokenizer.Expect(TokenRbrace)
 		return node
 	}
 
-	var s = stmt()
+	var s = simpleStmt()
 	if tokenizer.Consume(TokenLbrace) {
 		// while文
 		if s.kind != NodeExprStmt {
 			madden("for文の条件に式以外が書かれています")
 		}
 		node.children[1] = s.children[0] // expr
-		node.children[3] = stmtList()
+		node.children[3] = localStmtList()
 		tokenizer.Expect(TokenRbrace)
 		return node
 	}
@@ -271,12 +333,12 @@ func forStmt() *Node {
 	// 通常のfor文
 	node.children[0] = s
 	tokenizer.Expect(TokenSemicolon)
-	node.children[1] = stmt().children[0] // expr
+	node.children[1] = simpleStmt().children[0] // expr
 	tokenizer.Expect(TokenSemicolon)
-	node.children[2] = stmt()
+	node.children[2] = simpleStmt()
 
 	tokenizer.Expect(TokenLbrace)
-	node.children[3] = stmtList()
+	node.children[3] = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 	return node
 }
@@ -299,7 +361,7 @@ func ifStmt() *Node {
 	tokenizer.Expect(TokenIf)
 	var lhs = expr()
 	tokenizer.Expect(TokenLbrace)
-	var rhs = stmtList()
+	var rhs = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 	return NewBinaryNode(NodeIf, lhs, rhs)
 }
@@ -307,7 +369,7 @@ func ifStmt() *Node {
 func elseStmt() *Node {
 	tokenizer.Expect(TokenElse)
 	tokenizer.Expect(TokenLbrace)
-	var stmts = stmtList()
+	var stmts = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 	return NewNode(NodeElse, []*Node{stmts})
 }
