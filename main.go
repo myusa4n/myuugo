@@ -12,7 +12,8 @@ func main() {
 	}
 
 	userInput = os.Args[1]
-	tokens = tokenize(userInput)
+	tokenizer = NewTokenizer()
+	tokenizer.Tokenize(userInput)
 	program()
 	pipeline(code)
 
