@@ -382,5 +382,17 @@ func main() {
   return arr[0] + arr[1] + arr[2]
 }
 "
+assert 0 "
+package main
+
+func zero(n int) {
+  return 0
+}
+
+func main() {
+  var arr [3]int
+  return zero(arr[2])
+}
+"
 
 echo OK
