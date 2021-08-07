@@ -126,61 +126,6 @@ func consumeType() (Type, bool) {
 	return varType, true
 }
 
-type NodeKind string
-
-const (
-	NodeAdd          NodeKind = "ADD"           // +
-	NodeSub          NodeKind = "SUB"           // -
-	NodeMul          NodeKind = "MUL"           // *
-	NodeDiv          NodeKind = "DIV"           // /
-	NodeEql          NodeKind = "EQL"           // ==
-	NodeNotEql       NodeKind = "NOT EQL"       // !=
-	NodeLess         NodeKind = "LESS"          // <
-	NodeLessEql      NodeKind = "LESS EQL"      // <=
-	NodeGreater      NodeKind = "GREATER"       // >
-	NodeGreaterEql   NodeKind = "GREATER EQL"   // >=
-	NodeAssign       NodeKind = "ASSIGN"        // =
-	NodeReturn       NodeKind = "RETURN"        // return
-	NodeLocalVar     NodeKind = "Local Var"     // ローカル変数
-	NodeNum          NodeKind = "NUM"           // 整数
-	NodeMetaIf       NodeKind = "META IF"       // if ... else ...
-	NodeIf           NodeKind = "IF"            // if
-	NodeElse         NodeKind = "ELSE"          // else
-	NodeStmtList     NodeKind = "STMT LIST"     // stmt*
-	NodeFor          NodeKind = "FOR"           // for
-	NodeFunctionCall NodeKind = "FUNCTION CALL" // fn()
-	NodeFunctionDef  NodeKind = "FUNCTION DEF"  // func fn() { ... }
-	NodeAddr         NodeKind = "ADDR"          // &
-	NodeDeref        NodeKind = "DEREF"         // *addr
-	NodeVarStmt      NodeKind = "VAR STMT"      // var ...
-	NodePackageStmt  NodeKind = "PACKAGE STMT"  // package ...
-	NodeExprStmt     NodeKind = "EXPR STMT"     // 式文
-)
-
-type Node struct {
-	kind     NodeKind  // ノードの型
-	val      int       // kindがNodeNumの場合にのみ使う
-	lvar     *LocalVar // kindがNodeLocalVarの場合にのみ使う
-	label    string    // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
-	children []*Node   // 子。lhs, rhsの順でchildrenに格納される
-}
-
-func newNode(kind NodeKind, children []*Node) *Node {
-	return &Node{kind: kind, children: children}
-}
-
-func newBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{kind: kind, children: []*Node{lhs, rhs}}
-}
-
-func newLeafNode(kind NodeKind) *Node {
-	return &Node{kind: kind}
-}
-
-func newNodeNum(val int) *Node {
-	return &Node{kind: NodeNum, val: val}
-}
-
 var code []*Node
 var currentFuncLabel = ""
 var Env *Environment
@@ -197,7 +142,7 @@ func program() {
 }
 
 func packageStmt() *Node {
-	var n = newLeafNode(NodePackageStmt)
+	var n = NewLeafNode(NodePackageStmt)
 
 	expect(TokenPackage)
 	n.label = expectIdentifier().str
@@ -223,7 +168,7 @@ func stmtList() *Node {
 			endLineRequired = false
 		}
 	}
-	var node = newNode(NodeStmtList, stmts)
+	var node = NewNode(NodeStmtList, stmts)
 	node.children = stmts
 	return node
 }
@@ -247,15 +192,15 @@ func stmt() *Node {
 	}
 
 	if consume(TokenReturn) {
-		return newNode(NodeReturn, []*Node{expr()})
+		return NewNode(NodeReturn, []*Node{expr()})
 	} else {
 		var n = expr()
 		if consume(TokenEqual) {
 			// 代入文
 			var e = expr()
-			return newBinaryNode(NodeAssign, n, e)
+			return NewBinaryNode(NodeAssign, n, e)
 		}
-		return newNode(NodeExprStmt, []*Node{n})
+		return NewNode(NodeExprStmt, []*Node{n})
 	}
 }
 
@@ -267,14 +212,14 @@ func varStmt() *Node {
 	if !ok {
 		// 型が明示されていないときは初期化が必須
 		expect(TokenEqual)
-		return newBinaryNode(NodeVarStmt, v, expr())
+		return NewBinaryNode(NodeVarStmt, v, expr())
 	} else {
 		v.lvar.varType = ty
 	}
 	if consume(TokenEqual) {
-		return newBinaryNode(NodeVarStmt, v, expr())
+		return NewBinaryNode(NodeVarStmt, v, expr())
 	}
-	return newNode(NodeVarStmt, []*Node{v})
+	return NewNode(NodeVarStmt, []*Node{v})
 }
 
 func funcDefinition() *Node {
@@ -307,7 +252,7 @@ func funcDefinition() *Node {
 
 	expect(TokenLbrace)
 
-	var node = newNode(NodeFunctionDef, make([]*Node, 0))
+	var node = NewNode(NodeFunctionDef, make([]*Node, 0))
 	node.label = identifier.str
 	node.children = append(node.children, stmtList())
 	node.children = append(node.children, parameters...)
@@ -323,7 +268,7 @@ func funcDefinition() *Node {
 func forStmt() *Node {
 	expect(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
-	var node = newNode(NodeFor, []*Node{nil, nil, nil, nil})
+	var node = NewNode(NodeFor, []*Node{nil, nil, nil, nil})
 
 	if consume(TokenLbrace) {
 		// 無限ループ
@@ -366,9 +311,9 @@ func metaIfStmt() *Node {
 	var ifNode = ifStmt()
 	if currentToken().kind == TokenElse {
 		var elseNode = elseStmt()
-		return newBinaryNode(NodeMetaIf, ifNode, elseNode)
+		return NewBinaryNode(NodeMetaIf, ifNode, elseNode)
 	}
-	return newBinaryNode(NodeMetaIf, ifNode, nil)
+	return NewBinaryNode(NodeMetaIf, ifNode, nil)
 }
 
 func ifStmt() *Node {
@@ -377,7 +322,7 @@ func ifStmt() *Node {
 	expect(TokenLbrace)
 	var rhs = stmtList()
 	expect(TokenRbrace)
-	return newBinaryNode(NodeIf, lhs, rhs)
+	return NewBinaryNode(NodeIf, lhs, rhs)
 }
 
 func elseStmt() *Node {
@@ -385,7 +330,7 @@ func elseStmt() *Node {
 	expect(TokenLbrace)
 	var stmts = stmtList()
 	expect(TokenRbrace)
-	return newNode(NodeElse, []*Node{stmts})
+	return NewNode(NodeElse, []*Node{stmts})
 }
 
 func expr() *Node {
@@ -396,9 +341,9 @@ func equality() *Node {
 	var n = relational()
 	for {
 		if consume(TokenDoubleEqual) {
-			n = newBinaryNode(NodeEql, n, relational())
+			n = NewBinaryNode(NodeEql, n, relational())
 		} else if consume(TokenNotEqual) {
-			n = newBinaryNode(NodeNotEql, n, relational())
+			n = NewBinaryNode(NodeNotEql, n, relational())
 		} else {
 			return n
 		}
@@ -409,13 +354,13 @@ func relational() *Node {
 	var n = add()
 	for {
 		if consume(TokenLess) {
-			n = newBinaryNode(NodeLess, n, add())
+			n = NewBinaryNode(NodeLess, n, add())
 		} else if consume(TokenLessEqual) {
-			n = newBinaryNode(NodeLessEql, n, add())
+			n = NewBinaryNode(NodeLessEql, n, add())
 		} else if consume(TokenGreater) {
-			n = newBinaryNode(NodeGreater, n, add())
+			n = NewBinaryNode(NodeGreater, n, add())
 		} else if consume(TokenGreaterEqual) {
-			n = newBinaryNode(NodeGreaterEql, n, add())
+			n = NewBinaryNode(NodeGreaterEql, n, add())
 		} else {
 			return n
 		}
@@ -426,9 +371,9 @@ func add() *Node {
 	var n = mul()
 	for {
 		if consume(TokenPlus) {
-			n = newBinaryNode(NodeAdd, n, mul())
+			n = NewBinaryNode(NodeAdd, n, mul())
 		} else if consume(TokenMinus) {
-			n = newBinaryNode(NodeSub, n, mul())
+			n = NewBinaryNode(NodeSub, n, mul())
 		} else {
 			return n
 		}
@@ -439,9 +384,9 @@ func mul() *Node {
 	var n = unary()
 	for {
 		if consume(TokenStar) {
-			n = newBinaryNode(NodeMul, n, unary())
+			n = NewBinaryNode(NodeMul, n, unary())
 		} else if consume(TokenSlash) {
-			n = newBinaryNode(NodeDiv, n, unary())
+			n = NewBinaryNode(NodeDiv, n, unary())
 		} else {
 			return n
 		}
@@ -453,13 +398,13 @@ func unary() *Node {
 		return primary()
 	}
 	if consume(TokenMinus) {
-		return newBinaryNode(NodeSub, newNodeNum(0), primary())
+		return NewBinaryNode(NodeSub, NewNodeNum(0), primary())
 	}
 	if consume(TokenStar) {
-		return newNode(NodeDeref, []*Node{unary()})
+		return NewNode(NodeDeref, []*Node{unary()})
 	}
 	if consume(TokenAmpersand) {
-		return newNode(NodeAddr, []*Node{unary()})
+		return NewNode(NodeAddr, []*Node{unary()})
 	}
 	return primary()
 }
@@ -473,14 +418,14 @@ func primary() *Node {
 	}
 
 	if currentToken().kind != TokenIdentifier {
-		return newNodeNum(expectNumber())
+		return NewNodeNum(expectNumber())
 	}
 
 	if tokenizer.Prefetch(1).Test(TokenLparen) {
 		// 関数呼び出し
 		var tok = expectIdentifier()
 		expect(TokenLparen)
-		var node = newNode(NodeFunctionCall, make([]*Node, 0))
+		var node = NewNode(NodeFunctionCall, make([]*Node, 0))
 		node.label = tok.str
 		for !consume(TokenRparen) {
 			if len(node.children) > 0 {
@@ -495,7 +440,7 @@ func primary() *Node {
 
 func variableRef() *Node {
 	var tok = expectIdentifier()
-	var node = newLeafNode(NodeLocalVar)
+	var node = NewLeafNode(NodeLocalVar)
 	node.lvar = Env.FindLocalVar(currentFuncLabel, tok)
 	if node.lvar == nil {
 		errorAt(tok.rest, "未定義の変数です %s", tok.str)
@@ -505,7 +450,7 @@ func variableRef() *Node {
 
 func variableDeclaration() *Node {
 	var tok = expectIdentifier()
-	var node = newLeafNode(NodeLocalVar)
+	var node = NewLeafNode(NodeLocalVar)
 	lvar := Env.FindLocalVar(currentFuncLabel, tok)
 	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
