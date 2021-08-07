@@ -30,6 +30,7 @@ const (
 	NodeTopLevelVarStmt NodeKind = "TOPLEVEL VAR STMT" // (toplevel) var ...
 	NodePackageStmt     NodeKind = "PACKAGE STMT"      // package ...
 	NodeExprStmt        NodeKind = "EXPR STMT"         // 式文
+	NodeIndex           NodeKind = "INDEX"             // 添字アクセス
 )
 
 type Node struct {

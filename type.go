@@ -6,21 +6,30 @@ const (
 	TypeInt       TypeKind = "[TYPE] INT"
 	TypePtr       TypeKind = "[TYPE] PTR"
 	TypeVoid      TypeKind = "[TYPE] VOID"
+	TypeArray     TypeKind = "[TYPE] ARRAY"
 	TypeUndefined TypeKind = "[TYPE] UNDEFINED" // まだ型を決めることができていない
 )
 
 type Type struct {
-	kind  TypeKind
-	ptrTo *Type
+	kind      TypeKind
+	ptrTo     *Type
+	arraySize int
 }
 
 func NewType(kind TypeKind) Type {
 	return Type{kind: kind}
 }
 
+func NewArrayType(elemType Type, size int) Type {
+	return Type{kind: TypeArray, ptrTo: &elemType, arraySize: size}
+}
+
 func Sizeof(ty Type) int {
 	if ty.kind == TypeInt || ty.kind == TypePtr {
 		return 8
+	}
+	if ty.kind == TypeArray {
+		return ty.arraySize * Sizeof(*ty.ptrTo)
 	}
 	// 変数の型推論をまだ実装していないので、一旦8を返すようにする
 	// panic("未定義の型の変数です")

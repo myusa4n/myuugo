@@ -195,6 +195,16 @@ func gen(node *Node) {
 		fmt.Println("  pop rax")
 		return
 	}
+	if node.kind == NodeIndex {
+		genLvalue(node.children[0])
+		gen(node.children[1])
+		fmt.Println("  pop rdi")
+		fmt.Printf("  imul rdi, %d\n", Sizeof(node.children[0].variable.varType))
+		fmt.Println("  pop rax")
+		fmt.Println("  sub rax, rdi")
+		fmt.Println("  push [rax]")
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs

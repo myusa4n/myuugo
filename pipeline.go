@@ -62,10 +62,14 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.kind == NodeFunctionDef {
+		var prevFuncLabel = currentFuncLabel
+		currentFuncLabel = node.label
 		for _, param := range node.children[1:] { // 引数
 			traverse(param)
 		}
+		Env.AlignLocalVars(currentFuncLabel)
 		traverse(node.children[0]) // 関数本体
+		currentFuncLabel = prevFuncLabel
 		return stmtType
 	}
 	if node.kind == NodeAddr {
@@ -108,6 +112,9 @@ func traverse(node *Node) Type {
 				madden("var文における変数の型と初期化式の型が一致しません")
 			}
 		}
+		if currentFuncLabel != "" {
+			Env.AlignLocalVars(currentFuncLabel)
+		}
 		return stmtType
 	}
 	if node.kind == NodeExprStmt {
@@ -119,6 +126,17 @@ func traverse(node *Node) Type {
 	}
 	if node.kind == NodeVariable {
 		return node.variable.varType
+	}
+	if node.kind == NodeIndex {
+		var lhsType = traverse(node.children[0])
+		var rhsType = traverse(node.children[1])
+		if lhsType.kind != TypeArray {
+			madden("配列ではないものに添字でアクセスしようとしています")
+		}
+		if rhsType.kind != TypeInt {
+			madden("配列の添字は整数でなくてはなりません")
+		}
+		return *lhsType.ptrTo
 	}
 
 	var lhsType = traverse(node.children[0])

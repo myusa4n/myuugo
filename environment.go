@@ -30,13 +30,7 @@ func (e *Environment) AddLocalVar(fnLabel string, token Token) *Variable {
 	if lvar != nil {
 		return lvar
 	}
-	var locals = e.LocalVarTable[fnLabel]
 	lvar = &Variable{name: token.str, varType: Type{kind: TypeUndefined}, kind: VariableLocal}
-	if len(locals) == 0 {
-		lvar.offset = 0 + 8
-	} else {
-		lvar.offset = locals[len(locals)-1].offset + 8
-	}
 	e.LocalVarTable[fnLabel] = append(e.LocalVarTable[fnLabel], lvar)
 	return lvar
 }
@@ -100,4 +94,16 @@ func (e *Environment) GetFrameSize(fnLabel string) int {
 		size += Sizeof(lvar.varType)
 	}
 	return size
+}
+
+func (e *Environment) AlignLocalVars(fnLabel string) {
+	locals, ok := e.LocalVarTable[fnLabel]
+	if !ok {
+		madden("関数%sは存在しません", fnLabel)
+	}
+	var offset = 0
+	for _, lvar := range locals {
+		offset += Sizeof(lvar.varType)
+		lvar.offset = offset
+	}
 }

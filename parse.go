@@ -73,18 +73,11 @@ func (t *Tokenizer) atEof() bool {
 }
 
 func (t *Tokenizer) expectType() Type {
-	var varType Type = Type{}
-	if t.Consume(TokenStar) {
-		varType.kind = TypePtr
-		ty := t.expectType()
-		varType.ptrTo = &ty
-		return varType
+	ty, ok := t.consumeType()
+	if !ok {
+		madden("型ではありません")
 	}
-	tok := t.expectIdentifier()
-	if tok.str == "int" {
-		return Type{kind: TypeInt}
-	}
-	return varType
+	return ty
 }
 
 func (t *Tokenizer) consumeType() (Type, bool) {
@@ -95,12 +88,19 @@ func (t *Tokenizer) consumeType() (Type, bool) {
 		varType.ptrTo = &ty
 		return varType, true
 	}
+	if t.Consume(TokenLSBrace) {
+		var arraySize = t.expectNumber()
+		t.Expect(TokenRSBrace)
+		ty := t.expectType()
+		varType.ptrTo = &ty
+		return NewArrayType(ty, arraySize), true
+	}
 	tok, ok := t.consumeIdentifier()
 	if !ok {
 		return Type{}, false
 	}
 	if tok.str == "int" {
-		return Type{kind: TypeInt}, true
+		return NewType(TypeInt), true
 	}
 	return varType, true
 }
@@ -483,6 +483,14 @@ func primary() *Node {
 			node.children = append(node.children, expr())
 		}
 		return node
+	}
+	if tokenizer.Prefetch(1).Test(TokenLSBrace) {
+		// 添字アクセス
+		var arr = variableRef()
+		tokenizer.Expect(TokenLSBrace)
+		var index = expr()
+		tokenizer.Expect(TokenRSBrace)
+		return NewBinaryNode(NodeIndex, arr, index)
 	}
 	return variableRef()
 }

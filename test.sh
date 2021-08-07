@@ -371,5 +371,13 @@ func main() {
   return foo(4)
 }
 "
+assert 0 "
+package main
+
+func main() {
+  var arr [10]int
+  arr[4]
+}
+"
 
 echo OK
