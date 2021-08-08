@@ -437,8 +437,17 @@ package main
 
 func main() {
   var msg string = \"hello world\"
-  msg
+  puts(msg)
 }
 "
+assert 0 '
+package main
+
+func main() {
+  var a = 3
+  var b = 2
+  printf("%d + %d = %d\n", a, b, a + b)
+}
+'
 
 echo OK

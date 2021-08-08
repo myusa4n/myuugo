@@ -141,6 +141,7 @@ func gen(node *Node) {
 		for i := range node.children {
 			fmt.Println("  pop " + registers[len(node.children)-i-1])
 		}
+		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
 		fmt.Println("  call " + node.label)
 		fmt.Println("  push rax")
 		return

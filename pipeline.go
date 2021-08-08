@@ -96,20 +96,19 @@ func traverse(node *Node) Type {
 	}
 	if node.kind == NodeFunctionCall {
 		fn, ok := Env.FunctionTable[node.label]
-
-		if !ok {
-			madden("関数%sは定義されていません", fn.Label)
-		}
-		if len(fn.ParameterTypes) != len(node.children) {
-			madden("関数%sの引数の数が正しくありません", fn.Label)
-		}
-		for i, argument := range node.children {
-			if !TypeCompatable(fn.ParameterTypes[i], traverse(argument)) {
-				madden("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
+		if ok {
+			if len(fn.ParameterTypes) != len(node.children) {
+				madden("関数%sの引数の数が正しくありません", fn.Label)
 			}
+			for i, argument := range node.children {
+				if !TypeCompatable(fn.ParameterTypes[i], traverse(argument)) {
+					madden("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
+				}
+			}
+			node.exprType = fn.ReturnValueType
+			return fn.ReturnValueType
 		}
-		node.exprType = fn.ReturnValueType
-		return fn.ReturnValueType
+		return node.exprType // おそらくundefined
 	}
 	if node.kind == NodeLocalVarStmt || node.kind == NodeTopLevelVarStmt {
 		if len(node.children) == 2 {
