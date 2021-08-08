@@ -404,6 +404,26 @@ func main() {
   return memo[0] + memo[1]
 }
 "
+assert 91 "
+package main
 
+func main() {
+  var c1 rune = 40
+  var c2 rune = 51
+  return c1 + c2
+}
+"
+assert 3 "
+package main
+
+func main() {
+  var x [3]rune
+  x[0] = -1
+  x[1] = 2
+  var y int
+  y = 4
+  return x[0] + y
+}
+"
 
 echo OK

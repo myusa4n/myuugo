@@ -38,6 +38,7 @@ type Node struct {
 	val      int       // kindがNodeNumの場合にのみ使う
 	variable *Variable // kindがNodeLocalVarの場合にのみ使う
 	label    string    // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
+	exprType Type      // ノードが表す式の型
 	children []*Node   // 子。lhs, rhsの順でchildrenに格納される
 }
 

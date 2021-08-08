@@ -8,27 +8,31 @@ func pipeline(code []*Node) {
 
 // 式の型を決定するのに使う
 func traverse(node *Node) Type {
-	var stmtType = Type{kind: TypeUndefined}
+	var stmtType = Type{kind: TypeStmt}
 	if node.kind == NodePackageStmt {
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeStmtList {
 		for _, stmt := range node.children {
 			traverse(stmt)
 		}
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeReturn {
 		traverse(node.children[0])
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeAssign {
 		var lhsType = traverse(node.children[0]) // lhs
 		var rhsType = traverse(node.children[1]) // rhs
 
-		if !typeEquals(lhsType, rhsType) {
+		if !TypeCompatable(lhsType, rhsType) {
 			madden("代入式の左辺と右辺の型が違います ")
 		}
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeMetaIf {
@@ -36,15 +40,18 @@ func traverse(node *Node) Type {
 		if node.children[1] != nil {
 			traverse(node.children[1])
 		}
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeIf {
 		traverse(node.children[0]) // lhs
 		traverse(node.children[1]) // rhs
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeElse {
 		traverse(node.children[0])
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeFor {
@@ -59,6 +66,7 @@ func traverse(node *Node) Type {
 			traverse(node.children[2])
 		}
 		traverse(node.children[3])
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeFunctionDef {
@@ -70,10 +78,12 @@ func traverse(node *Node) Type {
 		Env.AlignLocalVars(currentFuncLabel)
 		traverse(node.children[0]) // 関数本体
 		currentFuncLabel = prevFuncLabel
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeAddr {
 		var ty = traverse(node.children[0])
+		node.exprType = Type{kind: TypePtr, ptrTo: &ty}
 		return Type{kind: TypePtr, ptrTo: &ty}
 	}
 	if node.kind == NodeDeref {
@@ -81,6 +91,7 @@ func traverse(node *Node) Type {
 		if ty.kind != TypePtr {
 			madden("ポインタでないものの参照を外そうとしています")
 		}
+		node.exprType = *ty.ptrTo
 		return *ty.ptrTo
 	}
 	if node.kind == NodeFunctionCall {
@@ -93,10 +104,11 @@ func traverse(node *Node) Type {
 			madden("関数%sの引数の数が正しくありません", fn.Label)
 		}
 		for i, argument := range node.children {
-			if !typeEquals(fn.ParameterTypes[i], traverse(argument)) {
+			if !TypeCompatable(fn.ParameterTypes[i], traverse(argument)) {
 				madden("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
 			}
 		}
+		node.exprType = fn.ReturnValueType
 		return fn.ReturnValueType
 	}
 	if node.kind == NodeLocalVarStmt || node.kind == NodeTopLevelVarStmt {
@@ -106,25 +118,30 @@ func traverse(node *Node) Type {
 
 			if lvarType.kind == TypeUndefined {
 				node.children[0].variable.varType = valueType
+				node.children[0].exprType = valueType
 				lvarType = valueType
 			}
-			if !typeEquals(lvarType, valueType) {
+			if !TypeCompatable(lvarType, valueType) {
 				madden("var文における変数の型と初期化式の型が一致しません")
 			}
 		}
 		if currentFuncLabel != "" {
 			Env.AlignLocalVars(currentFuncLabel)
 		}
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeExprStmt {
 		traverse(node.children[0])
+		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeNum {
+		node.exprType = NewType(TypeInt)
 		return Type{kind: TypeInt}
 	}
 	if node.kind == NodeVariable {
+		node.exprType = node.variable.varType
 		return node.variable.varType
 	}
 	if node.kind == NodeIndex {
@@ -133,19 +150,21 @@ func traverse(node *Node) Type {
 		if lhsType.kind != TypeArray {
 			madden("配列ではないものに添字でアクセスしようとしています")
 		}
-		if rhsType.kind != TypeInt {
+		if !IsKindOfNumber(rhsType) {
 			madden("配列の添字は整数でなくてはなりません")
 		}
+		node.exprType = *lhsType.ptrTo
 		return *lhsType.ptrTo
 	}
 
 	var lhsType = traverse(node.children[0])
 	var rhsType = traverse(node.children[1])
 
-	if !typeEquals(lhsType, rhsType) {
+	if !TypeCompatable(lhsType, rhsType) {
 		madden("[%s] 左辺と右辺の式の型が違います %s %s", node.kind, lhsType.kind, rhsType.kind)
 	}
 
+	node.exprType = NewType(TypeInt)
 	switch node.kind {
 	case NodeAdd:
 		return Type{kind: TypeInt}
@@ -168,5 +187,6 @@ func traverse(node *Node) Type {
 	case NodeGreaterEql:
 		return Type{kind: TypeInt}
 	}
+	node.exprType = stmtType
 	return stmtType
 }

@@ -102,6 +102,9 @@ func (t *Tokenizer) consumeType() (Type, bool) {
 	if tok.str == "int" {
 		return NewType(TypeInt), true
 	}
+	if tok.str == "rune" {
+		return NewType(TypeRune), true
+	}
 	return varType, true
 }
 

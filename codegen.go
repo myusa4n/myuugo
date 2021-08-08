@@ -60,7 +60,11 @@ func gen(node *Node) {
 	if node.kind == NodeVariable {
 		genLvalue(node)
 		fmt.Println("  pop rax")
-		fmt.Println("  mov rax, [rax]")
+		if Sizeof(node.exprType) == 1 {
+			fmt.Println("  movzx rax, BYTE PTR [rax]")
+		} else { // 8
+			fmt.Println("  mov rax, [rax]")
+		}
 		fmt.Println("  push rax")
 		return
 	}
@@ -187,7 +191,12 @@ func gen(node *Node) {
 
 			fmt.Println("  pop rdi")
 			fmt.Println("  pop rax")
-			fmt.Println("  mov [rax], rdi")
+
+			if Sizeof(node.children[0].exprType) == 1 {
+				fmt.Println("  mov [rax], dil")
+			} else { // 8
+				fmt.Println("  mov [rax], rdi")
+			}
 			return
 		}
 		return
@@ -208,7 +217,11 @@ func gen(node *Node) {
 	if node.kind == NodeIndex {
 		genLvalue(node)
 		fmt.Println("  pop rax")
-		fmt.Println("  mov rax, [rax]")
+		if Sizeof(node.exprType) == 1 {
+			fmt.Println("  movzx rax, BYTE PTR [rax]")
+		} else {
+			fmt.Println("  mov rax, [rax]")
+		}
 		fmt.Println("  push rax")
 		return
 	}
