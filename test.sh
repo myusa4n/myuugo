@@ -432,5 +432,13 @@ func main() {
   return 'c' - 'a'
 }
 "
+assert 0 "
+package main
+
+func main() {
+  var msg string = \"hello world\"
+  msg
+}
+"
 
 echo OK

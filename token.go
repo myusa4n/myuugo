@@ -22,6 +22,7 @@ type TokenKind string
 
 const (
 	TokenNumber       TokenKind = "NUMBER"
+	TokenString       TokenKind = "STRING"
 	TokenIdentifier   TokenKind = "IDENTIFIER"
 	TokenEof          TokenKind = "EOF"
 	TokenReturn       TokenKind = "return"
@@ -156,6 +157,16 @@ func (t *Tokenizer) Tokenize(input string) {
 			token.val = int(content)
 			t.tokens = append(t.tokens, token)
 			input = input[1:]
+			continue
+		}
+		if c == '"' {
+			var pos = 1
+			for runeAt(input, pos) != '"' {
+				pos += 1
+			}
+			var token = NewToken(TokenString, input[0:pos+1], input)
+			t.tokens = append(t.tokens, token)
+			input = input[pos+1:]
 			continue
 		}
 		errorAt(input, "トークナイズできません")

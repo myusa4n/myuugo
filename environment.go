@@ -1,16 +1,22 @@
 package main
 
+import "strconv"
+
 type Environment struct {
-	TopLevelVars  []*Variable
-	LocalVarTable map[string][]*Variable
-	FunctionTable map[string]*Function
+	TopLevelVars   []*Variable
+	StringLiterals []*StringLiteral
+	LocalVarTable  map[string][]*Variable
+	FunctionTable  map[string]*Function
+
+	stringLabelNumber int
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
-		TopLevelVars:  []*Variable{},
-		LocalVarTable: map[string][]*Variable{},
-		FunctionTable: map[string]*Function{},
+		TopLevelVars:   []*Variable{},
+		StringLiterals: []*StringLiteral{},
+		LocalVarTable:  map[string][]*Variable{},
+		FunctionTable:  map[string]*Function{},
 	}
 }
 
@@ -106,4 +112,12 @@ func (e *Environment) AlignLocalVars(fnLabel string) {
 		offset += Sizeof(lvar.varType)
 		lvar.offset = offset
 	}
+}
+
+func (e *Environment) AddStringLiteral(token Token) *StringLiteral {
+	var label = ".LStr" + strconv.Itoa(e.stringLabelNumber)
+	e.stringLabelNumber += 1
+	var str = &StringLiteral{label: label, value: token.str}
+	e.StringLiterals = append(e.StringLiterals, str)
+	return str
 }

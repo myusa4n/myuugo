@@ -21,6 +21,13 @@ func main() {
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".globl main")
 
+	fmt.Println(".data")
+	for _, str := range Env.StringLiterals {
+		fmt.Println(str.label + ":")
+		fmt.Println("  .string " + str.value)
+	}
+	fmt.Println(".text")
+
 	for _, c := range code {
 		// 抽象構文木を下りながらコード生成
 		gen(c)

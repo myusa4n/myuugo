@@ -226,6 +226,11 @@ func gen(node *Node) {
 		fmt.Println("  push rax")
 		return
 	}
+	if node.kind == NodeString {
+		fmt.Printf("  mov rax, OFFSET FLAT:%s\n", node.str.label)
+		fmt.Println("  push rax")
+		return
+	}
 
 	gen(node.children[0]) // lhs
 	gen(node.children[1]) // rhs

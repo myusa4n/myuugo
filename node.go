@@ -31,15 +31,17 @@ const (
 	NodePackageStmt     NodeKind = "PACKAGE STMT"      // package ...
 	NodeExprStmt        NodeKind = "EXPR STMT"         // 式文
 	NodeIndex           NodeKind = "INDEX"             // 添字アクセス
+	NodeString          NodeKind = "STRING"            // 文字列
 )
 
 type Node struct {
-	kind     NodeKind  // ノードの型
-	val      int       // kindがNodeNumの場合にのみ使う
-	variable *Variable // kindがNodeLocalVarの場合にのみ使う
-	label    string    // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
-	exprType Type      // ノードが表す式の型
-	children []*Node   // 子。lhs, rhsの順でchildrenに格納される
+	kind     NodeKind       // ノードの型
+	val      int            // kindがNodeNumの場合にのみ使う
+	variable *Variable      // kindがNodeLocalVarの場合にのみ使う
+	str      *StringLiteral // kindがNodeStringの場合にのみ使う
+	label    string         // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
+	exprType Type           // ノードが表す式の型
+	children []*Node        // 子。lhs, rhsの順でchildrenに格納される
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {

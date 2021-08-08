@@ -68,6 +68,18 @@ func (t *Tokenizer) expectNumber() int {
 	return val
 }
 
+// 次のトークンが文字列の場合、トークンを1つ読み進めてその文字列を返す。
+// それ以外の場合にはエラーを報告する。
+func (t *Tokenizer) expectString() string {
+	token := t.Fetch()
+	if !t.Test(TokenString) {
+		errorAt(token.str, "文字列ではありません")
+	}
+	var val = token.str
+	tokenizer.Succ()
+	return val
+}
+
 func (t *Tokenizer) atEof() bool {
 	return t.Test(TokenEof)
 }
@@ -104,6 +116,10 @@ func (t *Tokenizer) consumeType() (Type, bool) {
 	}
 	if tok.str == "rune" {
 		return NewType(TypeRune), true
+	}
+	if tok.str == "string" {
+		var r = NewType(TypeRune)
+		return Type{kind: TypePtr, ptrTo: &r}, true
 	}
 	return varType, true
 }
@@ -469,8 +485,15 @@ func primary() *Node {
 		return n
 	}
 
-	if !tokenizer.Test(TokenIdentifier) {
+	if tokenizer.Test(TokenNumber) {
 		return NewNodeNum(tokenizer.expectNumber())
+	}
+
+	if tokenizer.Test(TokenString) {
+		var n = NewLeafNode(NodeString)
+		n.str = Env.AddStringLiteral(tokenizer.Fetch())
+		tokenizer.Succ()
+		return n
 	}
 
 	if tokenizer.Prefetch(1).Test(TokenLparen) {

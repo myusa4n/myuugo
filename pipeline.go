@@ -144,6 +144,11 @@ func traverse(node *Node) Type {
 		node.exprType = node.variable.varType
 		return node.variable.varType
 	}
+	if node.kind == NodeString {
+		var runeType = NewType(TypeRune)
+		node.exprType = Type{kind: TypePtr, ptrTo: &runeType}
+		return node.exprType
+	}
 	if node.kind == NodeIndex {
 		var lhsType = traverse(node.children[0])
 		var rhsType = traverse(node.children[1])
