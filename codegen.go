@@ -133,6 +133,7 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeFunctionCall {
+		// TODO: rune型と配列型の扱いについて考える
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 		for _, argument := range node.children {
 			gen(argument)

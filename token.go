@@ -144,6 +144,20 @@ func (t *Tokenizer) Tokenize(input string) {
 			t.tokens = append(t.tokens, token)
 			continue
 		}
+		if c == '\'' {
+			var token = NewToken(TokenNumber, input[:3], input)
+			input = input[1:]
+			var content = runeAt(input, 0)
+			input = input[1:]
+			var close = runeAt(input, 0)
+			if close != '\'' {
+				madden("文字リテラルの指定が不正です")
+			}
+			token.val = int(content)
+			t.tokens = append(t.tokens, token)
+			input = input[1:]
+			continue
+		}
 		errorAt(input, "トークナイズできません")
 	}
 	t.tokens = append(t.tokens, NewToken(TokenEof, "", ""))

@@ -425,5 +425,12 @@ func main() {
   return x[0] + y
 }
 "
+assert 2 "
+package main
+
+func main() {
+  return 'c' - 'a'
+}
+"
 
 echo OK
