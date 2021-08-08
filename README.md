@@ -37,6 +37,7 @@ func main() {
   for n = 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
-  return ans
+  printf("ans is %d\n", ans)
+  return
 }
 ```
