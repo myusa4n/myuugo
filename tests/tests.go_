@@ -70,6 +70,8 @@ func main() {
 	test("string test 1", 0, stringTest1())
 	test("string test 2", 0, stringTest2())
 
+	test("comment test 1", 0, commentTest1())
+
 	puts("OK")
 }
 
@@ -289,4 +291,15 @@ func stringTest2() {
   var a = 3
   var b = 2
   printf("%d + %d = %d\n", a, b, a + b)
+}
+
+func commentTest1() int {
+  var comment = 0
+  // ok?
+  /*
+  comment = 10
+  ng?
+  */
+  return comment
+  // ok！
 }

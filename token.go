@@ -111,6 +111,25 @@ func (t *Tokenizer) Tokenize(path string) {
 	}
 
 	for input != "" {
+		// 行コメントをスキップ
+		if strings.HasPrefix(input, "//") {
+			input = input[2:]
+			for runeAt(input, 0) != '\n' {
+				input = input[1:]
+			}
+			continue
+		}
+		// 複数行コメントをスキップ
+		if strings.HasPrefix(input, "/*") {
+			input = input[2:]
+			var start = strings.Index(input, "*/")
+			if start == -1 {
+				errorAt(input, "コメントが閉じられていません")
+			}
+			input = input[start+2:]
+			continue
+		}
+
 		var isSymbol = false
 		for _, symbol := range symbols {
 			var strSymbol = string(symbol)
