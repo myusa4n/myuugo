@@ -73,9 +73,15 @@ func gen(node *Node) {
 		genLvalue(node.children[0]) // lhs
 		gen(node.children[1])       // rhs
 
-		fmt.Println("  pop rdi")
-		fmt.Println("  pop rax")
-		fmt.Println("  mov [rax], rdi")
+		if Sizeof(node.children[0].exprType) == 1 {
+			fmt.Println("  pop rdi")
+			fmt.Println("  pop rax")
+			fmt.Println("  mov [rax], dil")
+		} else { // 8
+			fmt.Println("  pop rdi")
+			fmt.Println("  pop rax")
+			fmt.Println("  mov [rax], rdi")
+		}
 		return
 	}
 	if node.kind == NodeMetaIf {
