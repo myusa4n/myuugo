@@ -11,9 +11,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	userInput = os.Args[1]
+	var path = os.Args[1]
 	tokenizer = NewTokenizer()
-	tokenizer.Tokenize(userInput)
+	tokenizer.Tokenize(path)
 	program()
 	pipeline(code)
 

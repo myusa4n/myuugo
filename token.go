@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"unicode"
@@ -73,17 +74,29 @@ func NewToken(kind TokenKind, str string, rest string) Token {
 type Tokenizer struct {
 	tokens []Token // inputをトークナイズした結果
 	pos    int     // 現在着目しているトークンの添数
-	input  string  // ユーザーからの入力プログラム
 }
 
 func NewTokenizer() *Tokenizer {
 	return &Tokenizer{}
 }
 
-func (t *Tokenizer) Tokenize(input string) {
+func readFile(path string) string {
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		madden("ファイル%sの読み取りに失敗しました", path)
+	}
+	if len(bytes) == 0 || bytes[len(bytes)-1] != '\n' {
+		bytes = append(bytes, '\n')
+	}
+	return string(bytes)
+}
+
+func (t *Tokenizer) Tokenize(path string) {
+	userInput = readFile(path)
+	filename = path
 	t.tokens = []Token{}
 	t.pos = 0
-	t.input = input
+	var input = userInput
 
 	var symbols = []TokenKind{
 		TokenDoubleEqual, TokenNotEqual, TokenGreaterEqual, TokenLessEqual,

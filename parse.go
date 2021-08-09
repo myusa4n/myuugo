@@ -3,20 +3,40 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 var tokenizer *Tokenizer
 var userInput string
+var filename string
 
-func errorAt(str string, format string, args ...interface{}) {
-	fmt.Fprintln(os.Stderr, userInput)
-	pos := len(userInput) - len(str)
-	if pos > 0 {
-		fmt.Fprintf(os.Stderr, "%*s", pos, " ")
+// エラーの起きた場所を報告するための関数
+// 下のようなフォーマットでエラーメッセージを表示する
+//
+// foo.c:10: x = y + + 5;
+//                   ^ 式ではありません
+func errorAt(rest string, message string) {
+	// 行番号と、restがその行の何番目から始まるかを見つける
+	var lineNumber = 1
+	var startIndex = 0
+	for _, c := range userInput[:len(userInput)-len(rest)] {
+		if c == '\n' {
+			lineNumber += 1
+			startIndex = 0
+		} else if c == '\t' {
+			startIndex += 4 // タブは空白4文字扱いとする
+		} else {
+			startIndex += 1
+		}
 	}
-	fmt.Fprintf(os.Stderr, "^ ")
-	fmt.Fprintf(os.Stderr, format, args...)
-	fmt.Fprintln(os.Stderr, "")
+	for i, line := range strings.Split(userInput, "\n") {
+		if i+1 == lineNumber {
+			// 見つかった行をファイル名と行番号と一緒に表示
+			var indent, _ = fmt.Fprintf(os.Stderr, "%s:%d: ", filename, lineNumber)
+			fmt.Fprintln(os.Stderr, line)
+			fmt.Fprintf(os.Stderr, "%*s^ %s\n", indent+startIndex, " ", message)
+		}
+	}
 	os.Exit(1)
 }
 
@@ -51,7 +71,7 @@ func (t *Tokenizer) consumeIdentifier() (Token, bool) {
 func (t *Tokenizer) expectIdentifier() Token {
 	token, ok := t.consumeIdentifier()
 	if !ok {
-		errorAt(token.str, "識別子ではありません")
+		errorAt(token.rest, "識別子ではありません")
 	}
 	return token
 }
@@ -61,7 +81,7 @@ func (t *Tokenizer) expectIdentifier() Token {
 func (t *Tokenizer) expectNumber() int {
 	token := t.Fetch()
 	if !t.Test(TokenNumber) {
-		errorAt(token.str, "数ではありません")
+		errorAt(token.rest, "数ではありません")
 	}
 	var val = token.val
 	tokenizer.Succ()
@@ -73,7 +93,7 @@ func (t *Tokenizer) expectNumber() int {
 func (t *Tokenizer) expectString() string {
 	token := t.Fetch()
 	if !t.Test(TokenString) {
-		errorAt(token.str, "文字列ではありません")
+		errorAt(token.rest, "文字列ではありません")
 	}
 	var val = token.str
 	tokenizer.Succ()
@@ -373,7 +393,7 @@ func forStmt() *Node {
 func metaIfStmt() *Node {
 	token := tokenizer.Fetch()
 	if !token.Test(TokenIf) {
-		errorAt(token.str, "'%s'ではありません", TokenIf)
+		errorAt(token.rest, "'"+string(TokenIf)+"'ではありません")
 	}
 
 	var ifNode = ifStmt()
@@ -526,7 +546,7 @@ func variableRef() *Node {
 	var node = NewLeafNode(NodeVariable)
 	node.variable = Env.FindVar(currentFuncLabel, tok)
 	if node.variable == nil {
-		errorAt(tok.rest, "未定義の変数です %s", tok.str)
+		errorAt(tok.rest, "未定義の変数です")
 	}
 	return node
 }
@@ -536,7 +556,7 @@ func localVariableDeclaration() *Node {
 	var node = NewLeafNode(NodeVariable)
 	lvar := Env.FindLocalVar(currentFuncLabel, tok)
 	if lvar != nil {
-		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
+		errorAt(tok.rest, "すでに定義済みの変数です")
 	}
 	node.variable = Env.AddLocalVar(currentFuncLabel, tok)
 	return node
@@ -547,7 +567,7 @@ func topLevelVariableDeclaration() *Node {
 	var node = NewLeafNode(NodeVariable)
 	lvar := Env.FindTopLevelVar(tok)
 	if lvar != nil {
-		errorAt(tok.rest, "すでに定義済みの変数です %s", tok.str)
+		errorAt(tok.rest, "すでに定義済みの変数です")
 	}
 	node.variable = Env.AddTopLevelVar(tok)
 	return node
