@@ -298,7 +298,7 @@ func commentTest1() int {
   // ok?
   /*
   comment = 10
-  ng?
+  日本語も行ける？
   */
   return comment
   // ok！

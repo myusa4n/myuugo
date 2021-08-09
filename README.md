@@ -11,6 +11,7 @@ package main
 
 var memo [11]int
 
+// 
 func fib(n int) int {
   if memo[n] != -1 {
     return memo[n]
