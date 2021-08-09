@@ -272,6 +272,10 @@ func localStmt() *Node {
 	}
 
 	if tokenizer.Consume(TokenReturn) {
+		if tokenizer.Test(TokenNewLine) || tokenizer.Test(TokenSemicolon) {
+			// 空のreturn文
+			return NewLeafNode(NodeReturn)
+		}
 		return NewNode(NodeReturn, []*Node{expr()})
 	} else {
 		var n = expr()
@@ -331,8 +335,7 @@ func funcDefinition() *Node {
 		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.variable.varType)
 	}
 
-	// 本当はvoid型が正しいけれど、テストを簡単にするためしばらくはint型で定義
-	fn.ReturnValueType = NewType(TypeInt)
+	fn.ReturnValueType = NewType(TypeVoid)
 	var ty, ok = tokenizer.consumeType()
 	if ok {
 		fn.ReturnValueType = ty

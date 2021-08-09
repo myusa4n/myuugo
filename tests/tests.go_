@@ -70,7 +70,8 @@ func main() {
 	test("string test 1", 0, stringTest1())
 	test("string test 2", 0, stringTest2())
 
-	test("comment test 1", 0, commentTest1())
+  puts("comment test 1")
+	commentTest1()
 
 	puts("OK")
 }
@@ -282,24 +283,26 @@ func runeTest3() int {
   return 'c' - 'a'
 }
 
-func stringTest1() {
+func stringTest1() int {
   var msg string = "hello world"
   puts(msg)
+  return 0
 }
 
-func stringTest2() {
+func stringTest2() int {
   var a = 3
   var b = 2
   printf("%d + %d = %d\n", a, b, a + b)
+  return 0
 }
 
-func commentTest1() int {
+func commentTest1() {
   var comment = 0
   // ok?
   /*
   comment = 10
   日本語も行ける？
   */
-  return comment
+  return
   // ok！
 }

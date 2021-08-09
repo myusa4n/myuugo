@@ -21,7 +21,17 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.kind == NodeReturn {
-		traverse(node.children[0])
+		fn, _ := Env.FunctionTable[currentFuncLabel]
+		if fn.ReturnValueType.kind == TypeVoid {
+			if len(node.children) > 0 {
+				madden("返り値の型がvoid型の関数内でreturnに引数を渡すことはできません")
+			}
+		} else {
+			traverse(node.children[0])
+			if !TypeCompatable(fn.ReturnValueType, node.children[0].exprType) {
+				madden("返り値の型とreturnの引数の型が一致しません")
+			}
+		}
 		node.exprType = stmtType
 		return stmtType
 	}

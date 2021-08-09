@@ -50,8 +50,13 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeReturn {
-		gen(node.children[0])
-		fmt.Println("  pop rax")
+		if len(node.children) > 0 {
+			gen(node.children[0])
+			fmt.Println("  pop rax")
+		} else {
+			// void型
+			fmt.Println("  mov rax, 0")
+		}
 		fmt.Println("  mov rsp, rbp")
 		fmt.Println("  pop rbp")
 		fmt.Println("  ret")
