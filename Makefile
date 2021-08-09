@@ -4,7 +4,7 @@ main: $(SRCS)
 	go build -o main $(SRCS)
 
 test: main
-	./test.sh
+	/bin/bash -e ./test.sh
 
 clean:
 	rm -f main *.o *~ tmp*
