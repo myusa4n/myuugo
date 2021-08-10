@@ -197,6 +197,20 @@ func gen(node *Node) {
 		fmt.Println("  push rax")
 		return
 	}
+	if node.kind == NodeShortVarDeclStmt {
+		genLvalue(node.children[0]) // lhs
+		gen(node.children[1])       // rhs
+
+		fmt.Println("  pop rdi")
+		fmt.Println("  pop rax")
+
+		if Sizeof(node.children[0].exprType) == 1 {
+			fmt.Println("  mov [rax], dil")
+		} else { // 8
+			fmt.Println("  mov [rax], rdi")
+		}
+		return
+	}
 	if node.kind == NodeLocalVarStmt {
 		if len(node.children) == 2 {
 			genLvalue(node.children[0]) // lhs

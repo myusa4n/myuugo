@@ -248,6 +248,14 @@ func simpleStmt() *Node {
 	if tokenizer.Test(TokenNewLine) || tokenizer.Test(TokenSemicolon) {
 		return nil
 	}
+
+	if tokenizer.Test(TokenIdentifier) && tokenizer.Prefetch(1).Test(TokenColonEqual) {
+		// 短絡変数宣言
+		var lvar = localVariableDeclaration()
+		tokenizer.Expect(TokenColonEqual)
+		return NewBinaryNode(NodeShortVarDeclStmt, lvar, expr())
+	}
+
 	var n = expr()
 	if tokenizer.Consume(TokenEqual) {
 		// 代入文
@@ -270,6 +278,12 @@ func localStmt() *Node {
 	if tokenizer.Test(TokenVar) {
 		return localVarStmt()
 	}
+	// 短絡変数宣言
+	if tokenizer.Test(TokenIdentifier) && tokenizer.Prefetch(1).Test(TokenColonEqual) {
+		var lvar = localVariableDeclaration()
+		tokenizer.Expect(TokenColonEqual)
+		return NewBinaryNode(NodeShortVarDeclStmt, lvar, expr())
+	}
 
 	if tokenizer.Consume(TokenReturn) {
 		if tokenizer.Test(TokenNewLine) || tokenizer.Test(TokenSemicolon) {
@@ -277,15 +291,14 @@ func localStmt() *Node {
 			return NewLeafNode(NodeReturn)
 		}
 		return NewNode(NodeReturn, []*Node{expr()})
-	} else {
-		var n = expr()
-		if tokenizer.Consume(TokenEqual) {
-			// 代入文
-			var e = expr()
-			return NewBinaryNode(NodeAssign, n, e)
-		}
-		return NewNode(NodeExprStmt, []*Node{n})
 	}
+	var n = expr()
+	if tokenizer.Consume(TokenEqual) {
+		// 代入文
+		var e = expr()
+		return NewBinaryNode(NodeAssign, n, e)
+	}
+	return NewNode(NodeExprStmt, []*Node{n})
 }
 
 // トップレベル変数は初期化式は与えないことにする

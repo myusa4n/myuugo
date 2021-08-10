@@ -36,6 +36,7 @@ const (
 	TokenEqual        TokenKind = "="
 	TokenDoubleEqual  TokenKind = "=="
 	TokenNotEqual     TokenKind = "!="
+	TokenColonEqual   TokenKind = ":="
 	TokenLessEqual    TokenKind = "<="
 	TokenGreaterEqual TokenKind = ">="
 	TokenLess         TokenKind = "<"
@@ -99,7 +100,7 @@ func (t *Tokenizer) Tokenize(path string) {
 	var input = userInput
 
 	var symbols = []TokenKind{
-		TokenDoubleEqual, TokenNotEqual, TokenGreaterEqual, TokenLessEqual,
+		TokenDoubleEqual, TokenNotEqual, TokenGreaterEqual, TokenLessEqual, TokenColonEqual,
 		TokenPlus, TokenMinus, TokenStar, TokenSlash, TokenLparen, TokenRparen, TokenLess, TokenGreater, TokenSemicolon, TokenNewLine, TokenEqual, TokenLbrace, TokenRbrace, TokenComma, TokenAmpersand, TokenLSBrace, TokenRSBrace,
 	}
 	var keywords = []TokenKind{

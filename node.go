@@ -3,35 +3,36 @@ package main
 type NodeKind string
 
 const (
-	NodeAdd             NodeKind = "ADD"               // +
-	NodeSub             NodeKind = "SUB"               // -
-	NodeMul             NodeKind = "MUL"               // *
-	NodeDiv             NodeKind = "DIV"               // /
-	NodeEql             NodeKind = "EQL"               // ==
-	NodeNotEql          NodeKind = "NOT EQL"           // !=
-	NodeLess            NodeKind = "LESS"              // <
-	NodeLessEql         NodeKind = "LESS EQL"          // <=
-	NodeGreater         NodeKind = "GREATER"           // >
-	NodeGreaterEql      NodeKind = "GREATER EQL"       // >=
-	NodeAssign          NodeKind = "ASSIGN"            // =
-	NodeReturn          NodeKind = "RETURN"            // return
-	NodeVariable        NodeKind = "VARIABLE"          // 変数参照
-	NodeNum             NodeKind = "NUM"               // 整数
-	NodeMetaIf          NodeKind = "META IF"           // if ... else ...
-	NodeIf              NodeKind = "IF"                // if
-	NodeElse            NodeKind = "ELSE"              // else
-	NodeStmtList        NodeKind = "STMT LIST"         // stmt*
-	NodeFor             NodeKind = "FOR"               // for
-	NodeFunctionCall    NodeKind = "FUNCTION CALL"     // fn()
-	NodeFunctionDef     NodeKind = "FUNCTION DEF"      // func fn() { ... }
-	NodeAddr            NodeKind = "ADDR"              // &
-	NodeDeref           NodeKind = "DEREF"             // *addr
-	NodeLocalVarStmt    NodeKind = "LOCAL VAR STMT"    // (local) var ...
-	NodeTopLevelVarStmt NodeKind = "TOPLEVEL VAR STMT" // (toplevel) var ...
-	NodePackageStmt     NodeKind = "PACKAGE STMT"      // package ...
-	NodeExprStmt        NodeKind = "EXPR STMT"         // 式文
-	NodeIndex           NodeKind = "INDEX"             // 添字アクセス
-	NodeString          NodeKind = "STRING"            // 文字列
+	NodeAdd              NodeKind = "ADD"                 // +
+	NodeSub              NodeKind = "SUB"                 // -
+	NodeMul              NodeKind = "MUL"                 // *
+	NodeDiv              NodeKind = "DIV"                 // /
+	NodeEql              NodeKind = "EQL"                 // ==
+	NodeNotEql           NodeKind = "NOT EQL"             // !=
+	NodeLess             NodeKind = "LESS"                // <
+	NodeLessEql          NodeKind = "LESS EQL"            // <=
+	NodeGreater          NodeKind = "GREATER"             // >
+	NodeGreaterEql       NodeKind = "GREATER EQL"         // >=
+	NodeAssign           NodeKind = "ASSIGN"              // =
+	NodeReturn           NodeKind = "RETURN"              // return
+	NodeVariable         NodeKind = "VARIABLE"            // 変数参照
+	NodeNum              NodeKind = "NUM"                 // 整数
+	NodeMetaIf           NodeKind = "META IF"             // if ... else ...
+	NodeIf               NodeKind = "IF"                  // if
+	NodeElse             NodeKind = "ELSE"                // else
+	NodeStmtList         NodeKind = "STMT LIST"           // stmt*
+	NodeFor              NodeKind = "FOR"                 // for
+	NodeFunctionCall     NodeKind = "FUNCTION CALL"       // fn()
+	NodeFunctionDef      NodeKind = "FUNCTION DEF"        // func fn() { ... }
+	NodeAddr             NodeKind = "ADDR"                // &
+	NodeDeref            NodeKind = "DEREF"               // *addr
+	NodeLocalVarStmt     NodeKind = "LOCAL VAR STMT"      // (local) var ...
+	NodeTopLevelVarStmt  NodeKind = "TOPLEVEL VAR STMT"   // (toplevel) var ...
+	NodePackageStmt      NodeKind = "PACKAGE STMT"        // package ...
+	NodeExprStmt         NodeKind = "EXPR STMT"           // 式文
+	NodeIndex            NodeKind = "INDEX"               // 添字アクセス
+	NodeString           NodeKind = "STRING"              // 文字列
+	NodeShortVarDeclStmt NodeKind = "SHORT VAR DECL STMT" // 短絡変数宣言
 )
 
 type Node struct {

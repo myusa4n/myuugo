@@ -73,6 +73,8 @@ func main() {
   puts("comment test 1")
 	commentTest1()
 
+  test("short var decl test 1", 22, shortVarDeclTest1())
+
 	puts("OK")
 }
 
@@ -305,4 +307,10 @@ func commentTest1() {
   */
   return
   // ok！
+}
+
+func shortVarDeclTest1() int {
+  number := 20
+  number = number + 2
+  return number
 }

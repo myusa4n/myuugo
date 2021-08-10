@@ -45,6 +45,15 @@ func traverse(node *Node) Type {
 		node.exprType = stmtType
 		return stmtType
 	}
+	if node.kind == NodeShortVarDeclStmt {
+		traverse(node.children[0])
+		var valueType = traverse(node.children[1])
+
+		node.children[0].variable.varType = valueType
+		node.children[0].exprType = valueType
+		node.exprType = stmtType
+		return stmtType
+	}
 	if node.kind == NodeMetaIf {
 		traverse(node.children[0])
 		if node.children[1] != nil {
@@ -85,8 +94,8 @@ func traverse(node *Node) Type {
 		for _, param := range node.children[1:] { // 引数
 			traverse(param)
 		}
-		Env.AlignLocalVars(currentFuncLabel)
 		traverse(node.children[0]) // 関数本体
+		Env.AlignLocalVars(currentFuncLabel)
 		currentFuncLabel = prevFuncLabel
 		node.exprType = stmtType
 		return stmtType
