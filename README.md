@@ -5,7 +5,7 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/08/09更新)
+## 現状(2021/08/10更新)
 ```go
 package main
 
@@ -33,8 +33,7 @@ func setMinusOne(n *int) {
   フィボナッチ数の総和を計算するプログラム
 */
 func main() {
-  var n int
-  for n = 0; n <= 10; n = n + 1 {
+  for n := 0; n <= 10; n = n + 1 {
     setMinusOne(&memo[n]) // 初期化
   }
 

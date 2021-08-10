@@ -24,8 +24,7 @@ func setMinusOne(n *int) {
   フィボナッチ数の総和を計算するプログラム
 */
 func main() {
-  var n int
-  for n = 0; n <= 10; n = n + 1 {
+  for n := 0; n <= 10; n = n + 1 {
     setMinusOne(&memo[n]) // 初期化
   }
 
