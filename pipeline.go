@@ -13,6 +13,30 @@ func traverse(node *Node) Type {
 		node.exprType = stmtType
 		return stmtType
 	}
+	if node.kind == NodeExprList {
+		for _, c := range node.children {
+			traverse(c)
+		}
+		// とりあえず
+		node.exprType = stmtType
+		return stmtType
+	}
+	if node.kind == NodeLocalVarList {
+		for _, c := range node.children {
+			traverse(c)
+		}
+		// とりあえず
+		node.exprType = stmtType
+		return stmtType
+	}
+	if node.kind == NodeExprList {
+		for _, c := range node.children {
+			traverse(c)
+		}
+		// とりあえず
+		node.exprType = stmtType
+		return stmtType
+	}
 	if node.kind == NodeStmtList {
 		for _, stmt := range node.children {
 			traverse(stmt)
@@ -36,21 +60,39 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.kind == NodeAssign {
-		var lhsType = traverse(node.children[0]) // lhs
-		var rhsType = traverse(node.children[1]) // rhs
+		var lhs = node.children[0]
+		var rhs = node.children[1]
+		traverse(lhs)
+		traverse(rhs)
 
-		if !TypeCompatable(lhsType, rhsType) {
-			madden("代入式の左辺と右辺の型が違います ")
+		if len(lhs.children) != len(rhs.children) {
+			madden("代入式の左辺と右辺のパラメータの数が異なります")
 		}
+		for i, l := range lhs.children {
+			r := rhs.children[i]
+			if !TypeCompatable(l.exprType, r.exprType) {
+				madden("代入式の左辺と右辺の型が違います ")
+			}
+		}
+
 		node.exprType = stmtType
 		return stmtType
 	}
 	if node.kind == NodeShortVarDeclStmt {
-		traverse(node.children[0])
-		var valueType = traverse(node.children[1])
+		var lhs = node.children[0]
+		var rhs = node.children[1]
+		traverse(lhs)
+		traverse(rhs)
 
-		node.children[0].variable.varType = valueType
-		node.children[0].exprType = valueType
+		if len(lhs.children) != len(rhs.children) {
+			madden(":=の左辺と右辺のパラメータの数が異なります")
+		}
+
+		for i, l := range lhs.children {
+			r := rhs.children[i]
+			l.variable.varType = r.exprType
+			l.exprType = r.exprType
+		}
 		node.exprType = stmtType
 		return stmtType
 	}

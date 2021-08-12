@@ -74,6 +74,7 @@ func main() {
 	commentTest1()
 
   test("short var decl test 1", 22, shortVarDeclTest1())
+  test("short var decl test 2", 100, shortVarDeclTest2())
 
 	puts("OK")
 }
@@ -313,4 +314,10 @@ func shortVarDeclTest1() int {
   number := 20
   number = number + 2
   return number
+}
+
+func shortVarDeclTest2() int {
+  num2, num5 := 1, -10
+  num2, num5 = 2, 50
+  return num2 * num5
 }

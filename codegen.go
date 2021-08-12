@@ -75,17 +75,24 @@ func gen(node *Node) {
 	}
 	if node.kind == NodeAssign {
 		// TODO: 左辺が配列だった場合は丸々コピーさせる必要がある
-		genLvalue(node.children[0]) // lhs
-		gen(node.children[1])       // rhs
+		var lhs = node.children[0]
+		var rhs = node.children[1]
 
-		if Sizeof(node.children[0].exprType) == 1 {
-			fmt.Println("  pop rdi")
-			fmt.Println("  pop rax")
-			fmt.Println("  mov [rax], dil")
-		} else { // 8
-			fmt.Println("  pop rdi")
-			fmt.Println("  pop rax")
-			fmt.Println("  mov [rax], rdi")
+		for i, l := range lhs.children {
+			r := rhs.children[i]
+
+			genLvalue(l)
+			gen(r)
+
+			if Sizeof(l.exprType) == 1 {
+				fmt.Println("  pop rdi")
+				fmt.Println("  pop rax")
+				fmt.Println("  mov [rax], dil")
+			} else { // 8
+				fmt.Println("  pop rdi")
+				fmt.Println("  pop rax")
+				fmt.Println("  mov [rax], rdi")
+			}
 		}
 		return
 	}
@@ -152,6 +159,7 @@ func gen(node *Node) {
 		for i := range node.children {
 			fmt.Println("  pop " + registers[len(node.children)-i-1])
 		}
+		// 質はrax, rdi, rsi, rdx, rcx, r8, r9 に入れればいいか
 		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
 		fmt.Println("  call " + node.label)
 		fmt.Println("  push rax")
@@ -198,16 +206,23 @@ func gen(node *Node) {
 		return
 	}
 	if node.kind == NodeShortVarDeclStmt {
-		genLvalue(node.children[0]) // lhs
-		gen(node.children[1])       // rhs
+		var lhs = node.children[0]
+		var rhs = node.children[1]
 
-		fmt.Println("  pop rdi")
-		fmt.Println("  pop rax")
+		for i, l := range lhs.children {
+			r := rhs.children[i]
 
-		if Sizeof(node.children[0].exprType) == 1 {
-			fmt.Println("  mov [rax], dil")
-		} else { // 8
-			fmt.Println("  mov [rax], rdi")
+			genLvalue(l)
+			gen(r)
+
+			fmt.Println("  pop rdi")
+			fmt.Println("  pop rax")
+
+			if Sizeof(l.exprType) == 1 {
+				fmt.Println("  mov [rax], dil")
+			} else { // 8
+				fmt.Println("  mov [rax], rdi")
+			}
 		}
 		return
 	}

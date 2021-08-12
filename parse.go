@@ -249,20 +249,25 @@ func simpleStmt() *Node {
 		return nil
 	}
 
-	if tokenizer.Test(TokenIdentifier) && tokenizer.Prefetch(1).Test(TokenColonEqual) {
-		// 短絡変数宣言
-		var lvar = localVariableDeclaration()
-		tokenizer.Expect(TokenColonEqual)
-		return NewBinaryNode(NodeShortVarDeclStmt, lvar, expr())
+	var pos = 0
+	var nxtToken = tokenizer.Prefetch(pos)
+	for !nxtToken.Test(TokenNewLine) && !nxtToken.Test(TokenSemicolon) {
+		if tokenizer.Prefetch(pos).Test(TokenEqual) {
+			// 代入文としてパース
+			var n = exprList()
+			tokenizer.Expect(TokenEqual)
+			return NewBinaryNode(NodeAssign, n, exprList())
+		}
+		if tokenizer.Prefetch(pos).Test(TokenColonEqual) {
+			// 短絡変数宣言としてパース
+			var n = localVarList()
+			tokenizer.Expect(TokenColonEqual)
+			return NewBinaryNode(NodeShortVarDeclStmt, n, exprList())
+		}
+		pos += 1
+		nxtToken = tokenizer.Prefetch(pos)
 	}
-
-	var n = expr()
-	if tokenizer.Consume(TokenEqual) {
-		// 代入文
-		var e = expr()
-		return NewBinaryNode(NodeAssign, n, e)
-	}
-	return NewNode(NodeExprStmt, []*Node{n})
+	return NewNode(NodeExprStmt, []*Node{expr()})
 }
 
 func localStmt() *Node {
@@ -278,13 +283,6 @@ func localStmt() *Node {
 	if tokenizer.Test(TokenVar) {
 		return localVarStmt()
 	}
-	// 短絡変数宣言
-	if tokenizer.Test(TokenIdentifier) && tokenizer.Prefetch(1).Test(TokenColonEqual) {
-		var lvar = localVariableDeclaration()
-		tokenizer.Expect(TokenColonEqual)
-		return NewBinaryNode(NodeShortVarDeclStmt, lvar, expr())
-	}
-
 	if tokenizer.Consume(TokenReturn) {
 		if tokenizer.Test(TokenNewLine) || tokenizer.Test(TokenSemicolon) {
 			// 空のreturn文
@@ -292,13 +290,7 @@ func localStmt() *Node {
 		}
 		return NewNode(NodeReturn, []*Node{expr()})
 	}
-	var n = expr()
-	if tokenizer.Consume(TokenEqual) {
-		// 代入文
-		var e = expr()
-		return NewBinaryNode(NodeAssign, n, e)
-	}
-	return NewNode(NodeExprStmt, []*Node{n})
+	return simpleStmt()
 }
 
 // トップレベル変数は初期化式は与えないことにする
@@ -396,7 +388,7 @@ func forStmt() *Node {
 	// 通常のfor文
 	node.children[0] = s
 	tokenizer.Expect(TokenSemicolon)
-	node.children[1] = simpleStmt().children[0] // expr
+	node.children[1] = expr()
 	tokenizer.Expect(TokenSemicolon)
 	node.children[2] = simpleStmt()
 
@@ -435,6 +427,23 @@ func elseStmt() *Node {
 	var stmts = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 	return NewNode(NodeElse, []*Node{stmts})
+}
+
+func localVarList() *Node {
+	var lvars = []*Node{localVariableDeclaration()}
+	for tokenizer.Consume(TokenComma) {
+		lvars = append(lvars, localVariableDeclaration())
+	}
+	return NewNode(NodeLocalVarList, lvars)
+}
+
+func exprList() *Node {
+	var exprs = []*Node{expr()}
+
+	for tokenizer.Consume(TokenComma) {
+		exprs = append(exprs, expr())
+	}
+	return NewNode(NodeExprList, exprs)
 }
 
 func expr() *Node {
