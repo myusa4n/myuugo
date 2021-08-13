@@ -24,6 +24,15 @@ func fib(n int) int {
   return memo[n]
 }
 
+// フィボナッチ数をO(n)で計算する
+func fib2(n int) (int, int) {
+  if n == 1 {
+    return 1, 1
+  }
+  cur, prev := fib2(n - 1)
+  return cur + prev, cur
+}
+
 func setMinusOne(n *int) {
   *n = -1
 }
