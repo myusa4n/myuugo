@@ -51,8 +51,15 @@ func gen(node *Node) {
 	}
 	if node.kind == NodeReturn {
 		if len(node.children) > 0 {
-			gen(node.children[0])
-			fmt.Println("  pop rax")
+			var exprs = node.children[0].children
+			for _, e := range exprs {
+				gen(e)
+			}
+
+			var registers = [7]string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+			for i := range exprs {
+				fmt.Println("  pop " + registers[len(exprs)-i-1])
+			}
 		} else {
 			// void型
 			fmt.Println("  mov rax, 0")
@@ -77,6 +84,27 @@ func gen(node *Node) {
 		// TODO: 左辺が配列だった場合は丸々コピーさせる必要がある
 		var lhs = node.children[0]
 		var rhs = node.children[1]
+
+		if rhs.exprType.kind == TypeMultiple && len(rhs.children) == 1 {
+			gen(rhs.children[0])
+
+			// 分解する
+			// 右端の変数から代入されることになる
+			for i := len(lhs.children) - 1; i >= 0; i-- {
+				var l = lhs.children[i]
+				genLvalue(l)
+				if Sizeof(l.exprType) == 1 {
+					fmt.Println("  pop rax")
+					fmt.Println("  pop rdi")
+					fmt.Println("  mov [rax], dil")
+				} else { // 8
+					fmt.Println("  pop rax")
+					fmt.Println("  pop rdi")
+					fmt.Println("  mov [rax], rdi")
+				}
+			}
+			return
+		}
 
 		for i, l := range lhs.children {
 			r := rhs.children[i]
@@ -152,16 +180,25 @@ func gen(node *Node) {
 	}
 	if node.kind == NodeFunctionCall {
 		// TODO: rune型と配列型の扱いについて考える
-		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+		var registers = [7]string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 		for _, argument := range node.children {
 			gen(argument)
 		}
 		for i := range node.children {
-			fmt.Println("  pop " + registers[len(node.children)-i-1])
+			fmt.Println("  pop " + registers[len(node.children)-i])
 		}
-		// 質はrax, rdi, rsi, rdx, rcx, r8, r9 に入れればいいか
 		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
 		fmt.Println("  call " + node.label)
+
+		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
+		fn, ok := Env.FunctionTable[node.label]
+		if ok && fn.ReturnValueType.kind == TypeMultiple {
+			// raxから順にスタックに突っ込んでいく
+			for i := range fn.ReturnValueType.components {
+				fmt.Println("  push " + registers[i])
+			}
+			return
+		}
 		fmt.Println("  push rax")
 		return
 	}
@@ -253,6 +290,12 @@ func gen(node *Node) {
 	}
 	if node.kind == NodeExprStmt {
 		gen(node.children[0])
+		if node.children[0].exprType.kind == TypeMultiple {
+			for range node.children[0].exprType.components {
+				fmt.Println("  pop rax")
+			}
+			return
+		}
 		fmt.Println("  pop rax")
 		return
 	}

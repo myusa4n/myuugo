@@ -288,7 +288,7 @@ func localStmt() *Node {
 			// 空のreturn文
 			return NewLeafNode(NodeReturn)
 		}
-		return NewNode(NodeReturn, []*Node{expr()})
+		return NewNode(NodeReturn, []*Node{exprList()})
 	}
 	return simpleStmt()
 }
@@ -341,11 +341,19 @@ func funcDefinition() *Node {
 	}
 
 	fn.ReturnValueType = NewType(TypeVoid)
-	var ty, ok = tokenizer.consumeType()
-	if ok {
-		fn.ReturnValueType = ty
+	if tokenizer.Consume(TokenLparen) { // 多値
+		var types = []Type{tokenizer.expectType()}
+		for tokenizer.Consume(TokenComma) {
+			types = append(types, tokenizer.expectType())
+		}
+		tokenizer.Expect(TokenRparen)
+		fn.ReturnValueType = NewMultipleType(types)
+	} else {
+		var ty, ok = tokenizer.consumeType()
+		if ok {
+			fn.ReturnValueType = ty
+		}
 	}
-
 	tokenizer.Expect(TokenLbrace)
 
 	var node = NewNode(NodeFunctionDef, make([]*Node, 0))

@@ -76,6 +76,8 @@ func main() {
   test("short var decl test 1", 22, shortVarDeclTest1())
   test("short var decl test 2", 100, shortVarDeclTest2())
 
+  test("multiple value test 1", 13, multipleValueTest1())
+
 	puts("OK")
 }
 
@@ -320,4 +322,23 @@ func shortVarDeclTest2() int {
   num2, num5 := 1, -10
   num2, num5 = 2, 50
   return num2 * num5
+}
+
+// (n番目のfibの値, n-1番目のfibの値)を返す
+func fib2(n int) (int, int) {
+  if n == 1 {
+    return 1, 1
+  }
+  var cur int
+  var prev int
+  cur, prev = fib2(n - 1)
+  return cur + prev, cur
+}
+
+func multipleValueTest1() int {
+  // 1, 2, 3, 5, 8, 13
+  var m int
+  var _ int
+  m, _ = fib2(6)
+  return m
 }

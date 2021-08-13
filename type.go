@@ -9,17 +9,23 @@ const (
 	TypeVoid      TypeKind = "[TYPE] VOID"
 	TypeArray     TypeKind = "[TYPE] ARRAY"
 	TypeStmt      TypeKind = "[TYPE] STMT"      // 簡便のため存在させている
+	TypeMultiple  TypeKind = "[TYPE] MULTIPLE"  // 関数の返り値が複数だった場合に使う
 	TypeUndefined TypeKind = "[TYPE] UNDEFINED" // まだ型を決めることができていない
 )
 
 type Type struct {
-	kind      TypeKind
-	ptrTo     *Type
-	arraySize int
+	kind       TypeKind
+	ptrTo      *Type
+	arraySize  int
+	components []Type
 }
 
 func NewType(kind TypeKind) Type {
 	return Type{kind: kind}
+}
+
+func NewMultipleType(components []Type) Type {
+	return Type{kind: TypeMultiple, components: components}
 }
 
 func NewArrayType(elemType Type, size int) Type {
@@ -50,6 +56,17 @@ func typeEquals(t1 Type, t2 Type) bool {
 	if t1.kind == TypeArray {
 		return t1.arraySize == t2.arraySize && typeEquals(*t1.ptrTo, *t2.ptrTo)
 	}
+	if t1.kind == TypeMultiple {
+		if len(t1.components) != len(t2.components) {
+			return false
+		}
+		for i := range t1.components {
+			if !typeEquals(t1.components[i], t2.components[i]) {
+				return false
+			}
+		}
+		return true
+	}
 	return true
 }
 
@@ -58,11 +75,5 @@ func IsKindOfNumber(t Type) bool {
 }
 
 func TypeCompatable(t1 Type, t2 Type) bool {
-	if t1.kind == TypePtr && t2.kind == TypePtr {
-		return typeEquals(*t1.ptrTo, *t2.ptrTo)
-	}
-	if t1.kind == TypeArray && t2.kind == TypeArray {
-		return typeEquals(*t1.ptrTo, *t2.ptrTo)
-	}
-	return IsKindOfNumber(t1) && IsKindOfNumber(t2)
+	return (IsKindOfNumber(t1) && IsKindOfNumber(t2)) || typeEquals(t1, t2)
 }

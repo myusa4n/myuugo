@@ -13,14 +13,6 @@ func traverse(node *Node) Type {
 		node.exprType = stmtType
 		return stmtType
 	}
-	if node.kind == NodeExprList {
-		for _, c := range node.children {
-			traverse(c)
-		}
-		// とりあえず
-		node.exprType = stmtType
-		return stmtType
-	}
 	if node.kind == NodeLocalVarList {
 		for _, c := range node.children {
 			traverse(c)
@@ -30,12 +22,16 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.kind == NodeExprList {
+		var types = []Type{}
 		for _, c := range node.children {
-			traverse(c)
+			types = append(types, traverse(c))
 		}
-		// とりあえず
-		node.exprType = stmtType
-		return stmtType
+		if len(types) > 1 {
+			node.exprType = NewMultipleType(types)
+		} else {
+			node.exprType = types[0]
+		}
+		return node.exprType
 	}
 	if node.kind == NodeStmtList {
 		for _, stmt := range node.children {
@@ -51,8 +47,8 @@ func traverse(node *Node) Type {
 				madden("返り値の型がvoid型の関数内でreturnに引数を渡すことはできません")
 			}
 		} else {
-			traverse(node.children[0])
-			if !TypeCompatable(fn.ReturnValueType, node.children[0].exprType) {
+			var ty = traverse(node.children[0])
+			if !TypeCompatable(fn.ReturnValueType, ty) {
 				madden("返り値の型とreturnの引数の型が一致しません")
 			}
 		}
@@ -62,17 +58,11 @@ func traverse(node *Node) Type {
 	if node.kind == NodeAssign {
 		var lhs = node.children[0]
 		var rhs = node.children[1]
-		traverse(lhs)
-		traverse(rhs)
+		var ltype = traverse(lhs)
+		var rtype = traverse(rhs)
 
-		if len(lhs.children) != len(rhs.children) {
-			madden("代入式の左辺と右辺のパラメータの数が異なります")
-		}
-		for i, l := range lhs.children {
-			r := rhs.children[i]
-			if !TypeCompatable(l.exprType, r.exprType) {
-				madden("代入式の左辺と右辺の型が違います ")
-			}
+		if !TypeCompatable(ltype, rtype) {
+			madden("代入式の左辺と右辺の型が違います ")
 		}
 
 		node.exprType = stmtType
@@ -82,10 +72,17 @@ func traverse(node *Node) Type {
 		var lhs = node.children[0]
 		var rhs = node.children[1]
 		traverse(lhs)
-		traverse(rhs)
+		var exprTypes = traverse(rhs)
 
-		if len(lhs.children) != len(rhs.children) {
-			madden(":=の左辺と右辺のパラメータの数が異なります")
+		if exprTypes.kind == TypeMultiple {
+			// componentの数だけ左辺のパラメータが存在していないといけない
+			if len(lhs.children) != len(exprTypes.components) {
+				madden(":=の左辺に要求されているパラメータの数は%dです", len(exprTypes.components))
+			}
+		} else {
+			if len(lhs.children) != len(rhs.children) {
+				madden(":=の左辺と右辺のパラメータの数が異なります")
+			}
 		}
 
 		for i, l := range lhs.children {
