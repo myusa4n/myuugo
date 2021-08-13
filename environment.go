@@ -3,30 +3,27 @@ package main
 import "strconv"
 
 type Environment struct {
-	TopLevelVars   []*Variable
+	program        *Program
 	StringLiterals []*StringLiteral
 	LocalVarTable  map[string][]*Variable
-	FunctionTable  map[string]*Function
 
 	stringLabelNumber int
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
-		TopLevelVars:   []*Variable{},
+		program:        NewProgram(),
 		StringLiterals: []*StringLiteral{},
 		LocalVarTable:  map[string][]*Variable{},
-		FunctionTable:  map[string]*Function{},
 	}
 }
 
 func (e *Environment) RegisterFunc(label string) *Function {
-	_, ok := e.FunctionTable[label]
-	if ok {
+	if e.program.FindFunction(label) != nil {
 		madden("関数%sは既に存在しています", label)
 	}
 	var fn = NewFunction(label, []Type{}, NewType(TypeUndefined))
-	e.FunctionTable[label] = fn
+	e.program.RegisterFunction(fn)
 	e.LocalVarTable[label] = []*Variable{}
 	return fn
 }
@@ -56,38 +53,22 @@ func (e *Environment) FindLocalVar(fnLabel string, token Token) *Variable {
 }
 
 func (e *Environment) FindTopLevelVar(token Token) *Variable {
-	for _, tvar := range e.TopLevelVars {
-		if tvar.name == token.str {
-			return tvar
-		}
-	}
-	return nil
+	return e.program.FindTopLevelVariable(token.str)
 }
 
 func (e *Environment) AddTopLevelVar(token Token) *Variable {
-	tvar := e.FindTopLevelVar(token)
-	if tvar != nil {
-		return tvar
-	}
-	tvar = &Variable{name: token.str, kind: VariableTopLevel, varType: Type{kind: TypeUndefined}}
-	e.TopLevelVars = append(e.TopLevelVars, tvar)
-	return tvar
+	return e.program.AddTopLevelVariable(NewType(TypeUndefined), token.str)
 }
 
 func (e *Environment) FindVar(fnLabel string, token Token) *Variable {
-	_, ok := e.FunctionTable[fnLabel]
+	ok := e.program.FindFunction(fnLabel) != nil
 	if ok {
 		lvar := e.FindLocalVar(fnLabel, token)
 		if lvar != nil {
 			return lvar
 		}
 	}
-	for _, tvar := range e.TopLevelVars {
-		if tvar.name == token.str {
-			return tvar
-		}
-	}
-	return nil
+	return e.program.FindTopLevelVariable(token.str)
 }
 
 func (e *Environment) GetFrameSize(fnLabel string) int {

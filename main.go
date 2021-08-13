@@ -14,7 +14,7 @@ func main() {
 	var path = os.Args[1]
 	tokenizer = NewTokenizer()
 	tokenizer.Tokenize(path)
-	program()
+	Parse()
 	pipeline(code)
 
 	// アセンブリの前半部分

@@ -148,7 +148,7 @@ var code []*Node
 var currentFuncLabel = ""
 var Env *Environment
 
-func program() {
+func Parse() {
 	Env = NewEnvironment()
 
 	for tokenizer.consumeEndLine() {

@@ -32,6 +32,10 @@ func NewArrayType(elemType Type, size int) Type {
 	return Type{kind: TypeArray, ptrTo: &elemType, arraySize: size}
 }
 
+func NewUndefinedType() Type {
+	return NewType(TypeUndefined)
+}
+
 func Sizeof(ty Type) int {
 	if ty.kind == TypeInt || ty.kind == TypePtr {
 		return 8

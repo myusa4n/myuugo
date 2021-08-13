@@ -13,3 +13,7 @@ type Variable struct {
 	varType Type         // 変数の型
 	offset  int          // RBPからのオフセット。
 }
+
+func NewTopLevelVariable(ty Type, name string) *Variable {
+	return &Variable{kind: VariableTopLevel, varType: ty, name: name}
+}

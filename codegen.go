@@ -191,8 +191,8 @@ func gen(node *Node) {
 		fmt.Println("  call " + node.label)
 
 		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
-		fn, ok := Env.FunctionTable[node.label]
-		if ok && fn.ReturnValueType.kind == TypeMultiple {
+		fn := Env.program.FindFunction(node.label)
+		if fn != nil && fn.ReturnValueType.kind == TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.components {
 				fmt.Println("  push " + registers[i])
