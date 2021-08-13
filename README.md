@@ -5,7 +5,7 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/08/13更新)
+## 現状(2021/08/14更新)
 ```go
 package main
 
@@ -47,7 +47,7 @@ func main() {
   }
 
   var ans = 0
-  for n = 1; n <= 10; n = n + 1 {
+  for n := 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
   printf("ans is %d\n", ans)
