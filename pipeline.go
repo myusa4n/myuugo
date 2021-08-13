@@ -72,24 +72,28 @@ func traverse(node *Node) Type {
 		var lhs = node.children[0]
 		var rhs = node.children[1]
 		traverse(lhs)
-		var exprTypes = traverse(rhs)
+		var rhsType = traverse(rhs)
 
-		if exprTypes.kind == TypeMultiple {
+		if rhsType.kind == TypeMultiple {
 			// componentの数だけ左辺のパラメータが存在していないといけない
-			if len(lhs.children) != len(exprTypes.components) {
-				madden(":=の左辺に要求されているパラメータの数は%dです", len(exprTypes.components))
+			if len(lhs.children) != len(rhsType.components) {
+				madden(":=の左辺に要求されているパラメータの数は%dです", len(rhsType.components))
 			}
 		} else {
 			if len(lhs.children) != len(rhs.children) {
 				madden(":=の左辺と右辺のパラメータの数が異なります")
 			}
 		}
-
 		for i, l := range lhs.children {
-			r := rhs.children[i]
-			l.variable.varType = r.exprType
-			l.exprType = r.exprType
+			if rhsType.kind == TypeMultiple {
+				l.variable.varType = rhsType.components[i]
+				l.exprType = rhsType.components[i]
+			} else {
+				l.variable.varType = rhsType
+				l.exprType = rhsType
+			}
 		}
+
 		node.exprType = stmtType
 		return stmtType
 	}

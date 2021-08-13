@@ -329,9 +329,7 @@ func fib2(n int) (int, int) {
   if n == 1 {
     return 1, 1
   }
-  var cur int
-  var prev int
-  cur, prev = fib2(n - 1)
+  cur, prev := fib2(n - 1)
   return cur + prev, cur
 }
 
