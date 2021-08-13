@@ -22,7 +22,7 @@ func main() {
 	fmt.Println(".globl main")
 
 	fmt.Println(".data")
-	for _, str := range Env.StringLiterals {
+	for _, str := range Env.program.StringLiterals {
 		fmt.Println(str.label + ":")
 		fmt.Println("  .string " + str.value)
 	}

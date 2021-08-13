@@ -191,7 +191,7 @@ func gen(node *Node) {
 		fmt.Println("  call " + node.label)
 
 		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
-		fn := Env.program.FindFunction(node.label)
+		fn := node.env.program.FindFunction(node.label)
 		if fn != nil && fn.ReturnValueType.kind == TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.components {
@@ -210,7 +210,7 @@ func gen(node *Node) {
 		fmt.Println("  push rbp")
 		fmt.Println("  mov rbp, rsp")
 
-		fmt.Printf("  sub rsp, %d\n", Env.GetFrameSize(node.label))
+		fmt.Printf("  sub rsp, %d\n", node.env.GetFrameSize(node.label))
 
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 

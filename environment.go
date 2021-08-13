@@ -1,21 +1,23 @@
 package main
 
-import "strconv"
-
 type Environment struct {
-	program        *Program
-	StringLiterals []*StringLiteral
-	LocalVarTable  map[string][]*Variable
+	program *Program
+	parent  *Environment
 
-	stringLabelNumber int
+	localVariables []*Variable
 }
 
 func NewEnvironment() *Environment {
 	return &Environment{
-		program:        NewProgram(),
-		StringLiterals: []*StringLiteral{},
-		LocalVarTable:  map[string][]*Variable{},
+		program: NewProgram(),
 	}
+}
+
+func (e *Environment) Fork() *Environment {
+	var newE = NewEnvironment()
+	newE.parent = e
+	newE.program = e.program
+	return newE
 }
 
 func (e *Environment) RegisterFunc(label string) *Function {
@@ -24,7 +26,6 @@ func (e *Environment) RegisterFunc(label string) *Function {
 	}
 	var fn = NewFunction(label, []Type{}, NewType(TypeUndefined))
 	e.program.RegisterFunction(fn)
-	e.LocalVarTable[label] = []*Variable{}
 	return fn
 }
 
@@ -33,18 +34,20 @@ func (e *Environment) AddLocalVar(fnLabel string, token Token) *Variable {
 	if lvar != nil {
 		return lvar
 	}
-	lvar = &Variable{name: token.str, varType: Type{kind: TypeUndefined}, kind: VariableLocal}
-	e.LocalVarTable[fnLabel] = append(e.LocalVarTable[fnLabel], lvar)
+	lvar = NewLocalVariable(NewType(TypeUndefined), token.str)
+	fn := e.program.FindFunction(fnLabel)
+
+	if fn == nil {
+		panic("存在しない関数" + fnLabel + "の中でローカル変数を宣言しようとしています")
+	}
+
+	fn.LocalVariables = append(fn.LocalVariables, lvar)
+	e.localVariables = append(e.localVariables, lvar)
 	return lvar
 }
 
 func (e *Environment) FindLocalVar(fnLabel string, token Token) *Variable {
-	locals, ok := e.LocalVarTable[fnLabel]
-
-	if !ok {
-		madden("関数%sは存在しません", fnLabel)
-	}
-	for _, lvar := range locals {
+	for _, lvar := range e.localVariables {
 		if lvar.name == token.str {
 			return lvar
 		}
@@ -61,44 +64,41 @@ func (e *Environment) AddTopLevelVar(token Token) *Variable {
 }
 
 func (e *Environment) FindVar(fnLabel string, token Token) *Variable {
-	ok := e.program.FindFunction(fnLabel) != nil
-	if ok {
-		lvar := e.FindLocalVar(fnLabel, token)
+	var cur = e
+	for cur != nil {
+		lvar := cur.FindLocalVar(fnLabel, token)
 		if lvar != nil {
 			return lvar
 		}
+		cur = cur.parent
 	}
 	return e.program.FindTopLevelVariable(token.str)
 }
 
 func (e *Environment) GetFrameSize(fnLabel string) int {
-	locals, ok := e.LocalVarTable[fnLabel]
-	if !ok {
+	fn := e.program.FindFunction(fnLabel)
+	if fn == nil {
 		madden("関数%sは存在しません", fnLabel)
 	}
 	var size int = 0
-	for _, lvar := range locals {
+	for _, lvar := range fn.LocalVariables {
 		size += Sizeof(lvar.varType)
 	}
 	return size
 }
 
 func (e *Environment) AlignLocalVars(fnLabel string) {
-	locals, ok := e.LocalVarTable[fnLabel]
-	if !ok {
+	fn := e.program.FindFunction(fnLabel)
+	if fn == nil {
 		madden("関数%sは存在しません", fnLabel)
 	}
 	var offset = 0
-	for _, lvar := range locals {
+	for _, lvar := range fn.LocalVariables {
 		offset += Sizeof(lvar.varType)
 		lvar.offset = offset
 	}
 }
 
 func (e *Environment) AddStringLiteral(token Token) *StringLiteral {
-	var label = ".LStr" + strconv.Itoa(e.stringLabelNumber)
-	e.stringLabelNumber += 1
-	var str = &StringLiteral{label: label, value: token.str}
-	e.StringLiterals = append(e.StringLiterals, str)
-	return str
+	return e.program.AddStringLiteral(token.str)
 }

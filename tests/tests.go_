@@ -78,6 +78,8 @@ func main() {
 
   test("multiple value test 1", 13, multipleValueTest1())
 
+  test("scope test 1", 22, scopeTest1())
+
 	puts("OK")
 }
 
@@ -339,4 +341,17 @@ func multipleValueTest1() int {
   var _ int
   m, _ = fib2(6)
   return m
+}
+
+func scopeTest1() int {
+  var n int = 10
+  for n := 0; n < 10; n = n + 1 {
+    // 特に何もしない
+  }
+  if 1 + 1 == 2 {
+    n = 22
+    var n int
+    n = 3
+  }
+  return n
 }

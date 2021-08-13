@@ -17,3 +17,7 @@ type Variable struct {
 func NewTopLevelVariable(ty Type, name string) *Variable {
 	return &Variable{kind: VariableTopLevel, varType: ty, name: name}
 }
+
+func NewLocalVariable(ty Type, name string) *Variable {
+	return &Variable{kind: VariableLocal, varType: ty, name: name}
+}

@@ -1,12 +1,16 @@
 package main
 
+import "strconv"
+
 type Program struct {
 	topLevelVariables []*Variable
 	functions         []*Function
+
+	StringLiterals []*StringLiteral
 }
 
 func NewProgram() *Program {
-	return &Program{topLevelVariables: []*Variable{}, functions: []*Function{}}
+	return &Program{topLevelVariables: []*Variable{}, functions: []*Function{}, StringLiterals: []*StringLiteral{}}
 }
 
 func (p *Program) AddTopLevelVariable(ty Type, name string) *Variable {
@@ -41,4 +45,11 @@ func (p *Program) FindFunction(name string) *Function {
 		}
 	}
 	return nil
+}
+
+func (p *Program) AddStringLiteral(value string) *StringLiteral {
+	var label = ".LStr" + strconv.Itoa(len(p.StringLiterals))
+	var str = NewStringLiteral(label, value)
+	p.StringLiterals = append(p.StringLiterals, str)
+	return str
 }

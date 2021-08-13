@@ -145,8 +145,22 @@ func (t *Tokenizer) consumeType() (Type, bool) {
 }
 
 var code []*Node
-var currentFuncLabel = ""
+var currentFuncLabel string
+var prevFuncLabel string
 var Env *Environment
+var prevEnv *Environment
+
+func stepIn(nextFuncLabel string) {
+	prevFuncLabel = currentFuncLabel
+	currentFuncLabel = nextFuncLabel
+	prevEnv = Env
+	Env = Env.Fork()
+}
+
+func stepOut() {
+	currentFuncLabel = prevFuncLabel
+	Env = prevEnv
+}
 
 func Parse() {
 	Env = NewEnvironment()
@@ -323,8 +337,7 @@ func funcDefinition() *Node {
 	tokenizer.Expect(TokenFunc)
 	identifier := tokenizer.expectIdentifier()
 
-	var prevFuncLabel = currentFuncLabel
-	currentFuncLabel = identifier.str
+	stepIn(identifier.str)
 	var fn = Env.RegisterFunc(currentFuncLabel)
 
 	var parameters = make([]*Node, 0)
@@ -363,13 +376,14 @@ func funcDefinition() *Node {
 
 	tokenizer.Expect(TokenRbrace)
 
-	currentFuncLabel = prevFuncLabel
+	stepOut()
 
 	return node
 }
 
 // range は未対応
 func forStmt() *Node {
+	stepIn(currentFuncLabel)
 	tokenizer.Expect(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
 	var node = NewNode(NodeFor, []*Node{nil, nil, nil, nil})
@@ -378,6 +392,7 @@ func forStmt() *Node {
 		// 無限ループ
 		node.children[3] = localStmtList()
 		tokenizer.Expect(TokenRbrace)
+		stepOut()
 		return node
 	}
 
@@ -390,6 +405,7 @@ func forStmt() *Node {
 		node.children[1] = s.children[0] // expr
 		node.children[3] = localStmtList()
 		tokenizer.Expect(TokenRbrace)
+		stepOut()
 		return node
 	}
 
@@ -403,6 +419,7 @@ func forStmt() *Node {
 	tokenizer.Expect(TokenLbrace)
 	node.children[3] = localStmtList()
 	tokenizer.Expect(TokenRbrace)
+	stepOut()
 	return node
 }
 
@@ -421,19 +438,26 @@ func metaIfStmt() *Node {
 }
 
 func ifStmt() *Node {
+	stepIn(currentFuncLabel)
+
 	tokenizer.Expect(TokenIf)
 	var lhs = expr()
 	tokenizer.Expect(TokenLbrace)
 	var rhs = localStmtList()
 	tokenizer.Expect(TokenRbrace)
+
+	stepOut()
 	return NewBinaryNode(NodeIf, lhs, rhs)
 }
 
 func elseStmt() *Node {
+	stepIn(currentFuncLabel)
 	tokenizer.Expect(TokenElse)
 	tokenizer.Expect(TokenLbrace)
 	var stmts = localStmtList()
 	tokenizer.Expect(TokenRbrace)
+
+	stepOut()
 	return NewNode(NodeElse, []*Node{stmts})
 }
 

@@ -41,7 +41,7 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.kind == NodeReturn {
-		fn := Env.program.FindFunction(currentFuncLabel)
+		fn := node.env.program.FindFunction(currentFuncLabel)
 		if fn.ReturnValueType.kind == TypeVoid {
 			if len(node.children) > 0 {
 				madden("返り値の型がvoid型の関数内でreturnに引数を渡すことはできません")
@@ -138,7 +138,7 @@ func traverse(node *Node) Type {
 			traverse(param)
 		}
 		traverse(node.children[0]) // 関数本体
-		Env.AlignLocalVars(currentFuncLabel)
+		node.env.AlignLocalVars(currentFuncLabel)
 		currentFuncLabel = prevFuncLabel
 		node.exprType = stmtType
 		return stmtType
@@ -157,7 +157,7 @@ func traverse(node *Node) Type {
 		return *ty.ptrTo
 	}
 	if node.kind == NodeFunctionCall {
-		fn := Env.program.FindFunction(node.label)
+		fn := node.env.program.FindFunction(node.label)
 		if fn != nil {
 			if len(fn.ParameterTypes) != len(node.children) {
 				madden("関数%sの引数の数が正しくありません", fn.Label)
@@ -187,7 +187,7 @@ func traverse(node *Node) Type {
 			}
 		}
 		if currentFuncLabel != "" {
-			Env.AlignLocalVars(currentFuncLabel)
+			node.env.AlignLocalVars(currentFuncLabel)
 		}
 		node.exprType = stmtType
 		return stmtType

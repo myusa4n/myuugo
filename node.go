@@ -45,20 +45,21 @@ type Node struct {
 	label    string         // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
 	exprType Type           // ノードが表す式の型
 	children []*Node        // 子。lhs, rhsの順でchildrenに格納される
+	env      *Environment   // そのノードで管理している変数などの情報をまとめたもの
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {
-	return &Node{kind: kind, children: children}
+	return &Node{kind: kind, children: children, env: Env}
 }
 
 func NewBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{kind: kind, children: []*Node{lhs, rhs}}
+	return &Node{kind: kind, children: []*Node{lhs, rhs}, env: Env}
 }
 
 func NewLeafNode(kind NodeKind) *Node {
-	return &Node{kind: kind}
+	return &Node{kind: kind, env: Env}
 }
 
 func NewNodeNum(val int) *Node {
-	return &Node{kind: NodeNum, val: val}
+	return &Node{kind: NodeNum, val: val, env: Env}
 }
