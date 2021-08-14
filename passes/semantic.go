@@ -64,11 +64,11 @@ func traverse(node *parse.Node) lang.Type {
 	if node.Kind == parse.NodeReturn {
 		fn := program.FindFunction(node.Env.FunctionName)
 		if fn.ReturnValueType.Kind == lang.TypeVoid {
-			if len(node.Children) > 0 {
+			if node.Target != nil {
 				util.Alarm("返り値の型がvoid型の関数内でreturnに引数を渡すことはできません")
 			}
 		} else {
-			var ty = traverse(node.Children[0])
+			var ty = traverse(node.Target)
 			if !lang.TypeCompatable(fn.ReturnValueType, ty) {
 				util.Alarm("返り値の型とreturnの引数の型が一致しません")
 			}
@@ -119,55 +119,54 @@ func traverse(node *parse.Node) lang.Type {
 		return stmtType
 	}
 	if node.Kind == parse.NodeMetaIf {
-		traverse(node.Children[0])
-		if node.Children[1] != nil {
-			traverse(node.Children[1])
+		traverse(node.If)
+		if node.Else != nil {
+			traverse(node.Else)
 		}
 		node.ExprType = stmtType
 		return stmtType
 	}
 	if node.Kind == parse.NodeIf {
-		traverse(node.Children[0]) // lhs
-		traverse(node.Children[1]) // rhs
+		traverse(node.Condition)
+		traverse(node.Body)
 		node.ExprType = stmtType
 		return stmtType
 	}
 	if node.Kind == parse.NodeElse {
-		traverse(node.Children[0])
+		traverse(node.Body)
 		node.ExprType = stmtType
 		return stmtType
 	}
 	if node.Kind == parse.NodeFor {
-		// children := (初期化, 条件, 更新)
-		if node.Children[0] != nil {
-			traverse(node.Children[0])
+		if node.Init != nil {
+			traverse(node.Init)
 		}
-		if node.Children[1] != nil {
-			traverse(node.Children[1]) // 条件
+		if node.Condition != nil {
+			traverse(node.Condition) // 条件
 		}
-		if node.Children[2] != nil {
-			traverse(node.Children[2])
+		if node.Update != nil {
+			traverse(node.Update)
 		}
-		traverse(node.Children[3])
+		traverse(node.Body)
 		node.ExprType = stmtType
 		return stmtType
 	}
 	if node.Kind == parse.NodeFunctionDef {
-		for _, param := range node.Children[1:] { // 引数
+		for _, param := range node.Parameters { // 引数
 			traverse(param)
 		}
-		traverse(node.Children[0]) // 関数本体
+		traverse(node.Body) // 関数本体
 		alignLocalVars(node.Env.FunctionName)
 		node.ExprType = stmtType
 		return stmtType
 	}
 	if node.Kind == parse.NodeAddr {
-		var ty = traverse(node.Children[0])
+		var ty = traverse(node.Target)
 		node.ExprType = lang.NewPointerType(&ty)
 		return node.ExprType
 	}
 	if node.Kind == parse.NodeDeref {
-		var ty = traverse(node.Children[0])
+		var ty = traverse(node.Target)
 		if ty.Kind != lang.TypePtr {
 			util.Alarm("ポインタでないものの参照を外そうとしています")
 		}
@@ -177,10 +176,10 @@ func traverse(node *parse.Node) lang.Type {
 	if node.Kind == parse.NodeFunctionCall {
 		fn := program.FindFunction(node.Label)
 		if fn != nil {
-			if len(fn.ParameterTypes) != len(node.Children) {
+			if len(fn.ParameterTypes) != len(node.Arguments) {
 				util.Alarm("関数%sの引数の数が正しくありません", fn.Label)
 			}
-			for i, argument := range node.Children {
+			for i, argument := range node.Arguments {
 				if !lang.TypeCompatable(fn.ParameterTypes[i], traverse(argument)) {
 					util.Alarm("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
 				}
@@ -229,20 +228,20 @@ func traverse(node *parse.Node) lang.Type {
 		return node.ExprType
 	}
 	if node.Kind == parse.NodeIndex {
-		var lhsType = traverse(node.Children[0])
-		var rhsType = traverse(node.Children[1])
-		if lhsType.Kind != lang.TypeArray {
+		var seqType = traverse(node.Seq)
+		var indexType = traverse(node.Index)
+		if seqType.Kind != lang.TypeArray {
 			util.Alarm("配列ではないものに添字でアクセスしようとしています")
 		}
-		if !lang.IsKindOfNumber(rhsType) {
+		if !lang.IsKindOfNumber(indexType) {
 			util.Alarm("配列の添字は整数でなくてはなりません")
 		}
-		node.ExprType = *lhsType.PtrTo
-		return *lhsType.PtrTo
+		node.ExprType = *seqType.PtrTo
+		return node.ExprType
 	}
 
-	var lhsType = traverse(node.Children[0])
-	var rhsType = traverse(node.Children[1])
+	var lhsType = traverse(node.Lhs)
+	var rhsType = traverse(node.Rhs)
 
 	if !lang.TypeCompatable(lhsType, rhsType) {
 		util.Alarm("[%s] 左辺と右辺の式の型が違います %s %s", node.Kind, lhsType.Kind, rhsType.Kind)

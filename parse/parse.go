@@ -293,9 +293,9 @@ func localStmt() *Node {
 	if tokenizer.Consume(TokenReturn) {
 		if tokenizer.Test(TokenNewLine) || tokenizer.Test(TokenSemicolon) {
 			// 空のreturn文
-			return NewLeafNode(NodeReturn)
+			return NewUnaryOperationNode(NodeReturn, nil)
 		}
-		return NewNode(NodeReturn, []*Node{exprList()})
+		return NewUnaryOperationNode(NodeReturn, exprList())
 	}
 	return simpleStmt()
 }
@@ -363,12 +363,12 @@ func funcDefinition() *Node {
 	}
 	tokenizer.Expect(TokenLbrace)
 
-	var node = NewNode(NodeFunctionDef, make([]*Node, 0))
-	node.Label = identifier.str
-	node.Children = append(node.Children, localStmtList())
-	node.Children = append(node.Children, parameters...)
+	var functionName = identifier.str
+	var body = localStmtList()
 
 	tokenizer.Expect(TokenRbrace)
+
+	var node = NewFunctionDefNode(functionName, parameters, body)
 
 	stepOut()
 
@@ -380,14 +380,13 @@ func forStmt() *Node {
 	stepIn()
 	tokenizer.Expect(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
-	var node = NewNode(NodeFor, []*Node{nil, nil, nil, nil})
 
 	if tokenizer.Consume(TokenLbrace) {
 		// 無限ループ
-		node.Children[3] = localStmtList()
+		var body = localStmtList()
 		tokenizer.Expect(TokenRbrace)
 		stepOut()
-		return node
+		return NewForNode(nil, nil, nil, body)
 	}
 
 	var s = simpleStmt()
@@ -396,25 +395,25 @@ func forStmt() *Node {
 		if s.Kind != NodeExprStmt {
 			util.Alarm("for文の条件に式以外が書かれています")
 		}
-		node.Children[1] = s.Children[0] // expr
-		node.Children[3] = localStmtList()
+		var cond = s.Children[0] // expr
+		var body = localStmtList()
 		tokenizer.Expect(TokenRbrace)
 		stepOut()
-		return node
+		return NewForNode(nil, cond, nil, body)
 	}
 
 	// 通常のfor文
-	node.Children[0] = s
+	var init = s
 	tokenizer.Expect(TokenSemicolon)
-	node.Children[1] = expr()
+	var cond = expr()
 	tokenizer.Expect(TokenSemicolon)
-	node.Children[2] = simpleStmt()
+	var update = simpleStmt()
 
 	tokenizer.Expect(TokenLbrace)
-	node.Children[3] = localStmtList()
+	var body = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 	stepOut()
-	return node
+	return NewForNode(init, cond, update, body)
 }
 
 func metaIfStmt() *Node {
@@ -426,33 +425,33 @@ func metaIfStmt() *Node {
 	var ifNode = ifStmt()
 	if tokenizer.Test(TokenElse) {
 		var elseNode = elseStmt()
-		return NewBinaryNode(NodeMetaIf, ifNode, elseNode)
+		return NewMetaIfNode(ifNode, elseNode)
 	}
-	return NewBinaryNode(NodeMetaIf, ifNode, nil)
+	return NewMetaIfNode(ifNode, nil)
 }
 
 func ifStmt() *Node {
 	stepIn()
 
 	tokenizer.Expect(TokenIf)
-	var lhs = expr()
+	var cond = expr()
 	tokenizer.Expect(TokenLbrace)
-	var rhs = localStmtList()
+	var body = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 
 	stepOut()
-	return NewBinaryNode(NodeIf, lhs, rhs)
+	return NewIfNode(cond, body)
 }
 
 func elseStmt() *Node {
 	stepIn()
 	tokenizer.Expect(TokenElse)
 	tokenizer.Expect(TokenLbrace)
-	var stmts = localStmtList()
+	var body = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 
 	stepOut()
-	return NewNode(NodeElse, []*Node{stmts})
+	return NewElseNode(body)
 }
 
 func localVarList() *Node {
@@ -480,9 +479,9 @@ func equality() *Node {
 	var n = relational()
 	for {
 		if tokenizer.Consume(TokenDoubleEqual) {
-			n = NewBinaryNode(NodeEql, n, relational())
+			n = NewBinaryOperationNode(NodeEql, n, relational())
 		} else if tokenizer.Consume(TokenNotEqual) {
-			n = NewBinaryNode(NodeNotEql, n, relational())
+			n = NewBinaryOperationNode(NodeNotEql, n, relational())
 		} else {
 			return n
 		}
@@ -493,13 +492,13 @@ func relational() *Node {
 	var n = add()
 	for {
 		if tokenizer.Consume(TokenLess) {
-			n = NewBinaryNode(NodeLess, n, add())
+			n = NewBinaryOperationNode(NodeLess, n, add())
 		} else if tokenizer.Consume(TokenLessEqual) {
-			n = NewBinaryNode(NodeLessEql, n, add())
+			n = NewBinaryOperationNode(NodeLessEql, n, add())
 		} else if tokenizer.Consume(TokenGreater) {
-			n = NewBinaryNode(NodeGreater, n, add())
+			n = NewBinaryOperationNode(NodeGreater, n, add())
 		} else if tokenizer.Consume(TokenGreaterEqual) {
-			n = NewBinaryNode(NodeGreaterEql, n, add())
+			n = NewBinaryOperationNode(NodeGreaterEql, n, add())
 		} else {
 			return n
 		}
@@ -510,9 +509,9 @@ func add() *Node {
 	var n = mul()
 	for {
 		if tokenizer.Consume(TokenPlus) {
-			n = NewBinaryNode(NodeAdd, n, mul())
+			n = NewBinaryOperationNode(NodeAdd, n, mul())
 		} else if tokenizer.Consume(TokenMinus) {
-			n = NewBinaryNode(NodeSub, n, mul())
+			n = NewBinaryOperationNode(NodeSub, n, mul())
 		} else {
 			return n
 		}
@@ -523,9 +522,9 @@ func mul() *Node {
 	var n = unary()
 	for {
 		if tokenizer.Consume(TokenStar) {
-			n = NewBinaryNode(NodeMul, n, unary())
+			n = NewBinaryOperationNode(NodeMul, n, unary())
 		} else if tokenizer.Consume(TokenSlash) {
-			n = NewBinaryNode(NodeDiv, n, unary())
+			n = NewBinaryOperationNode(NodeDiv, n, unary())
 		} else {
 			return n
 		}
@@ -537,13 +536,13 @@ func unary() *Node {
 		return primary()
 	}
 	if tokenizer.Consume(TokenMinus) {
-		return NewBinaryNode(NodeSub, NewNodeNum(0), primary())
+		return NewBinaryOperationNode(NodeSub, NewNodeNum(0), primary())
 	}
 	if tokenizer.Consume(TokenStar) {
-		return NewNode(NodeDeref, []*Node{unary()})
+		return NewUnaryOperationNode(NodeDeref, unary())
 	}
 	if tokenizer.Consume(TokenAmpersand) {
-		return NewNode(NodeAddr, []*Node{unary()})
+		return NewUnaryOperationNode(NodeAddr, unary())
 	}
 	return primary()
 }
@@ -571,15 +570,15 @@ func primary() *Node {
 		// 関数呼び出し
 		var tok = tokenizer.expectIdentifier()
 		tokenizer.Expect(TokenLparen)
-		var node = NewNode(NodeFunctionCall, make([]*Node, 0))
-		node.Label = tok.str
+		var functionName = tok.str
+		var arguments = []*Node{}
 		for !tokenizer.Consume(TokenRparen) {
-			if len(node.Children) > 0 {
+			if len(arguments) > 0 {
 				tokenizer.Expect(TokenComma)
 			}
-			node.Children = append(node.Children, expr())
+			arguments = append(arguments, expr())
 		}
-		return node
+		return NewFunctionCallNode(functionName, arguments)
 	}
 	if tokenizer.Prefetch(1).Test(TokenLSBrace) {
 		// 添字アクセス
@@ -587,7 +586,7 @@ func primary() *Node {
 		tokenizer.Expect(TokenLSBrace)
 		var index = expr()
 		tokenizer.Expect(TokenRSBrace)
-		return NewBinaryNode(NodeIndex, arr, index)
+		return NewIndexNode(arr, index)
 	}
 	return variableRef()
 }

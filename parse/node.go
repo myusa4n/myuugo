@@ -48,8 +48,48 @@ type Node struct {
 	Str      *lang.StringLiteral // kindがNodeStringの場合にのみ使う
 	Label    string              // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
 	ExprType lang.Type           // ノードが表す式の型
-	Children []*Node             // 子。lhs, rhsの順でchildrenに格納される
+	Children []*Node             // 子。
 	Env      *Environment        // そのノードで管理している変数などの情報をまとめたもの
+
+	// 二項演算を行うノードの場合にのみ使う
+	Lhs *Node
+	Rhs *Node
+
+	// kindがNodeIndexの場合にのみ使う
+	Seq   *Node
+	Index *Node
+
+	// kindがNodeMetaIfの場合にのみ使う
+	If   *Node
+	Else *Node
+
+	// kindがNodeFunctionDef, NodeIf, NodeElse, NodeForの場合にのみ使う
+	Body *Node
+
+	// kindがNodeIf, NodeForの場合にのみ使う
+	Condition *Node
+
+	// kindがNodeForの場合にのみ使う
+	// for Init; Condition; Update {}
+	Init   *Node
+	Update *Node
+
+	// kindがNodeFunctionDefの場合にのみ使う
+	Parameters []*Node
+
+	// kindがNodeFunctionCallの場合にのみ使う
+	Arguments []*Node
+
+	// kindがNodeReturn, NodeAddr, NodeDerefの場合にのみ使う
+	Target *Node
+}
+
+func NewFunctionDefNode(name string, parameters []*Node, body *Node) *Node {
+	return &Node{Kind: NodeFunctionDef, Label: name, Parameters: parameters, Body: body, Env: Env}
+}
+
+func NewFunctionCallNode(name string, arguments []*Node) *Node {
+	return &Node{Kind: NodeFunctionCall, Label: name, Arguments: arguments, Env: Env}
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {
@@ -60,10 +100,38 @@ func NewBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
 	return &Node{Kind: kind, Children: []*Node{lhs, rhs}, Env: Env}
 }
 
+func NewBinaryOperationNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
+	return &Node{Kind: kind, Lhs: lhs, Rhs: rhs, Env: Env}
+}
+
+func NewUnaryOperationNode(kind NodeKind, target *Node) *Node {
+	return &Node{Kind: kind, Target: target, Env: Env}
+}
+
+func NewIndexNode(seq *Node, index *Node) *Node {
+	return &Node{Kind: NodeIndex, Seq: seq, Index: index, Env: Env}
+}
+
+func NewMetaIfNode(ifn *Node, elsen *Node) *Node {
+	return &Node{Kind: NodeMetaIf, If: ifn, Else: elsen, Env: Env}
+}
+
+func NewIfNode(cond *Node, body *Node) *Node {
+	return &Node{Kind: NodeIf, Condition: cond, Body: body, Env: Env}
+}
+
+func NewElseNode(body *Node) *Node {
+	return &Node{Kind: NodeElse, Body: body, Env: Env}
+}
+
 func NewLeafNode(kind NodeKind) *Node {
 	return &Node{Kind: kind, Env: Env}
 }
 
 func NewNodeNum(val int) *Node {
 	return &Node{Kind: NodeNum, Val: val, Env: Env}
+}
+
+func NewForNode(init *Node, cond *Node, update *Node, body *Node) *Node {
+	return &Node{Kind: NodeFor, Init: init, Condition: cond, Update: update, Body: body}
 }

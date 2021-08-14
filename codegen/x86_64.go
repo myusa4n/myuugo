@@ -26,7 +26,7 @@ func getFrameSize(functionName string) int {
 
 func genLvalue(node *parse.Node) {
 	if node.Kind == parse.NodeDeref {
-		gen(node.Children[0])
+		gen(node.Target)
 		return
 	} else if node.Kind == parse.NodeVariable {
 		if node.Variable.Kind == lang.VariableLocal {
@@ -39,10 +39,10 @@ func genLvalue(node *parse.Node) {
 		}
 		return
 	} else if node.Kind == parse.NodeIndex {
-		genLvalue(node.Children[0])
-		gen(node.Children[1])
+		genLvalue(node.Seq)
+		gen(node.Index)
 		fmt.Println("  pop rdi")
-		fmt.Printf("  imul rdi, %d\n", lang.Sizeof(*node.Children[0].Variable.Type.PtrTo))
+		fmt.Printf("  imul rdi, %d\n", lang.Sizeof(node.ExprType))
 		fmt.Println("  pop rax")
 		fmt.Println("  add rax, rdi")
 		fmt.Println("  push rax")
@@ -67,8 +67,8 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeReturn {
-		if len(node.Children) > 0 {
-			var exprs = node.Children[0].Children
+		if node.Target != nil {
+			var exprs = node.Target.Children
 			for _, e := range exprs {
 				gen(e)
 			}
@@ -145,10 +145,10 @@ func gen(node *parse.Node) {
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
-		gen(node.Children[0]) // if
+		gen(node.If)
 		fmt.Println(elseLabel + ":")
-		if node.Children[1] != nil {
-			gen(node.Children[1]) // else
+		if node.Else != nil {
+			gen(node.Else)
 		}
 		fmt.Println(endLabel + ":")
 		labelNumber += 1
@@ -158,16 +158,16 @@ func gen(node *parse.Node) {
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
-		gen(node.Children[0]) // lhs
+		gen(node.Condition)
 		fmt.Println("  pop rax")
 		fmt.Println("  cmp rax, 0")
 		fmt.Println("  je " + elseLabel)
-		gen(node.Children[1]) // rhs
+		gen(node.Body)
 		fmt.Println("  jmp " + endLabel)
 		return
 	}
 	if node.Kind == parse.NodeElse {
-		gen(node.Children[0])
+		gen(node.Body)
 		return
 	}
 	if node.Kind == parse.NodeFor {
@@ -175,21 +175,19 @@ func gen(node *parse.Node) {
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		labelNumber += 1
 
-		// children := (初期化, 条件, 更新)
-
-		if node.Children[0] != nil {
-			gen(node.Children[0])
+		if node.Init != nil {
+			gen(node.Init)
 		}
 		fmt.Println(beginLabel + ":")
-		if node.Children[1] != nil {
-			gen(node.Children[1]) // 条件
+		if node.Condition != nil {
+			gen(node.Condition) // 条件
 			fmt.Println("  pop rax")
 			fmt.Println("  cmp rax, 0")
 			fmt.Println("  je " + endLabel)
 		}
-		gen(node.Children[3])
-		if node.Children[2] != nil {
-			gen(node.Children[2])
+		gen(node.Body)
+		if node.Update != nil {
+			gen(node.Update)
 		}
 		fmt.Println("  jmp " + beginLabel)
 		fmt.Println(endLabel + ":")
@@ -198,11 +196,11 @@ func gen(node *parse.Node) {
 	if node.Kind == parse.NodeFunctionCall {
 		// TODO: rune型と配列型の扱いについて考える
 		var registers = [7]string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
-		for _, argument := range node.Children {
+		for _, argument := range node.Arguments {
 			gen(argument)
 		}
-		for i := range node.Children {
-			fmt.Println("  pop " + registers[len(node.Children)-i])
+		for i := range node.Arguments {
+			fmt.Println("  pop " + registers[len(node.Arguments)-i])
 		}
 		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
 		fmt.Println("  call " + node.Label)
@@ -223,7 +221,6 @@ func gen(node *parse.Node) {
 		fmt.Println(node.Label + ":")
 
 		// プロローグ
-		// 変数26個分の領域を確保する
 		fmt.Println("  push rbp")
 		fmt.Println("  mov rbp, rsp")
 
@@ -231,13 +228,13 @@ func gen(node *parse.Node) {
 
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
-		for i, param := range node.Children[1:] { // 引数
+		for i, param := range node.Parameters { // 引数
 			genLvalue(param)
 			fmt.Println("  pop rax")
 			fmt.Println("  mov [rax], " + registers[i])
 		}
 
-		gen(node.Children[0]) // 関数本体
+		gen(node.Body) // 関数本体
 
 		// エピローグ
 		// 関数の返り値の型が void 型だと仮定する
@@ -249,11 +246,11 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeAddr {
-		genLvalue(node.Children[0])
+		genLvalue(node.Target)
 		return
 	}
 	if node.Kind == parse.NodeDeref {
-		gen(node.Children[0])
+		gen(node.Target)
 		fmt.Println("  pop rax")
 		fmt.Println("  mov rax, [rax]")
 		fmt.Println("  push rax")
@@ -354,8 +351,8 @@ func gen(node *parse.Node) {
 		return
 	}
 
-	gen(node.Children[0]) // lhs
-	gen(node.Children[1]) // rhs
+	gen(node.Lhs)
+	gen(node.Rhs)
 
 	fmt.Println("  pop rdi")
 	fmt.Println("  pop rax")

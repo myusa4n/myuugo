@@ -29,7 +29,7 @@ func main() {
   }
 
   var ans = 0
-  for n = 1; n <= 10; n = n + 1 {
+  for n := 1; n <= 10; n = n + 1 {
     ans = ans + fib(n)
   }
   printf("ans is %d\n", ans)
