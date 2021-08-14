@@ -248,14 +248,7 @@ func topLevelStmt() *Node {
 	if tokenizer.Test(TokenReturn) {
 		util.Alarm("return文はトップレベルでは使用できません")
 	}
-
-	var n = expr()
-	if tokenizer.Consume(TokenEqual) {
-		// 代入文
-		var e = expr()
-		return NewBinaryNode(NodeAssign, n, e)
-	}
-	return NewNode(NodeExprStmt, []*Node{n})
+	panic("トップレベルの文として許可されていません")
 }
 
 func simpleStmt() *Node {
