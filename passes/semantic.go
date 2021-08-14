@@ -8,6 +8,18 @@ import (
 
 var program *parse.Program
 
+func alignLocalVars(functionName string) {
+	fn := program.FindFunction(functionName)
+	if fn == nil {
+		panic("関数 \"" + functionName + " は存在しません")
+	}
+	var offset = 0
+	for _, lvar := range fn.LocalVariables {
+		offset += lang.Sizeof(lvar.Type)
+		lvar.Offset = offset
+	}
+}
+
 func Semantic(p *parse.Program) {
 	program = p
 	for _, node := range p.Code {
@@ -50,7 +62,7 @@ func traverse(node *parse.Node) lang.Type {
 		return stmtType
 	}
 	if node.Kind == parse.NodeReturn {
-		fn := node.Env.FindFunction(node.Env.FunctionName)
+		fn := program.FindFunction(node.Env.FunctionName)
 		if fn.ReturnValueType.Kind == lang.TypeVoid {
 			if len(node.Children) > 0 {
 				util.Alarm("返り値の型がvoid型の関数内でreturnに引数を渡すことはできません")
@@ -145,7 +157,7 @@ func traverse(node *parse.Node) lang.Type {
 			traverse(param)
 		}
 		traverse(node.Children[0]) // 関数本体
-		node.Env.AlignLocalVars(node.Env.FunctionName)
+		alignLocalVars(node.Env.FunctionName)
 		node.ExprType = stmtType
 		return stmtType
 	}
@@ -163,7 +175,7 @@ func traverse(node *parse.Node) lang.Type {
 		return *ty.PtrTo
 	}
 	if node.Kind == parse.NodeFunctionCall {
-		fn := node.Env.FindFunction(node.Label)
+		fn := program.FindFunction(node.Label)
 		if fn != nil {
 			if len(fn.ParameterTypes) != len(node.Children) {
 				util.Alarm("関数%sの引数の数が正しくありません", fn.Label)
@@ -193,7 +205,7 @@ func traverse(node *parse.Node) lang.Type {
 			}
 		}
 		if node.Kind == parse.NodeLocalVarList {
-			node.Env.AlignLocalVars(node.Env.FunctionName)
+			alignLocalVars(node.Env.FunctionName)
 		}
 		node.ExprType = stmtType
 		return stmtType

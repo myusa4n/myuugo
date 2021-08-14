@@ -10,6 +10,19 @@ import (
 )
 
 var labelNumber = 0
+var program *parse.Program
+
+func getFrameSize(functionName string) int {
+	fn := program.FindFunction(functionName)
+	if fn == nil {
+		panic("関数 \"" + functionName + " は存在しません")
+	}
+	var size int = 0
+	for _, lvar := range fn.LocalVariables {
+		size += lang.Sizeof(lvar.Type)
+	}
+	return size
+}
 
 func genLvalue(node *parse.Node) {
 	if node.Kind == parse.NodeDeref {
@@ -195,7 +208,7 @@ func gen(node *parse.Node) {
 		fmt.Println("  call " + node.Label)
 
 		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
-		fn := node.Env.FindFunction(node.Label)
+		fn := program.FindFunction(node.Label)
 		if fn != nil && fn.ReturnValueType.Kind == lang.TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.Components {
@@ -214,7 +227,7 @@ func gen(node *parse.Node) {
 		fmt.Println("  push rbp")
 		fmt.Println("  mov rbp, rsp")
 
-		fmt.Printf("  sub rsp, %d\n", node.Env.GetFrameSize(node.Label))
+		fmt.Printf("  sub rsp, %d\n", getFrameSize(node.Label))
 
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
@@ -385,19 +398,20 @@ func gen(node *parse.Node) {
 	fmt.Println("  push rax")
 }
 
-func GenX86_64(program *parse.Program) {
+func GenX86_64(p *parse.Program) {
+	program = p
 	// アセンブリの前半部分
 	fmt.Println(".intel_syntax noprefix")
 	fmt.Println(".globl main")
 
 	fmt.Println(".data")
-	for _, str := range program.StringLiterals {
+	for _, str := range p.StringLiterals {
 		fmt.Println(str.Label + ":")
 		fmt.Println("  .string " + str.Value)
 	}
 	fmt.Println(".text")
 
-	for _, c := range program.Code {
+	for _, c := range p.Code {
 		// 抽象構文木を下りながらコード生成
 		gen(c)
 	}
