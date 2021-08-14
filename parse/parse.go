@@ -144,21 +144,19 @@ func (t *Tokenizer) consumeType() (Type, bool) {
 	return varType, true
 }
 
-var currentFuncLabel string
-var prevFuncLabel string
 var Env *Environment
-var prevEnv *Environment
 
-func stepIn(nextFuncLabel string) {
-	prevFuncLabel = currentFuncLabel
-	currentFuncLabel = nextFuncLabel
-	prevEnv = Env
+func stepIn() {
 	Env = Env.Fork()
 }
 
+func stepInFunction(name string) {
+	Env = Env.Fork()
+	Env.FunctionName = name
+}
+
 func stepOut() {
-	currentFuncLabel = prevFuncLabel
-	Env = prevEnv
+	Env = Env.parent
 }
 
 func Parse(tok *Tokenizer) *Program {
@@ -338,8 +336,8 @@ func funcDefinition() *Node {
 	tokenizer.Expect(TokenFunc)
 	identifier := tokenizer.expectIdentifier()
 
-	stepIn(identifier.str)
-	var fn = Env.RegisterFunc(currentFuncLabel)
+	stepInFunction(identifier.str)
+	var fn = Env.RegisterFunc(Env.FunctionName)
 
 	var parameters = make([]*Node, 0)
 
@@ -384,7 +382,7 @@ func funcDefinition() *Node {
 
 // range は未対応
 func forStmt() *Node {
-	stepIn(currentFuncLabel)
+	stepIn()
 	tokenizer.Expect(TokenFor)
 	// 初期化, ループ条件, 更新式, 繰り返す文
 	var node = NewNode(NodeFor, []*Node{nil, nil, nil, nil})
@@ -439,7 +437,7 @@ func metaIfStmt() *Node {
 }
 
 func ifStmt() *Node {
-	stepIn(currentFuncLabel)
+	stepIn()
 
 	tokenizer.Expect(TokenIf)
 	var lhs = expr()
@@ -452,7 +450,7 @@ func ifStmt() *Node {
 }
 
 func elseStmt() *Node {
-	stepIn(currentFuncLabel)
+	stepIn()
 	tokenizer.Expect(TokenElse)
 	tokenizer.Expect(TokenLbrace)
 	var stmts = localStmtList()
@@ -602,7 +600,7 @@ func primary() *Node {
 func variableRef() *Node {
 	var tok = tokenizer.expectIdentifier()
 	var node = NewLeafNode(NodeVariable)
-	node.Variable = Env.FindVar(currentFuncLabel, tok)
+	node.Variable = Env.FindVar(Env.FunctionName, tok)
 	if node.Variable == nil {
 		errorAt(tok.rest, "未定義の変数です")
 	}
@@ -612,11 +610,11 @@ func variableRef() *Node {
 func localVariableDeclaration() *Node {
 	var tok = tokenizer.expectIdentifier()
 	var node = NewLeafNode(NodeVariable)
-	lvar := Env.FindLocalVar(currentFuncLabel, tok)
+	lvar := Env.FindLocalVar(Env.FunctionName, tok)
 	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です")
 	}
-	node.Variable = Env.AddLocalVar(currentFuncLabel, tok)
+	node.Variable = Env.AddLocalVar(Env.FunctionName, tok)
 	return node
 }
 

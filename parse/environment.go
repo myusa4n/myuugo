@@ -6,10 +6,11 @@ import (
 )
 
 type Environment struct {
-	program *Program
-	parent  *Environment
-
+	program        *Program
+	parent         *Environment
 	localVariables []*Variable
+
+	FunctionName string
 }
 
 func NewEnvironment() *Environment {
@@ -22,6 +23,7 @@ func (e *Environment) Fork() *Environment {
 	var newE = NewEnvironment()
 	newE.parent = e
 	newE.program = e.program
+	newE.FunctionName = e.FunctionName
 	return newE
 }
 
