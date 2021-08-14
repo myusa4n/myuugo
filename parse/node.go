@@ -1,7 +1,7 @@
 package parse
 
 import (
-	. "github.com/myuu222/myuugo/lang"
+	"github.com/myuu222/myuugo/lang"
 )
 
 type NodeKind string
@@ -42,14 +42,14 @@ const (
 )
 
 type Node struct {
-	Kind     NodeKind       // ノードの型
-	Val      int            // kindがNodeNumの場合にのみ使う
-	Variable *Variable      // kindがNodeLocalVarの場合にのみ使う
-	Str      *StringLiteral // kindがNodeStringの場合にのみ使う
-	Label    string         // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
-	ExprType Type           // ノードが表す式の型
-	Children []*Node        // 子。lhs, rhsの順でchildrenに格納される
-	Env      *Environment   // そのノードで管理している変数などの情報をまとめたもの
+	Kind     NodeKind            // ノードの型
+	Val      int                 // kindがNodeNumの場合にのみ使う
+	Variable *lang.Variable      // kindがNodeLocalVarの場合にのみ使う
+	Str      *lang.StringLiteral // kindがNodeStringの場合にのみ使う
+	Label    string              // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
+	ExprType lang.Type           // ノードが表す式の型
+	Children []*Node             // 子。lhs, rhsの順でchildrenに格納される
+	Env      *Environment        // そのノードで管理している変数などの情報をまとめたもの
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {

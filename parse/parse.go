@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/myuu222/myuugo/lang"
-	. "github.com/myuu222/myuugo/util"
+	"github.com/myuu222/myuugo/lang"
+	"github.com/myuu222/myuugo/util"
 )
 
 var tokenizer *Tokenizer
@@ -53,7 +53,7 @@ func (t *Tokenizer) consumeEndLine() bool {
 
 func (t *Tokenizer) expectEndLine() {
 	if !t.consumeEndLine() {
-		Alarm("文の終端記号ではありません")
+		util.Alarm("文の終端記号ではありません")
 	}
 }
 
@@ -107,39 +107,39 @@ func (t *Tokenizer) atEof() bool {
 	return t.Test(TokenEof)
 }
 
-func (t *Tokenizer) expectType() Type {
+func (t *Tokenizer) expectType() lang.Type {
 	ty, ok := t.consumeType()
 	if !ok {
-		Alarm("型ではありません")
+		util.Alarm("型ではありません")
 	}
 	return ty
 }
 
-func (t *Tokenizer) consumeType() (Type, bool) {
-	var varType Type = Type{}
+func (t *Tokenizer) consumeType() (lang.Type, bool) {
+	var varType lang.Type = lang.Type{}
 	if t.Consume(TokenStar) {
 		ty := t.expectType()
-		return NewPointerType(&ty), true
+		return lang.NewPointerType(&ty), true
 	}
 	if t.Consume(TokenLSBrace) {
 		var arraySize = t.expectNumber()
 		t.Expect(TokenRSBrace)
 		ty := t.expectType()
-		return NewArrayType(ty, arraySize), true
+		return lang.NewArrayType(ty, arraySize), true
 	}
 	tok, ok := t.consumeIdentifier()
 	if !ok {
-		return Type{}, false
+		return lang.Type{}, false
 	}
 	if tok.str == "int" {
-		return NewType(TypeInt), true
+		return lang.NewType(lang.TypeInt), true
 	}
 	if tok.str == "rune" {
-		return NewType(TypeRune), true
+		return lang.NewType(lang.TypeRune), true
 	}
 	if tok.str == "string" {
-		var r = NewType(TypeRune)
-		return NewPointerType(&r), true
+		var r = lang.NewType(lang.TypeRune)
+		return lang.NewPointerType(&r), true
 	}
 	return varType, true
 }
@@ -239,13 +239,13 @@ func topLevelStmt() *Node {
 
 	// 許可されていないもの
 	if tokenizer.Test(TokenIf) {
-		Alarm("if文はトップレベルでは使用できません")
+		util.Alarm("if文はトップレベルでは使用できません")
 	}
 	if tokenizer.Test(TokenFor) {
-		Alarm("for文はトップレベルでは使用できません")
+		util.Alarm("for文はトップレベルでは使用できません")
 	}
 	if tokenizer.Test(TokenReturn) {
-		Alarm("return文はトップレベルでは使用できません")
+		util.Alarm("return文はトップレベルでは使用できません")
 	}
 
 	var n = expr()
@@ -352,14 +352,14 @@ func funcDefinition() *Node {
 		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.Variable.Type)
 	}
 
-	fn.ReturnValueType = NewType(TypeVoid)
+	fn.ReturnValueType = lang.NewType(lang.TypeVoid)
 	if tokenizer.Consume(TokenLparen) { // 多値
-		var types = []Type{tokenizer.expectType()}
+		var types = []lang.Type{tokenizer.expectType()}
 		for tokenizer.Consume(TokenComma) {
 			types = append(types, tokenizer.expectType())
 		}
 		tokenizer.Expect(TokenRparen)
-		fn.ReturnValueType = NewMultipleType(types)
+		fn.ReturnValueType = lang.NewMultipleType(types)
 	} else {
 		var ty, ok = tokenizer.consumeType()
 		if ok {
@@ -399,7 +399,7 @@ func forStmt() *Node {
 	if tokenizer.Consume(TokenLbrace) {
 		// while文
 		if s.Kind != NodeExprStmt {
-			Alarm("for文の条件に式以外が書かれています")
+			util.Alarm("for文の条件に式以外が書かれています")
 		}
 		node.Children[1] = s.Children[0] // expr
 		node.Children[3] = localStmtList()

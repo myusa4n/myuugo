@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	. "github.com/myuu222/myuugo/codegen"
-	. "github.com/myuu222/myuugo/parse"
-	. "github.com/myuu222/myuugo/passes"
+	"github.com/myuu222/myuugo/codegen"
+	"github.com/myuu222/myuugo/parse"
+	"github.com/myuu222/myuugo/passes"
 )
 
 func main() {
@@ -16,12 +16,12 @@ func main() {
 	}
 
 	var path = os.Args[1]
-	var tokenizer = NewTokenizer()
+	var tokenizer = parse.NewTokenizer()
 	tokenizer.Tokenize(path)
 
-	var program = Parse(tokenizer)
+	var program = parse.Parse(tokenizer)
 
-	Semantic(program)
+	passes.Semantic(program)
 
-	GenX86_64(program)
+	codegen.GenX86_64(program)
 }
