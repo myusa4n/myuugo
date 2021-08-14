@@ -12,8 +12,6 @@ func Semantic(program *Program) {
 	}
 }
 
-var currentFuncLabel = ""
-
 // 式の型を決定するのに使う
 func traverse(node *Node) Type {
 	var stmtType = NewType(TypeStmt)
@@ -49,7 +47,7 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.Kind == NodeReturn {
-		fn := node.Env.FindFunction(currentFuncLabel)
+		fn := node.Env.FindFunction(Env.FunctionName)
 		if fn.ReturnValueType.Kind == TypeVoid {
 			if len(node.Children) > 0 {
 				Alarm("返り値の型がvoid型の関数内でreturnに引数を渡すことはできません")
@@ -140,14 +138,11 @@ func traverse(node *Node) Type {
 		return stmtType
 	}
 	if node.Kind == NodeFunctionDef {
-		var prevFuncLabel = currentFuncLabel
-		currentFuncLabel = node.Label
 		for _, param := range node.Children[1:] { // 引数
 			traverse(param)
 		}
 		traverse(node.Children[0]) // 関数本体
-		node.Env.AlignLocalVars(currentFuncLabel)
-		currentFuncLabel = prevFuncLabel
+		node.Env.AlignLocalVars(Env.FunctionName)
 		node.ExprType = stmtType
 		return stmtType
 	}
@@ -194,8 +189,8 @@ func traverse(node *Node) Type {
 				Alarm("var文における変数の型と初期化式の型が一致しません")
 			}
 		}
-		if currentFuncLabel != "" {
-			node.Env.AlignLocalVars(currentFuncLabel)
+		if node.Kind == NodeLocalVarList {
+			node.Env.AlignLocalVars(Env.FunctionName)
 		}
 		node.ExprType = stmtType
 		return stmtType
