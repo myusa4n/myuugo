@@ -159,8 +159,9 @@ func stepOut() {
 	Env = Env.parent
 }
 
-func Parse(tok *Tokenizer) *Program {
-	tokenizer = tok
+func Parse(path string) *Program {
+	tokenizer = NewTokenizer()
+	tokenizer.Tokenize(path)
 	Env = NewEnvironment()
 
 	for tokenizer.consumeEndLine() {

@@ -9,17 +9,18 @@ import (
 	"github.com/myuu222/myuugo/passes"
 )
 
+func usage() {
+	fmt.Fprintln(os.Stderr, "引数の個数が正しくありません")
+	os.Exit(1)
+}
+
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "引数の個数が正しくありません")
-		os.Exit(1)
+		usage()
 	}
 
 	var path = os.Args[1]
-	var tokenizer = parse.NewTokenizer()
-	tokenizer.Tokenize(path)
-
-	var program = parse.Parse(tokenizer)
+	var program = parse.Parse(path)
 
 	passes.Semantic(program)
 
