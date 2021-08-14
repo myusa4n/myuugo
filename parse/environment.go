@@ -85,7 +85,7 @@ func (e *Environment) FindVar(fnLabel string, token Token) *Variable {
 func (e *Environment) GetFrameSize(fnLabel string) int {
 	fn := e.program.FindFunction(fnLabel)
 	if fn == nil {
-		Alarm("関数%sは存在しません", fnLabel)
+		panic("関数 \"" + fnLabel + " は存在しません")
 	}
 	var size int = 0
 	for _, lvar := range fn.LocalVariables {
@@ -97,7 +97,7 @@ func (e *Environment) GetFrameSize(fnLabel string) int {
 func (e *Environment) AlignLocalVars(fnLabel string) {
 	fn := e.program.FindFunction(fnLabel)
 	if fn == nil {
-		Alarm("関数%sは存在しません", fnLabel)
+		panic("関数 \"" + fnLabel + " は存在しません")
 	}
 	var offset = 0
 	for _, lvar := range fn.LocalVariables {
