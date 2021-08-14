@@ -6,8 +6,8 @@ import (
 	. "github.com/myuu222/myuugo/util"
 )
 
-func Semantic(code []*Node) {
-	for _, node := range code {
+func Semantic(program *Program) {
+	for _, node := range program.Code {
 		traverse(node)
 	}
 }

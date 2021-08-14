@@ -21,7 +21,7 @@ func main() {
 
 	var program = Parse(tokenizer)
 
-	Semantic(program.Code)
+	Semantic(program)
 
 	GenX86_64(program)
 }
