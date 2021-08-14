@@ -1,4 +1,9 @@
-package main
+package parse
+
+import (
+	. "github.com/myuu222/myuugo/lang"
+	. "github.com/myuu222/myuugo/util"
+)
 
 type Environment struct {
 	program *Program
@@ -22,7 +27,7 @@ func (e *Environment) Fork() *Environment {
 
 func (e *Environment) RegisterFunc(label string) *Function {
 	if e.program.FindFunction(label) != nil {
-		madden("関数%sは既に存在しています", label)
+		Alarm("関数%sは既に存在しています", label)
 	}
 	var fn = NewFunction(label, []Type{}, NewType(TypeUndefined))
 	e.program.RegisterFunction(fn)
@@ -48,7 +53,7 @@ func (e *Environment) AddLocalVar(fnLabel string, token Token) *Variable {
 
 func (e *Environment) FindLocalVar(fnLabel string, token Token) *Variable {
 	for _, lvar := range e.localVariables {
-		if lvar.name == token.str {
+		if lvar.Name == token.str {
 			return lvar
 		}
 	}
@@ -78,11 +83,11 @@ func (e *Environment) FindVar(fnLabel string, token Token) *Variable {
 func (e *Environment) GetFrameSize(fnLabel string) int {
 	fn := e.program.FindFunction(fnLabel)
 	if fn == nil {
-		madden("関数%sは存在しません", fnLabel)
+		Alarm("関数%sは存在しません", fnLabel)
 	}
 	var size int = 0
 	for _, lvar := range fn.LocalVariables {
-		size += Sizeof(lvar.varType)
+		size += Sizeof(lvar.Type)
 	}
 	return size
 }
@@ -90,15 +95,19 @@ func (e *Environment) GetFrameSize(fnLabel string) int {
 func (e *Environment) AlignLocalVars(fnLabel string) {
 	fn := e.program.FindFunction(fnLabel)
 	if fn == nil {
-		madden("関数%sは存在しません", fnLabel)
+		Alarm("関数%sは存在しません", fnLabel)
 	}
 	var offset = 0
 	for _, lvar := range fn.LocalVariables {
-		offset += Sizeof(lvar.varType)
-		lvar.offset = offset
+		offset += Sizeof(lvar.Type)
+		lvar.Offset = offset
 	}
 }
 
 func (e *Environment) AddStringLiteral(token Token) *StringLiteral {
 	return e.program.AddStringLiteral(token.str)
+}
+
+func (e *Environment) FindFunction(name string) *Function {
+	return e.program.FindFunction(name)
 }

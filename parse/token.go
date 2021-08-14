@@ -1,17 +1,19 @@
-package main
+package parse
 
 import (
 	"io/ioutil"
 	"strconv"
 	"strings"
 	"unicode"
+
+	. "github.com/myuu222/myuugo/util"
 )
 
 // (先頭の識別子, 識別子を切り出して得られた残りの文字列)  を返す
 func getIdentifier(s string) (string, string) {
 	var res = ""
 	for i, c := range s {
-		if (i == 0 && unicode.IsDigit(c)) || !(isAlnum(c) || (c == '_')) {
+		if (i == 0 && unicode.IsDigit(c)) || !(IsAlnum(c) || (c == '_')) {
 			return res, s[i:]
 		}
 		res += string(c)
@@ -84,7 +86,7 @@ func NewTokenizer() *Tokenizer {
 func readFile(path string) string {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		madden("ファイル%sの読み取りに失敗しました", path)
+		Alarm("ファイル%sの読み取りに失敗しました", path)
 	}
 	if len(bytes) == 0 || bytes[len(bytes)-1] != '\n' {
 		bytes = append(bytes, '\n')
@@ -115,7 +117,7 @@ func (t *Tokenizer) Tokenize(path string) {
 		// 行コメントをスキップ
 		if strings.HasPrefix(input, "//") {
 			input = input[2:]
-			for runeAt(input, 0) != '\n' {
+			for RuneAt(input, 0) != '\n' {
 				input = input[1:]
 			}
 			continue
@@ -145,8 +147,8 @@ func (t *Tokenizer) Tokenize(path string) {
 			continue
 		}
 
-		var c = runeAt(input, 0)
-		if isAlpha(c) || (c == '_') {
+		var c = RuneAt(input, 0)
+		if IsAlpha(c) || (c == '_') {
 			// input から 識別子を取り出す
 			var identifier, nextInput = getIdentifier(input)
 			var isKeyword = false
@@ -173,7 +175,7 @@ func (t *Tokenizer) Tokenize(path string) {
 		}
 		if unicode.IsDigit(c) {
 			var token = NewToken(TokenNumber, "", input)
-			token.val, input = strtoi(input)
+			token.val, input = Strtoi(input)
 			token.str = strconv.Itoa(token.val)
 			t.tokens = append(t.tokens, token)
 			continue
@@ -181,11 +183,11 @@ func (t *Tokenizer) Tokenize(path string) {
 		if c == '\'' {
 			var token = NewToken(TokenNumber, input[:3], input)
 			input = input[1:]
-			var content = runeAt(input, 0)
+			var content = RuneAt(input, 0)
 			input = input[1:]
-			var close = runeAt(input, 0)
+			var close = RuneAt(input, 0)
 			if close != '\'' {
-				madden("文字リテラルの指定が不正です")
+				Alarm("文字リテラルの指定が不正です")
 			}
 			token.val = int(content)
 			t.tokens = append(t.tokens, token)
@@ -194,7 +196,7 @@ func (t *Tokenizer) Tokenize(path string) {
 		}
 		if c == '"' {
 			var pos = 1
-			for runeAt(input, pos) != '"' {
+			for RuneAt(input, pos) != '"' {
 				pos += 1
 			}
 			var token = NewToken(TokenString, input[0:pos+1], input)
@@ -238,6 +240,6 @@ func (t *Tokenizer) Consume(kind TokenKind) bool {
 // それ以外の場合にはエラーを報告する。
 func (t *Tokenizer) Expect(kind TokenKind) {
 	if !t.Consume(kind) {
-		madden("'%s'ではありません", kind)
+		Alarm("'%s'ではありません", kind)
 	}
 }

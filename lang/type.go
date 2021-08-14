@@ -1,4 +1,4 @@
-package main
+package lang
 
 type TypeKind string
 
@@ -14,22 +14,26 @@ const (
 )
 
 type Type struct {
-	kind       TypeKind
-	ptrTo      *Type
-	arraySize  int
-	components []Type
+	Kind       TypeKind
+	PtrTo      *Type
+	ArraySize  int
+	Components []Type
 }
 
 func NewType(kind TypeKind) Type {
-	return Type{kind: kind}
+	return Type{Kind: kind}
 }
 
 func NewMultipleType(components []Type) Type {
-	return Type{kind: TypeMultiple, components: components}
+	return Type{Kind: TypeMultiple, Components: components}
 }
 
 func NewArrayType(elemType Type, size int) Type {
-	return Type{kind: TypeArray, ptrTo: &elemType, arraySize: size}
+	return Type{Kind: TypeArray, PtrTo: &elemType, ArraySize: size}
+}
+
+func NewPointerType(to *Type) Type {
+	return Type{Kind: TypePtr, PtrTo: to}
 }
 
 func NewUndefinedType() Type {
@@ -37,35 +41,35 @@ func NewUndefinedType() Type {
 }
 
 func Sizeof(ty Type) int {
-	if ty.kind == TypeInt || ty.kind == TypePtr {
+	if ty.Kind == TypeInt || ty.Kind == TypePtr {
 		return 8
 	}
-	if ty.kind == TypeRune {
+	if ty.Kind == TypeRune {
 		return 1
 	}
-	if ty.kind == TypeArray {
-		return ty.arraySize * Sizeof(*ty.ptrTo)
+	if ty.Kind == TypeArray {
+		return ty.ArraySize * Sizeof(*ty.PtrTo)
 	}
 	// 未定義
 	return 0
 }
 
 func typeEquals(t1 Type, t2 Type) bool {
-	if t1.kind != t2.kind {
+	if t1.Kind != t2.Kind {
 		return false
 	}
-	if t1.kind == TypePtr {
-		return typeEquals(*t1.ptrTo, *t2.ptrTo)
+	if t1.Kind == TypePtr {
+		return typeEquals(*t1.PtrTo, *t2.PtrTo)
 	}
-	if t1.kind == TypeArray {
-		return t1.arraySize == t2.arraySize && typeEquals(*t1.ptrTo, *t2.ptrTo)
+	if t1.Kind == TypeArray {
+		return t1.ArraySize == t2.ArraySize && typeEquals(*t1.PtrTo, *t2.PtrTo)
 	}
-	if t1.kind == TypeMultiple {
-		if len(t1.components) != len(t2.components) {
+	if t1.Kind == TypeMultiple {
+		if len(t1.Components) != len(t2.Components) {
 			return false
 		}
-		for i := range t1.components {
-			if !typeEquals(t1.components[i], t2.components[i]) {
+		for i := range t1.Components {
+			if !typeEquals(t1.Components[i], t2.Components[i]) {
 				return false
 			}
 		}
@@ -75,7 +79,7 @@ func typeEquals(t1 Type, t2 Type) bool {
 }
 
 func IsKindOfNumber(t Type) bool {
-	return t.kind == TypeInt || t.kind == TypeRune
+	return t.Kind == TypeInt || t.Kind == TypeRune
 }
 
 func TypeCompatable(t1 Type, t2 Type) bool {

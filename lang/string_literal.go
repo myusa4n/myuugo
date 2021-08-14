@@ -1,10 +1,10 @@
-package main
+package lang
 
 type StringLiteral struct {
-	label string
-	value string
+	Label string
+	Value string
 }
 
 func NewStringLiteral(label string, value string) *StringLiteral {
-	return &StringLiteral{label: label, value: value}
+	return &StringLiteral{Label: label, Value: value}
 }

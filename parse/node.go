@@ -1,4 +1,8 @@
-package main
+package parse
+
+import (
+	. "github.com/myuu222/myuugo/lang"
+)
 
 type NodeKind string
 
@@ -38,28 +42,28 @@ const (
 )
 
 type Node struct {
-	kind     NodeKind       // ノードの型
-	val      int            // kindがNodeNumの場合にのみ使う
-	variable *Variable      // kindがNodeLocalVarの場合にのみ使う
-	str      *StringLiteral // kindがNodeStringの場合にのみ使う
-	label    string         // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
-	exprType Type           // ノードが表す式の型
-	children []*Node        // 子。lhs, rhsの順でchildrenに格納される
-	env      *Environment   // そのノードで管理している変数などの情報をまとめたもの
+	Kind     NodeKind       // ノードの型
+	Val      int            // kindがNodeNumの場合にのみ使う
+	Variable *Variable      // kindがNodeLocalVarの場合にのみ使う
+	Str      *StringLiteral // kindがNodeStringの場合にのみ使う
+	Label    string         // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
+	ExprType Type           // ノードが表す式の型
+	Children []*Node        // 子。lhs, rhsの順でchildrenに格納される
+	Env      *Environment   // そのノードで管理している変数などの情報をまとめたもの
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {
-	return &Node{kind: kind, children: children, env: Env}
+	return &Node{Kind: kind, Children: children, Env: Env}
 }
 
 func NewBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{kind: kind, children: []*Node{lhs, rhs}, env: Env}
+	return &Node{Kind: kind, Children: []*Node{lhs, rhs}, Env: Env}
 }
 
 func NewLeafNode(kind NodeKind) *Node {
-	return &Node{kind: kind, env: Env}
+	return &Node{Kind: kind, Env: Env}
 }
 
 func NewNodeNum(val int) *Node {
-	return &Node{kind: NodeNum, val: val, env: Env}
+	return &Node{Kind: NodeNum, Val: val, Env: Env}
 }

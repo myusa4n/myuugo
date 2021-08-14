@@ -1,16 +1,27 @@
-package main
+package parse
 
-import "strconv"
+import (
+	"strconv"
+
+	. "github.com/myuu222/myuugo/lang"
+)
 
 type Program struct {
 	topLevelVariables []*Variable
 	functions         []*Function
 
+	// そのうち削除するかも
 	StringLiterals []*StringLiteral
+	Code           []*Node
 }
 
 func NewProgram() *Program {
-	return &Program{topLevelVariables: []*Variable{}, functions: []*Function{}, StringLiterals: []*StringLiteral{}}
+	return &Program{
+		topLevelVariables: []*Variable{},
+		functions:         []*Function{},
+		StringLiterals:    []*StringLiteral{},
+		Code:              []*Node{},
+	}
 }
 
 func (p *Program) AddTopLevelVariable(ty Type, name string) *Variable {
@@ -24,7 +35,7 @@ func (p *Program) AddTopLevelVariable(ty Type, name string) *Variable {
 
 func (p *Program) FindTopLevelVariable(name string) *Variable {
 	for _, v := range p.topLevelVariables {
-		if v.name == name {
+		if v.Name == name {
 			return v
 		}
 	}

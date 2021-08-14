@@ -3,6 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+
+	. "github.com/myuu222/myuugo/codegen"
+	. "github.com/myuu222/myuugo/parse"
+	. "github.com/myuu222/myuugo/passes"
 )
 
 func main() {
@@ -12,24 +16,12 @@ func main() {
 	}
 
 	var path = os.Args[1]
-	tokenizer = NewTokenizer()
+	var tokenizer = NewTokenizer()
 	tokenizer.Tokenize(path)
-	Parse()
-	pipeline(code)
 
-	// アセンブリの前半部分
-	fmt.Println(".intel_syntax noprefix")
-	fmt.Println(".globl main")
+	var program = Parse(tokenizer)
 
-	fmt.Println(".data")
-	for _, str := range Env.program.StringLiterals {
-		fmt.Println(str.label + ":")
-		fmt.Println("  .string " + str.value)
-	}
-	fmt.Println(".text")
+	Semantic(program.Code)
 
-	for _, c := range code {
-		// 抽象構文木を下りながらコード生成
-		gen(c)
-	}
+	GenX86_64(program)
 }

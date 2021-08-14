@@ -1,4 +1,4 @@
-package main
+package lang
 
 type Function struct {
 	Label           string

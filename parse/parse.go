@@ -1,9 +1,12 @@
-package main
+package parse
 
 import (
 	"fmt"
 	"os"
 	"strings"
+
+	. "github.com/myuu222/myuugo/lang"
+	. "github.com/myuu222/myuugo/util"
 )
 
 var tokenizer *Tokenizer
@@ -50,7 +53,7 @@ func (t *Tokenizer) consumeEndLine() bool {
 
 func (t *Tokenizer) expectEndLine() {
 	if !t.consumeEndLine() {
-		madden("文の終端記号ではありません")
+		Alarm("文の終端記号ではありません")
 	}
 }
 
@@ -107,7 +110,7 @@ func (t *Tokenizer) atEof() bool {
 func (t *Tokenizer) expectType() Type {
 	ty, ok := t.consumeType()
 	if !ok {
-		madden("型ではありません")
+		Alarm("型ではありません")
 	}
 	return ty
 }
@@ -115,16 +118,13 @@ func (t *Tokenizer) expectType() Type {
 func (t *Tokenizer) consumeType() (Type, bool) {
 	var varType Type = Type{}
 	if t.Consume(TokenStar) {
-		varType.kind = TypePtr
 		ty := t.expectType()
-		varType.ptrTo = &ty
-		return varType, true
+		return NewPointerType(&ty), true
 	}
 	if t.Consume(TokenLSBrace) {
 		var arraySize = t.expectNumber()
 		t.Expect(TokenRSBrace)
 		ty := t.expectType()
-		varType.ptrTo = &ty
 		return NewArrayType(ty, arraySize), true
 	}
 	tok, ok := t.consumeIdentifier()
@@ -139,12 +139,11 @@ func (t *Tokenizer) consumeType() (Type, bool) {
 	}
 	if tok.str == "string" {
 		var r = NewType(TypeRune)
-		return Type{kind: TypePtr, ptrTo: &r}, true
+		return NewPointerType(&r), true
 	}
 	return varType, true
 }
 
-var code []*Node
 var currentFuncLabel string
 var prevFuncLabel string
 var Env *Environment
@@ -162,22 +161,24 @@ func stepOut() {
 	Env = prevEnv
 }
 
-func Parse() {
+func Parse(tok *Tokenizer) *Program {
+	tokenizer = tok
 	Env = NewEnvironment()
 
 	for tokenizer.consumeEndLine() {
 	}
-	code = []*Node{packageStmt()}
+	Env.program.Code = []*Node{packageStmt()}
 	tokenizer.expectEndLine()
 
-	code = append(code, topLevelStmtList().children...)
+	Env.program.Code = append(Env.program.Code, topLevelStmtList().Children...)
+	return Env.program
 }
 
 func packageStmt() *Node {
 	var n = NewLeafNode(NodePackageStmt)
 
 	tokenizer.Expect(TokenPackage)
-	n.label = tokenizer.expectIdentifier().str
+	n.Label = tokenizer.expectIdentifier().str
 
 	return n
 }
@@ -201,7 +202,7 @@ func localStmtList() *Node {
 		}
 	}
 	var node = NewNode(NodeStmtList, stmts)
-	node.children = stmts
+	node.Children = stmts
 	return node
 }
 
@@ -224,7 +225,7 @@ func topLevelStmtList() *Node {
 		}
 	}
 	var node = NewNode(NodeStmtList, stmts)
-	node.children = stmts
+	node.Children = stmts
 	return node
 }
 
@@ -240,13 +241,13 @@ func topLevelStmt() *Node {
 
 	// 許可されていないもの
 	if tokenizer.Test(TokenIf) {
-		madden("if文はトップレベルでは使用できません")
+		Alarm("if文はトップレベルでは使用できません")
 	}
 	if tokenizer.Test(TokenFor) {
-		madden("for文はトップレベルでは使用できません")
+		Alarm("for文はトップレベルでは使用できません")
 	}
 	if tokenizer.Test(TokenReturn) {
-		madden("return文はトップレベルでは使用できません")
+		Alarm("return文はトップレベルでは使用できません")
 	}
 
 	var n = expr()
@@ -311,7 +312,7 @@ func localStmt() *Node {
 func topLevelVarStmt() *Node {
 	tokenizer.Expect(TokenVar)
 	var v = topLevelVariableDeclaration()
-	v.variable.varType = tokenizer.expectType()
+	v.Variable.Type = tokenizer.expectType()
 	return NewNode(NodeTopLevelVarStmt, []*Node{v})
 }
 
@@ -325,7 +326,7 @@ func localVarStmt() *Node {
 		tokenizer.Expect(TokenEqual)
 		return NewBinaryNode(NodeLocalVarStmt, v, expr())
 	} else {
-		v.variable.varType = ty
+		v.Variable.Type = ty
 	}
 	if tokenizer.Consume(TokenEqual) {
 		return NewBinaryNode(NodeLocalVarStmt, v, expr())
@@ -349,8 +350,8 @@ func funcDefinition() *Node {
 		}
 		lvarNode := localVariableDeclaration()
 		parameters = append(parameters, lvarNode)
-		lvarNode.variable.varType = tokenizer.expectType()
-		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.variable.varType)
+		lvarNode.Variable.Type = tokenizer.expectType()
+		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.Variable.Type)
 	}
 
 	fn.ReturnValueType = NewType(TypeVoid)
@@ -370,9 +371,9 @@ func funcDefinition() *Node {
 	tokenizer.Expect(TokenLbrace)
 
 	var node = NewNode(NodeFunctionDef, make([]*Node, 0))
-	node.label = identifier.str
-	node.children = append(node.children, localStmtList())
-	node.children = append(node.children, parameters...)
+	node.Label = identifier.str
+	node.Children = append(node.Children, localStmtList())
+	node.Children = append(node.Children, parameters...)
 
 	tokenizer.Expect(TokenRbrace)
 
@@ -390,7 +391,7 @@ func forStmt() *Node {
 
 	if tokenizer.Consume(TokenLbrace) {
 		// 無限ループ
-		node.children[3] = localStmtList()
+		node.Children[3] = localStmtList()
 		tokenizer.Expect(TokenRbrace)
 		stepOut()
 		return node
@@ -399,25 +400,25 @@ func forStmt() *Node {
 	var s = simpleStmt()
 	if tokenizer.Consume(TokenLbrace) {
 		// while文
-		if s.kind != NodeExprStmt {
-			madden("for文の条件に式以外が書かれています")
+		if s.Kind != NodeExprStmt {
+			Alarm("for文の条件に式以外が書かれています")
 		}
-		node.children[1] = s.children[0] // expr
-		node.children[3] = localStmtList()
+		node.Children[1] = s.Children[0] // expr
+		node.Children[3] = localStmtList()
 		tokenizer.Expect(TokenRbrace)
 		stepOut()
 		return node
 	}
 
 	// 通常のfor文
-	node.children[0] = s
+	node.Children[0] = s
 	tokenizer.Expect(TokenSemicolon)
-	node.children[1] = expr()
+	node.Children[1] = expr()
 	tokenizer.Expect(TokenSemicolon)
-	node.children[2] = simpleStmt()
+	node.Children[2] = simpleStmt()
 
 	tokenizer.Expect(TokenLbrace)
-	node.children[3] = localStmtList()
+	node.Children[3] = localStmtList()
 	tokenizer.Expect(TokenRbrace)
 	stepOut()
 	return node
@@ -568,7 +569,7 @@ func primary() *Node {
 
 	if tokenizer.Test(TokenString) {
 		var n = NewLeafNode(NodeString)
-		n.str = Env.AddStringLiteral(tokenizer.Fetch())
+		n.Str = Env.AddStringLiteral(tokenizer.Fetch())
 		tokenizer.Succ()
 		return n
 	}
@@ -578,12 +579,12 @@ func primary() *Node {
 		var tok = tokenizer.expectIdentifier()
 		tokenizer.Expect(TokenLparen)
 		var node = NewNode(NodeFunctionCall, make([]*Node, 0))
-		node.label = tok.str
+		node.Label = tok.str
 		for !tokenizer.Consume(TokenRparen) {
-			if len(node.children) > 0 {
+			if len(node.Children) > 0 {
 				tokenizer.Expect(TokenComma)
 			}
-			node.children = append(node.children, expr())
+			node.Children = append(node.Children, expr())
 		}
 		return node
 	}
@@ -601,8 +602,8 @@ func primary() *Node {
 func variableRef() *Node {
 	var tok = tokenizer.expectIdentifier()
 	var node = NewLeafNode(NodeVariable)
-	node.variable = Env.FindVar(currentFuncLabel, tok)
-	if node.variable == nil {
+	node.Variable = Env.FindVar(currentFuncLabel, tok)
+	if node.Variable == nil {
 		errorAt(tok.rest, "未定義の変数です")
 	}
 	return node
@@ -615,7 +616,7 @@ func localVariableDeclaration() *Node {
 	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です")
 	}
-	node.variable = Env.AddLocalVar(currentFuncLabel, tok)
+	node.Variable = Env.AddLocalVar(currentFuncLabel, tok)
 	return node
 }
 
@@ -626,6 +627,6 @@ func topLevelVariableDeclaration() *Node {
 	if lvar != nil {
 		errorAt(tok.rest, "すでに定義済みの変数です")
 	}
-	node.variable = Env.AddTopLevelVar(tok)
+	node.Variable = Env.AddTopLevelVar(tok)
 	return node
 }
