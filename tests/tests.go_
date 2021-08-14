@@ -80,6 +80,9 @@ func main() {
 
   test("scope test 1", 22, scopeTest1())
 
+  test("bool test 1", 1000, boolTest1())
+  test("bool test 2", true, boolTest2())
+
 	puts("OK")
 }
 
@@ -354,4 +357,19 @@ func scopeTest1() int {
     n = 3
   }
   return n
+}
+
+func boolTest1() int {
+  var n int = 10
+  if true {
+    n = n * 100
+  }
+  if false {
+    n = 0
+  }
+  return n
+}
+
+func boolTest2() bool {
+  return true
 }

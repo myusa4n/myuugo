@@ -129,6 +129,9 @@ func traverse(node *parse.Node) lang.Type {
 	if node.Kind == parse.NodeIf {
 		traverse(node.Condition)
 		traverse(node.Body)
+		if node.Condition.ExprType.Kind != lang.TypeBool {
+			util.Alarm("if文の条件として使える式はbool型のものだけです")
+		}
 		node.ExprType = stmtType
 		return stmtType
 	}
@@ -218,6 +221,10 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = lang.NewType(lang.TypeInt)
 		return node.ExprType
 	}
+	if node.Kind == parse.NodeBool {
+		node.ExprType = lang.NewType(lang.TypeBool)
+		return node.ExprType
+	}
 	if node.Kind == parse.NodeVariable {
 		node.ExprType = node.Variable.Type
 		return node.Variable.Type
@@ -247,29 +254,13 @@ func traverse(node *parse.Node) lang.Type {
 		util.Alarm("[%s] 左辺と右辺の式の型が違います %s %s", node.Kind, lhsType.Kind, rhsType.Kind)
 	}
 
-	node.ExprType = lang.NewType(lang.TypeInt)
 	switch node.Kind {
-	case parse.NodeAdd:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeSub:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeMul:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeDiv:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeEql:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeNotEql:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeLess:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeLessEql:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeGreater:
-		return lang.NewType(lang.TypeInt)
-	case parse.NodeGreaterEql:
-		return lang.NewType(lang.TypeInt)
+	case parse.NodeAdd, parse.NodeSub, parse.NodeMul, parse.NodeDiv:
+		node.ExprType = lang.NewType(lang.TypeInt)
+	case parse.NodeEql, parse.NodeNotEql, parse.NodeLess, parse.NodeLessEql, parse.NodeGreater, parse.NodeGreaterEql:
+		node.ExprType = lang.NewType(lang.TypeBool)
+	default:
+		node.ExprType = stmtType
 	}
-	node.ExprType = stmtType
-	return stmtType
+	return node.ExprType
 }

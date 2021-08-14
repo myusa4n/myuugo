@@ -60,6 +60,10 @@ func gen(node *parse.Node) {
 		fmt.Printf("  push %d\n", node.Val)
 		return
 	}
+	if node.Kind == parse.NodeBool {
+		fmt.Printf("  push %d\n", node.Val)
+		return
+	}
 	if node.Kind == parse.NodeStmtList {
 		for _, stmt := range node.Children {
 			gen(stmt)
@@ -229,6 +233,7 @@ func gen(node *parse.Node) {
 		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 
 		for i, param := range node.Parameters { // 引数
+			// TODO: サイズによって、代入する値を変える必要があるはず
 			genLvalue(param)
 			fmt.Println("  pop rax")
 			fmt.Println("  mov [rax], " + registers[i])

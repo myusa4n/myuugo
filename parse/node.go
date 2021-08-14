@@ -21,6 +21,7 @@ const (
 	NodeReturn           NodeKind = "RETURN"              // return
 	NodeVariable         NodeKind = "VARIABLE"            // 変数参照
 	NodeNum              NodeKind = "NUM"                 // 整数
+	NodeBool             NodeKind = "BOOL"                // 真偽値
 	NodeMetaIf           NodeKind = "META IF"             // if ... else ...
 	NodeIf               NodeKind = "IF"                  // if
 	NodeElse             NodeKind = "ELSE"                // else
@@ -130,6 +131,10 @@ func NewLeafNode(kind NodeKind) *Node {
 
 func NewNodeNum(val int) *Node {
 	return &Node{Kind: NodeNum, Val: val, Env: Env}
+}
+
+func NewNodeBool(val int) *Node {
+	return &Node{Kind: NodeBool, Val: val, Env: Env}
 }
 
 func NewForNode(init *Node, cond *Node, update *Node, body *Node) *Node {

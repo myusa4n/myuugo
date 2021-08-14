@@ -91,6 +91,18 @@ func (t *Tokenizer) expectNumber() int {
 	return val
 }
 
+// 次のトークンが真偽値の場合、トークンを1つ読み進めて1か0を返す。
+// それ以外の場合にはエラーを報告する。
+func (t *Tokenizer) expectBool() int {
+	token := t.Fetch()
+	if !t.Test(TokenBool) {
+		errorAt(token.rest, "真偽値ではありません")
+	}
+	var val = token.val
+	tokenizer.Succ()
+	return val
+}
+
 // 次のトークンが文字列の場合、トークンを1つ読み進めてその文字列を返す。
 // それ以外の場合にはエラーを報告する。
 func (t *Tokenizer) expectString() string {
@@ -136,6 +148,9 @@ func (t *Tokenizer) consumeType() (lang.Type, bool) {
 	}
 	if tok.str == "rune" {
 		return lang.NewType(lang.TypeRune), true
+	}
+	if tok.str == "bool" {
+		return lang.NewType(lang.TypeBool), true
 	}
 	if tok.str == "string" {
 		var r = lang.NewType(lang.TypeRune)
@@ -557,6 +572,10 @@ func primary() *Node {
 
 	if tokenizer.Test(TokenNumber) {
 		return NewNodeNum(tokenizer.expectNumber())
+	}
+
+	if tokenizer.Test(TokenBool) {
+		return NewNodeBool(tokenizer.expectBool())
 	}
 
 	if tokenizer.Test(TokenString) {

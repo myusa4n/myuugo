@@ -57,6 +57,7 @@ const (
 	TokenAmpersand    TokenKind = "&"
 	TokenLSBrace      TokenKind = "["
 	TokenRSBrace      TokenKind = "]"
+	TokenBool         TokenKind = "BOOL"
 )
 
 type Token struct {
@@ -152,6 +153,18 @@ func (t *Tokenizer) Tokenize(path string) {
 			// input から 識別子を取り出す
 			var identifier, nextInput = getIdentifier(input)
 			var isKeyword = false
+
+			if identifier == "true" || identifier == "false" {
+				tok := NewToken(TokenBool, identifier, input)
+				if identifier == "true" {
+					tok.val = 1
+				} else {
+					tok.val = 0
+				}
+				t.tokens = append(t.tokens, tok)
+				input = nextInput
+				continue
+			}
 
 			for _, keyword := range keywords {
 				if keyword == TokenKind(identifier) {

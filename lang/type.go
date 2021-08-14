@@ -8,6 +8,7 @@ const (
 	TypePtr       TypeKind = "[TYPE] PTR"
 	TypeVoid      TypeKind = "[TYPE] VOID"
 	TypeArray     TypeKind = "[TYPE] ARRAY"
+	TypeBool      TypeKind = "[TYPE] BOOL"
 	TypeStmt      TypeKind = "[TYPE] STMT"      // 簡便のため存在させている
 	TypeMultiple  TypeKind = "[TYPE] MULTIPLE"  // 関数の返り値が複数だった場合に使う
 	TypeUndefined TypeKind = "[TYPE] UNDEFINED" // まだ型を決めることができていない
@@ -44,7 +45,7 @@ func Sizeof(ty Type) int {
 	if ty.Kind == TypeInt || ty.Kind == TypePtr {
 		return 8
 	}
-	if ty.Kind == TypeRune {
+	if ty.Kind == TypeRune || ty.Kind == TypeBool {
 		return 1
 	}
 	if ty.Kind == TypeArray {
@@ -79,7 +80,7 @@ func typeEquals(t1 Type, t2 Type) bool {
 }
 
 func IsKindOfNumber(t Type) bool {
-	return t.Kind == TypeInt || t.Kind == TypeRune
+	return t.Kind == TypeInt || t.Kind == TypeRune || t.Kind == TypeBool
 }
 
 func TypeCompatable(t1 Type, t2 Type) bool {
