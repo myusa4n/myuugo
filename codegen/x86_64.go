@@ -370,6 +370,31 @@ func gen(node *parse.Node) {
 
 		return
 	}
+	if node.Kind == parse.NodeLogicalOr {
+		gen(node.Lhs)
+		fmt.Println("  pop rax")
+		fmt.Println("  push 1")
+		fmt.Println("  cmp rax, 1")
+
+		var label = ".Lor" + strconv.Itoa(labelNumber)
+		labelNumber++
+
+		// 短絡評価する
+		fmt.Println("  je " + label)
+
+		fmt.Println("  pop rax") // スタックから1を削除する
+		gen(node.Rhs)
+
+		fmt.Println("  pop rax")
+		fmt.Println("  cmp rax, 1")
+		fmt.Println("  sete al")
+		fmt.Println("  movzb rax, al")
+		fmt.Println("  push rax")
+
+		fmt.Println(label + ":")
+
+		return
+	}
 
 	gen(node.Lhs)
 	gen(node.Rhs)

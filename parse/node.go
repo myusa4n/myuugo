@@ -42,6 +42,7 @@ const (
 	NodeLocalVarList     NodeKind = "LOCAL VAR LIST"      // 複数の変数からなる式
 	NodeNot              NodeKind = "[NODE] NOT"          // 否定
 	NodeLogicalAnd       NodeKind = "[NODE] LOGICAL AND"  // 論理積
+	NodeLogicalOr        NodeKind = "[NODE] LOGICAL OR"   // 論理和
 )
 
 type Node struct {

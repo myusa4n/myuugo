@@ -497,6 +497,8 @@ func logicalEquality() *Node {
 	for {
 		if tokenizer.Consume(TokenDoubleAmpersand) {
 			n = NewBinaryOperationNode(NodeLogicalAnd, n, equality())
+		} else if tokenizer.Consume(TokenDoubleVerticalLine) {
+			n = NewBinaryOperationNode(NodeLogicalOr, n, equality())
 		} else {
 			return n
 		}

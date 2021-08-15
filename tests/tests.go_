@@ -44,6 +44,9 @@ func main() {
 	testBool("boolean operation test 15", false, !(2+3 >= 5))
 	testBool("boolean operation test 16", true, 1 + 1 == 2 && 3 + 4 == 7)
 	testBool("boolean operation test 17", false, 2 + 1 == 3 && 3 + 5 == 7 && 1 + 1 == 2)
+	testBool("boolean operation test 18", true, 1 + 1 == 2 || 3 + 4 == 7)
+	testBool("boolean operation test 19", true, 2 + 1 == 4 || 3 + 5 == 8 || 1 + 1 == 2)
+	testBool("boolean operation test 20", false, 2 + 1 == 4 || 3 + 5 == 7 || 1 + 1 == 4)
 
 	testInt("local var test 1", 4, localVarTest1())
 	testInt("local var test 2", 7, localVarTest2())
