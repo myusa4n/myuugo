@@ -51,6 +51,7 @@ func main() {
 	testInt("if stmt test 1", 1, ifStmtTest1())
 	testInt("if stmt test 2", 2, ifStmtTest2())
 	testInt("if stmt test 3", 34, ifStmtTest3())
+	testInt("if stmt test 4", 1, ifStmtTest4())
 
 	testInt("for stmt test 1", 15, forStmtTest1())
 	testInt("for stmt test 2", 15, forStmtTest2())
@@ -144,6 +145,19 @@ func ifStmtTest3() int {
 		test = 3*test + 4
 	}
 	return test
+}
+
+func ifStmtTest4() int {
+	var test = 14 
+	if test < 10 {
+		return 0
+	} else if test < 20 {
+		return 1
+	} else if test < 30 {
+		return 2
+	} else {
+		return 3
+	}
 }
 
 func forStmtTest1() int {

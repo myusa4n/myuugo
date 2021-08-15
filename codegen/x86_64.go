@@ -150,12 +150,13 @@ func gen(node *parse.Node) {
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
 		gen(node.If)
+		labelNumber += 1
 		fmt.Println(elseLabel + ":")
+
 		if node.Else != nil {
 			gen(node.Else)
 		}
 		fmt.Println(endLabel + ":")
-		labelNumber += 1
 		return
 	}
 	if node.Kind == parse.NodeIf {

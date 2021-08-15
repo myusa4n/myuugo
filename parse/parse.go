@@ -459,14 +459,16 @@ func ifStmt() *Node {
 }
 
 func elseStmt() *Node {
-	stepIn()
 	tokenizer.Expect(TokenElse)
-	tokenizer.Expect(TokenLbrace)
-	var body = localStmtList()
-	tokenizer.Expect(TokenRbrace)
 
-	stepOut()
-	return NewElseNode(body)
+	if tokenizer.Consume(TokenLbrace) {
+		stepIn()
+		var body = localStmtList()
+		tokenizer.Expect(TokenRbrace)
+		stepOut()
+		return NewElseNode(body)
+	}
+	return metaIfStmt()
 }
 
 func localVarList() *Node {
