@@ -554,15 +554,12 @@ func primary() *Node {
 		tokenizer.Expect(TokenRparen)
 		return n
 	}
-
 	if tokenizer.Test(TokenNumber) {
 		return NewNodeNum(tokenizer.expectNumber())
 	}
-
 	if tokenizer.Test(TokenBool) {
 		return NewNodeBool(tokenizer.expectBool())
 	}
-
 	if tokenizer.Test(TokenString) {
 		var n = NewLeafNode(NodeString)
 		n.Str = Env.program.AddStringLiteral(tokenizer.Fetch().str)
@@ -570,6 +567,20 @@ func primary() *Node {
 		return n
 	}
 
+	var n *Node = named()
+
+	for {
+		if tokenizer.Consume(TokenLSBrace) {
+			n = NewIndexNode(n, expr())
+			tokenizer.Expect(TokenRSBrace)
+			continue
+		}
+		break
+	}
+	return n
+}
+
+func named() *Node {
 	if tokenizer.Prefetch(1).Test(TokenLparen) {
 		// 関数呼び出し
 		var tok = tokenizer.expectIdentifier()
@@ -583,14 +594,6 @@ func primary() *Node {
 			arguments = append(arguments, expr())
 		}
 		return NewFunctionCallNode(functionName, arguments)
-	}
-	if tokenizer.Prefetch(1).Test(TokenLSBrace) {
-		// 添字アクセス
-		var arr = variableRef()
-		tokenizer.Expect(TokenLSBrace)
-		var index = expr()
-		tokenizer.Expect(TokenRSBrace)
-		return NewIndexNode(arr, index)
 	}
 	return variableRef()
 }

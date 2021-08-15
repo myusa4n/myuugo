@@ -42,11 +42,11 @@ func main() {
 	testBool("boolean operation test 13", false, 4*3 >= 5*7)
 	testBool("boolean operation test 14", true, !(2+3 > 5))
 	testBool("boolean operation test 15", false, !(2+3 >= 5))
-	testBool("boolean operation test 16", true, 1 + 1 == 2 && 3 + 4 == 7)
-	testBool("boolean operation test 17", false, 2 + 1 == 3 && 3 + 5 == 7 && 1 + 1 == 2)
-	testBool("boolean operation test 18", true, 1 + 1 == 2 || 3 + 4 == 7)
-	testBool("boolean operation test 19", true, 2 + 1 == 4 || 3 + 5 == 8 || 1 + 1 == 2)
-	testBool("boolean operation test 20", false, 2 + 1 == 4 || 3 + 5 == 7 || 1 + 1 == 4)
+	testBool("boolean operation test 16", true, 1+1 == 2 && 3+4 == 7)
+	testBool("boolean operation test 17", false, 2+1 == 3 && 3+5 == 7 && 1+1 == 2)
+	testBool("boolean operation test 18", true, 1+1 == 2 || 3+4 == 7)
+	testBool("boolean operation test 19", true, 2+1 == 4 || 3+5 == 8 || 1+1 == 2)
+	testBool("boolean operation test 20", false, 2+1 == 4 || 3+5 == 7 || 1+1 == 4)
 
 	testInt("local var test 1", 4, localVarTest1())
 	testInt("local var test 2", 7, localVarTest2())
@@ -79,6 +79,7 @@ func main() {
 	testInt("array test 1", 6, arrayTest1())
 	testInt("array test 2", 0, arrayTest2())
 	testInt("array test 3", 1, arrayTest3())
+	testInt("array test 4", 12, arrayTest4())
 
 	testInt("rune test 1", 91, runeTest1())
 	testInt("rune test 2", 3, runeTest2())
@@ -155,7 +156,7 @@ func ifStmtTest3() int {
 }
 
 func ifStmtTest4() int {
-	var test = 14 
+	var test = 14
 	if test < 10 {
 		return 0
 	} else if test < 20 {
@@ -301,6 +302,12 @@ var memo [3]int
 func arrayTest3() int {
 	memo[0] = 1
 	return memo[0] + memo[1]
+}
+
+func arrayTest4() int {
+	var memo2d [3][4]int
+	memo2d[0][1] = 12
+	return memo2d[0][1]
 }
 
 func runeTest1() int {
