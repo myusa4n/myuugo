@@ -55,6 +55,7 @@ const (
 	TokenNewLine      TokenKind = "\n"
 	TokenComma        TokenKind = ","
 	TokenAmpersand    TokenKind = "&"
+	TokenBang         TokenKind = "!"
 	TokenLSBrace      TokenKind = "["
 	TokenRSBrace      TokenKind = "]"
 	TokenBool         TokenKind = "BOOL"
@@ -104,7 +105,7 @@ func (t *Tokenizer) Tokenize(path string) {
 
 	var symbols = []TokenKind{
 		TokenDoubleEqual, TokenNotEqual, TokenGreaterEqual, TokenLessEqual, TokenColonEqual,
-		TokenPlus, TokenMinus, TokenStar, TokenSlash, TokenLparen, TokenRparen, TokenLess, TokenGreater, TokenSemicolon, TokenNewLine, TokenEqual, TokenLbrace, TokenRbrace, TokenComma, TokenAmpersand, TokenLSBrace, TokenRSBrace,
+		TokenPlus, TokenMinus, TokenStar, TokenSlash, TokenLparen, TokenRparen, TokenLess, TokenGreater, TokenSemicolon, TokenNewLine, TokenEqual, TokenLbrace, TokenRbrace, TokenComma, TokenAmpersand, TokenLSBrace, TokenRSBrace, TokenBang,
 	}
 	var keywords = []TokenKind{
 		TokenPackage,

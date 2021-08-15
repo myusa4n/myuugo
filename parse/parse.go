@@ -561,6 +561,9 @@ func unary() *Node {
 	if tokenizer.Consume(TokenAmpersand) {
 		return NewUnaryOperationNode(NodeAddr, unary())
 	}
+	if tokenizer.Consume(TokenBang) {
+		return NewUnaryOperationNode(NodeNot, unary())
+	}
 	return primary()
 }
 

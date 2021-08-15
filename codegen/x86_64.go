@@ -248,6 +248,13 @@ func gen(node *parse.Node) {
 
 		return
 	}
+	if node.Kind == parse.NodeNot {
+		gen(node.Target)
+		fmt.Println("  pop rax")
+		fmt.Println("  xor rax, 1")
+		fmt.Println("  push rax")
+		return
+	}
 	if node.Kind == parse.NodeAddr {
 		genLvalue(node.Target)
 		return

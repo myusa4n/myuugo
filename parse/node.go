@@ -40,6 +40,7 @@ const (
 	NodeShortVarDeclStmt NodeKind = "SHORT VAR DECL STMT" // 短絡変数宣言
 	NodeExprList         NodeKind = "EXPR LIST"           // 複数の要素からなる式
 	NodeLocalVarList     NodeKind = "LOCAL VAR LIST"      // 複数の変数からなる式
+	NodeNot              NodeKind = "[NODE] NOT"          // 否定
 )
 
 type Node struct {

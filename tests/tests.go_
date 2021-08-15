@@ -40,6 +40,8 @@ func main() {
 	testBool("boolean operation test 11", false, 2+3 > 5)
 	testBool("boolean operation test 12", true, 2+3 >= 5)
 	testBool("boolean operation test 13", false, 4*3 >= 5*7)
+	testBool("boolean operation test 14", true, !(2+3 > 5))
+	testBool("boolean operation test 15", false, !(2+3 >= 5))
 
 	testInt("local var test 1", 4, localVarTest1())
 	testInt("local var test 2", 7, localVarTest2())

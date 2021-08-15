@@ -163,6 +163,14 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = stmtType
 		return stmtType
 	}
+	if node.Kind == parse.NodeNot {
+		var ty = traverse(node.Target)
+		if ty.Kind != lang.TypeBool {
+			panic("否定演算子の後に続くのはbool型の値だけです")
+		}
+		node.ExprType = lang.NewType(lang.TypeBool)
+		return node.ExprType
+	}
 	if node.Kind == parse.NodeAddr {
 		var ty = traverse(node.Target)
 		node.ExprType = lang.NewPointerType(&ty)
