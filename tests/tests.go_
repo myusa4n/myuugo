@@ -1,6 +1,6 @@
 package main
 
-func test(name string, expected int, actual int) {
+func testInt(name string, expected int, actual int) {
 	if expected == actual {
 		printf("[%s]: %d => %d\n", name, expected, actual)
 	} else {
@@ -9,79 +9,88 @@ func test(name string, expected int, actual int) {
 	}
 }
 
+func testBool(name string, expected bool, actual bool) {
+	if expected == actual {
+		printf("[%s]: %hhx => %hhx\n", name, expected, actual)
+	} else {
+		printf("[%s]: %hhx expected, but got %hhx\n", name, expected, actual)
+		exit(1)
+	}
+}
+
 func main() {
-	test("arithmetic operation test 1", 21, 5+20-4)
-	test("arithmetic operation test 2", 41, 12+34-5)
-	test("arithmetic operation test 3", 47, 5+6*7)
-	test("arithmetic operation test 4", 15, 5*(9-6))
-	test("arithmetic operation test 5", 4, (3+5)/2)
-	test("arithmetic operation test 6", 5, 10+-5)
-	test("arithmetic operation test 7", 4, -10+-7*-2)
+	testInt("arithmetic operation test 1", 21, 5+20-4)
+	testInt("arithmetic operation test 2", 41, 12+34-5)
+	testInt("arithmetic operation test 3", 47, 5+6*7)
+	testInt("arithmetic operation test 4", 15, 5*(9-6))
+	testInt("arithmetic operation test 5", 4, (3+5)/2)
+	testInt("arithmetic operation test 6", 5, 10+-5)
+	testInt("arithmetic operation test 7", 4, -10+-7*-2)
 
-	test("boolean operation test 1", 1, 1+1 == 2)
-	test("boolean operation test 2", 1, 1-5*2 == -9)
-	test("boolean operation test 3", 0, 4*-3 != -12)
-	test("boolean operation test 4", 0, 4*-3 != -12)
-	test("boolean operation test 5", 1, 1-5*2 != 9)
-	test("boolean operation test 6", 1, 5*10*-1 < 7*-7)
-	test("boolean operation test 7", 0, 2+3 < 5)
-	test("boolean operation test 8", 1, 2+3 <= 5)
-	test("boolean operation test 9", 1, 4*3 <= 5*7)
-	test("boolean operation test 10", 0, 5*10*-1 > 7*-7)
-	test("boolean operation test 11", 0, 2+3 > 5)
-	test("boolean operation test 12", 1, 2+3 >= 5)
-	test("boolean operation test 13", 0, 4*3 >= 5*7)
+	testBool("boolean operation test 1", true, 1+1 == 2)
+	testBool("boolean operation test 2", true, 1-5*2 == -9)
+	testBool("boolean operation test 3", false, 4*-3 != -12)
+	testBool("boolean operation test 4", false, 4*-3 != -12)
+	testBool("boolean operation test 5", true, 1-5*2 != 9)
+	testBool("boolean operation test 6", true, 5*10*-1 < 7*-7)
+	testBool("boolean operation test 7", false, 2+3 < 5)
+	testBool("boolean operation test 8", true, 2+3 <= 5)
+	testBool("boolean operation test 9", true, 4*3 <= 5*7)
+	testBool("boolean operation test 10", false, 5*10*-1 > 7*-7)
+	testBool("boolean operation test 11", false, 2+3 > 5)
+	testBool("boolean operation test 12", true, 2+3 >= 5)
+	testBool("boolean operation test 13", false, 4*3 >= 5*7)
 
-	test("local var test 1", 4, localVarTest1())
-	test("local var test 2", 7, localVarTest2())
-	test("local var test 3", 21, localVarTest3())
-	test("local var test 4", 222, localVarTest4())
-	test("local var test 5", 22, localVarTest5())
-	test("local var test 6", 12, localVarTest6())
+	testInt("local var test 1", 4, localVarTest1())
+	testInt("local var test 2", 7, localVarTest2())
+	testInt("local var test 3", 21, localVarTest3())
+	testInt("local var test 4", 222, localVarTest4())
+	testInt("local var test 5", 22, localVarTest5())
+	testInt("local var test 6", 12, localVarTest6())
 
-	test("if stmt test 1", 1, ifStmtTest1())
-	test("if stmt test 2", 2, ifStmtTest2())
-	test("if stmt test 3", 34, ifStmtTest3())
+	testInt("if stmt test 1", 1, ifStmtTest1())
+	testInt("if stmt test 2", 2, ifStmtTest2())
+	testInt("if stmt test 3", 34, ifStmtTest3())
 
-	test("for stmt test 1", 15, forStmtTest1())
-	test("for stmt test 2", 15, forStmtTest2())
-	test("for stmt test 3", 15, forStmtTest3())
+	testInt("for stmt test 1", 15, forStmtTest1())
+	testInt("for stmt test 2", 15, forStmtTest2())
+	testInt("for stmt test 3", 15, forStmtTest3())
 
-	test("func def test 1", 3, funcDefTest1())
-	test("func def test 2", 8, funcDefTest2())
+	testInt("func def test 1", 3, funcDefTest1())
+	testInt("func def test 2", 8, funcDefTest2())
 
-	test("pointer test 1", 4, pointerTest1())
-	test("pointer test 2", 3, pointerTest2())
+	testInt("pointer test 1", 4, pointerTest1())
+	testInt("pointer test 2", 3, pointerTest2())
 
-	test("type test 1", 100, typeTest1())
+	testInt("type test 1", 100, typeTest1())
 
-	test("top level var test 1", 22, topLevelTest1())
-	test("top level var test 2", 4, topLevelTest2())
-	test("top level var test 3", 20, topLevelTest3())
+	testInt("top level var test 1", 22, topLevelTest1())
+	testInt("top level var test 2", 4, topLevelTest2())
+	testInt("top level var test 3", 20, topLevelTest3())
 
-	test("array test 1", 6, arrayTest1())
-	test("array test 2", 0, arrayTest2())
-	test("array test 3", 1, arrayTest3())
+	testInt("array test 1", 6, arrayTest1())
+	testInt("array test 2", 0, arrayTest2())
+	testInt("array test 3", 1, arrayTest3())
 
-	test("rune test 1", 91, runeTest1())
-	test("rune test 2", 3, runeTest2())
-	test("rune test 3", 2, runeTest3())
+	testInt("rune test 1", 91, runeTest1())
+	testInt("rune test 2", 3, runeTest2())
+	testInt("rune test 3", 2, runeTest3())
 
-	test("string test 1", 0, stringTest1())
-	test("string test 2", 0, stringTest2())
+	testInt("string test 1", 0, stringTest1())
+	testInt("string test 2", 0, stringTest2())
 
-  puts("comment test 1")
+	puts("comment test 1")
 	commentTest1()
 
-  test("short var decl test 1", 22, shortVarDeclTest1())
-  test("short var decl test 2", 100, shortVarDeclTest2())
+	testInt("short var decl test 1", 22, shortVarDeclTest1())
+	testInt("short var decl test 2", 100, shortVarDeclTest2())
 
-  test("multiple value test 1", 13, multipleValueTest1())
+	testInt("multiple value test 1", 13, multipleValueTest1())
 
-  test("scope test 1", 22, scopeTest1())
+	testInt("scope test 1", 22, scopeTest1())
 
-  test("bool test 1", 1000, boolTest1())
-  test("bool test 2", true, boolTest2())
+	testBool("bool test 1", true, boolTest1())
+	testBool("bool test 2", true, boolTest2())
 
 	puts("OK")
 }
@@ -94,282 +103,281 @@ func localVarTest1() int {
 func localVarTest2() int { var z = 20; var a = 13; var x = z - a; return x }
 
 func localVarTest3() int {
-  var a = 5
-  a + 3;
-  return 4 * a+1
+	var a = 5
+	a + 3
+	return 4*a + 1
 }
 
 func localVarTest4() int {
-  var hello = 5 * 4 + 2
-  var world = hello * 20 / 2
-  return world + 2
+	var hello = 5*4 + 2
+	var world = hello * 20 / 2
+	return world + 2
 }
 
 func ifStmtTest1() int {
-  var a = 2
-  if a == 2 {
-    a = a * 3
-    a = 1
-    return a
-    a = 5
-  }
-  return a
+	var a = 2
+	if a == 2 {
+		a = a * 3
+		a = 1
+		return a
+		a = 5
+	}
+	return a
 }
 
 func ifStmtTest2() int {
-  var a = 2
-  if a != 2 {
-    a = 6
-  }
-  return a
+	var a = 2
+	if a != 2 {
+		a = 6
+	}
+	return a
 }
 
 func ifStmtTest3() int {
-  var test = 16
-  if test < 10 {
-    test = 100
-    test = test + 21
-  } else {
-    test = test - 5
-    test = test - 1
-    test = 3 * test + 4
-  }
-  return test
+	var test = 16
+	if test < 10 {
+		test = 100
+		test = test + 21
+	} else {
+		test = test - 5
+		test = test - 1
+		test = 3*test + 4
+	}
+	return test
 }
 
 func forStmtTest1() int {
-  var i = 1
-  var sum = 0
-  for {
-    sum = sum + i
-    if i == 5 {
-      return sum
-    }
-    i = i + 1
-  }
+	var i = 1
+	var sum = 0
+	for {
+		sum = sum + i
+		if i == 5 {
+			return sum
+		}
+		i = i + 1
+	}
 }
 
 func forStmtTest2() int {
-  var i = 1
-  var sum = 0
-  for i < 6 {
-    sum = sum + i
-    i = i + 1
-  }
-  return sum
+	var i = 1
+	var sum = 0
+	for i < 6 {
+		sum = sum + i
+		i = i + 1
+	}
+	return sum
 }
 
-
 func forStmtTest3() int {
-  var sum = 0
-  var i int
-  for i = 0; i < 6; i = i+1 {
-    sum = sum + i
-  }
-  return sum
+	var sum = 0
+	var i int
+	for i = 0; i < 6; i = i + 1 {
+		sum = sum + i
+	}
+	return sum
 }
 
 func foo(a int, b int) int {
-  return a + b
+	return a + b
 }
 
 func funcDefTest1() int {
-  return foo(2, 1)
+	return foo(2, 1)
 }
 
 func fib(n int) int {
-  if n <= 1 {
-    return 1
-  }
-  return fib(n - 1) + fib(n - 2)
+	if n <= 1 {
+		return 1
+	}
+	return fib(n-1) + fib(n-2)
 }
 
 func funcDefTest2() int {
-  return fib(5)
+	return fib(5)
 }
 
 func pointerTest1() int {
-  var str = 4
-  return *&str
+	var str = 4
+	return *&str
 }
 
 func localVarTest5() int {
-  var a int = 3
-  var b int
-  b = 19
-  return a + b
+	var a int = 3
+	var b int
+	b = 19
+	return a + b
 }
 
 func pointerTest2() int {
-  var x int
-  var y *int
+	var x int
+	var y *int
 
-  y = &x
-  *y = 3
-  return x
+	y = &x
+	*y = 3
+	return x
 }
 
 func localVarTest6() int {
-  var x1 int = 1
-  var x11 int = 11
-  return x1 + x11
+	var x1 int = 1
+	var x11 int = 11
+	return x1 + x11
 }
 
 func Mul5(n int) int {
-  return n * 5
+	return n * 5
 }
 
 func typeTest1() int {
-  var n = Mul5(10) * 2
-  var m int = n
-  return m
+	var n = Mul5(10) * 2
+	var m int = n
+	return m
 }
 
 var number int
 
 func topLevelTest1() int {
-  number = 5
-  return 10 * number / 2 - 3 
+	number = 5
+	return 10*number/2 - 3
 }
 
 func bar(number int) int {
-  return number
+	return number
 }
 
 func topLevelTest2() int {
-  number = 5
-  return bar(4)
+	number = 5
+	return bar(4)
 }
 
 func baz(n int) int {
-  return number * n
+	return number * n
 }
 
 func topLevelTest3() int {
-  number = 5
-  return baz(4)
+	number = 5
+	return baz(4)
 }
 
 func arrayTest1() int {
-  var arr [10]int
-  arr[0] = 1
-  arr[1] = 2
-  arr[2] = 3
-  return arr[0] + arr[1] + arr[2]
+	var arr [10]int
+	arr[0] = 1
+	arr[1] = 2
+	arr[2] = 3
+	return arr[0] + arr[1] + arr[2]
 }
 
 func zero(n int) int {
-  return 0
+	return 0
 }
 
 func arrayTest2() int {
-  var arr [3]int
-  return zero(arr[2])
+	var arr [3]int
+	return zero(arr[2])
 }
 
 var memo [3]int
 
 func arrayTest3() int {
-  memo[0] = 1
-  return memo[0] + memo[1]
+	memo[0] = 1
+	return memo[0] + memo[1]
 }
 
 func runeTest1() int {
-  var c1 rune = 40
-  var c2 rune = 51
-  return c1 + c2
+	var c1 rune = 40
+	var c2 rune = 51
+	return c1 + c2
 }
 
 func runeTest2() int {
-  var x [3]rune
-  x[0] = -1
-  x[1] = 2
-  var y int
-  y = 4
-  return 3
+	var x [3]rune
+	x[0] = -1
+	x[1] = 2
+	var y int
+	y = 4
+	return 3
 }
 
 func runeTest3() int {
-  return 'c' - 'a'
+	return 'c' - 'a'
 }
 
 func stringTest1() int {
-  var msg string = "hello world"
-  puts(msg)
-  return 0
+	var msg string = "hello world"
+	puts(msg)
+	return 0
 }
 
 func stringTest2() int {
-  var a = 3
-  var b = 2
-  printf("%d + %d = %d\n", a, b, a + b)
-  return 0
+	var a = 3
+	var b = 2
+	printf("%d + %d = %d\n", a, b, a+b)
+	return 0
 }
 
 func commentTest1() {
-  var comment = 0
-  // ok?
-  /*
-  comment = 10
-  日本語も行ける？
-  */
-  return
-  // ok！
+	var comment = 0
+	// ok?
+	/*
+	  comment = 10
+	  日本語も行ける？
+	*/
+	return
+	// ok！
 }
 
 func shortVarDeclTest1() int {
-  number := 20
-  number = number + 2
-  return number
+	number := 20
+	number = number + 2
+	return number
 }
 
 func shortVarDeclTest2() int {
-  num2, num5 := 1, -10
-  num2, num5 = 2, 50
-  return num2 * num5
+	num2, num5 := 1, -10
+	num2, num5 = 2, 50
+	return num2 * num5
 }
 
 // (n番目のfibの値, n-1番目のfibの値)を返す
 func fib2(n int) (int, int) {
-  if n == 1 {
-    return 1, 1
-  }
-  cur, prev := fib2(n - 1)
-  return cur + prev, cur
+	if n == 1 {
+		return 1, 1
+	}
+	cur, prev := fib2(n - 1)
+	return cur + prev, cur
 }
 
 func multipleValueTest1() int {
-  // 1, 2, 3, 5, 8, 13
-  var m int
-  var _ int
-  m, _ = fib2(6)
-  return m
+	// 1, 2, 3, 5, 8, 13
+	var m int
+	var _ int
+	m, _ = fib2(6)
+	return m
 }
 
 func scopeTest1() int {
-  var n int = 10
-  for n := 0; n < 10; n = n + 1 {
-    // 特に何もしない
-  }
-  if 1 + 1 == 2 {
-    n = 22
-    var n int
-    n = 3
-  }
-  return n
+	var n int = 10
+	for n := 0; n < 10; n = n + 1 {
+		// 特に何もしない
+	}
+	if 1+1 == 2 {
+		n = 22
+		var n int
+		n = 3
+	}
+	return n
 }
 
-func boolTest1() int {
-  var n int = 10
-  if true {
-    n = n * 100
-  }
-  if false {
-    n = 0
-  }
-  return n
+func boolTest1() bool {
+	var n int = 10
+	if true {
+		n = n * 100
+	}
+	if false {
+		n = 0
+	}
+	return n == 1000
 }
 
 func boolTest2() bool {
-  return true
+	return true
 }

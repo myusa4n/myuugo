@@ -126,15 +126,9 @@ func gen(node *parse.Node) {
 			for i := len(lhs.Children) - 1; i >= 0; i-- {
 				var l = lhs.Children[i]
 				genLvalue(l)
-				if lang.Sizeof(l.ExprType) == 1 {
-					fmt.Println("  pop rax")
-					fmt.Println("  pop rdi")
-					fmt.Println("  mov [rax], dil")
-				} else { // 8
-					fmt.Println("  pop rax")
-					fmt.Println("  pop rdi")
-					fmt.Println("  mov [rax], rdi")
-				}
+				fmt.Println("  pop rax")
+				fmt.Println("  pop rdi")
+				fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
 			}
 			return
 		}
@@ -145,15 +139,9 @@ func gen(node *parse.Node) {
 			genLvalue(l)
 			gen(r)
 
-			if lang.Sizeof(l.ExprType) == 1 {
-				fmt.Println("  pop rdi")
-				fmt.Println("  pop rax")
-				fmt.Println("  mov [rax], dil")
-			} else { // 8
-				fmt.Println("  pop rdi")
-				fmt.Println("  pop rax")
-				fmt.Println("  mov [rax], rdi")
-			}
+			fmt.Println("  pop rdi")
+			fmt.Println("  pop rax")
+			fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
 		}
 		return
 	}
@@ -282,15 +270,9 @@ func gen(node *parse.Node) {
 			for i := len(lhs.Children) - 1; i >= 0; i-- {
 				var l = lhs.Children[i]
 				genLvalue(l)
-				if lang.Sizeof(l.ExprType) == 1 {
-					fmt.Println("  pop rax")
-					fmt.Println("  pop rdi")
-					fmt.Println("  mov [rax], dil")
-				} else { // 8
-					fmt.Println("  pop rax")
-					fmt.Println("  pop rdi")
-					fmt.Println("  mov [rax], rdi")
-				}
+				fmt.Println("  pop rax")
+				fmt.Println("  pop rdi")
+				fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
 			}
 			return
 		}
@@ -304,11 +286,7 @@ func gen(node *parse.Node) {
 			fmt.Println("  pop rdi")
 			fmt.Println("  pop rax")
 
-			if lang.Sizeof(l.ExprType) == 1 {
-				fmt.Println("  mov [rax], dil")
-			} else { // 8
-				fmt.Println("  mov [rax], rdi")
-			}
+			fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
 		}
 		return
 	}
@@ -320,12 +298,7 @@ func gen(node *parse.Node) {
 			fmt.Println("  pop rdi")
 			fmt.Println("  pop rax")
 
-			if lang.Sizeof(node.Children[0].ExprType) == 1 {
-				fmt.Println("  mov [rax], dil")
-			} else { // 8
-				fmt.Println("  mov [rax], rdi")
-			}
-			return
+			fmt.Println("  mov [rax], " + register(1, lang.Sizeof(node.Children[0].ExprType)))
 		}
 		return
 	}

@@ -80,7 +80,7 @@ func typeEquals(t1 Type, t2 Type) bool {
 }
 
 func IsKindOfNumber(t Type) bool {
-	return t.Kind == TypeInt || t.Kind == TypeRune || t.Kind == TypeBool
+	return t.Kind == TypeInt || t.Kind == TypeRune
 }
 
 func TypeCompatable(t1 Type, t2 Type) bool {
