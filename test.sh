@@ -17,4 +17,4 @@ assert() {
   fi
 }
 
-assert 0 "tests/tests.go_"
+assert 0 "tests/tests.go"
