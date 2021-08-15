@@ -150,7 +150,6 @@ func gen(node *parse.Node) {
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
 		gen(node.If)
-		labelNumber += 1
 		fmt.Println(elseLabel + ":")
 
 		if node.Else != nil {
@@ -162,6 +161,7 @@ func gen(node *parse.Node) {
 	if node.Kind == parse.NodeIf {
 		var endLabel = ".Lend" + strconv.Itoa(labelNumber)
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
+		labelNumber += 1
 
 		gen(node.Condition)
 		fmt.Println("  pop rax")
@@ -343,6 +343,31 @@ func gen(node *parse.Node) {
 	if node.Kind == parse.NodeString {
 		fmt.Printf("  mov rax, OFFSET FLAT:%s\n", node.Str.Label)
 		fmt.Println("  push rax")
+		return
+	}
+	if node.Kind == parse.NodeLogicalAnd {
+		gen(node.Lhs)
+		fmt.Println("  pop rax")
+		fmt.Println("  push 0")
+		fmt.Println("  cmp rax, 0")
+
+		var label = ".Land" + strconv.Itoa(labelNumber)
+		labelNumber++
+
+		// 短絡評価する
+		fmt.Println("  je " + label)
+
+		fmt.Println("  pop rax") // スタックから0を削除する
+		gen(node.Rhs)
+
+		fmt.Println("  pop rax")
+		fmt.Println("  cmp rax, 1")
+		fmt.Println("  sete al")
+		fmt.Println("  movzb rax, al")
+		fmt.Println("  push rax")
+
+		fmt.Println(label + ":")
+
 		return
 	}
 

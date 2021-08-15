@@ -267,6 +267,12 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = lang.NewType(lang.TypeInt)
 	case parse.NodeEql, parse.NodeNotEql, parse.NodeLess, parse.NodeLessEql, parse.NodeGreater, parse.NodeGreaterEql:
 		node.ExprType = lang.NewType(lang.TypeBool)
+	case parse.NodeLogicalAnd:
+		// 両辺がBoolであることを期待
+		if lhsType.Kind != lang.TypeBool {
+			util.Alarm("&&の両辺の値はbool型の値でなくてはなりません")
+		}
+		node.ExprType = lang.NewType(lang.TypeBool)
 	default:
 		node.ExprType = stmtType
 	}

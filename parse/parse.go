@@ -489,7 +489,18 @@ func exprList() *Node {
 }
 
 func expr() *Node {
-	return equality()
+	return logicalEquality()
+}
+
+func logicalEquality() *Node {
+	var n = equality()
+	for {
+		if tokenizer.Consume(TokenDoubleAmpersand) {
+			n = NewBinaryOperationNode(NodeLogicalAnd, n, equality())
+		} else {
+			return n
+		}
+	}
 }
 
 func equality() *Node {

@@ -41,6 +41,7 @@ const (
 	NodeExprList         NodeKind = "EXPR LIST"           // 複数の要素からなる式
 	NodeLocalVarList     NodeKind = "LOCAL VAR LIST"      // 複数の変数からなる式
 	NodeNot              NodeKind = "[NODE] NOT"          // 否定
+	NodeLogicalAnd       NodeKind = "[NODE] LOGICAL AND"  // 論理積
 )
 
 type Node struct {
