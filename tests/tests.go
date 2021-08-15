@@ -80,6 +80,7 @@ func main() {
 	testInt("array test 2", 0, arrayTest2())
 	testInt("array test 3", 1, arrayTest3())
 	testInt("array test 4", 12, arrayTest4())
+	testInt("array test 5", 22, arrayTest5())
 
 	testInt("rune test 1", 91, runeTest1())
 	testInt("rune test 2", 3, runeTest2())
@@ -308,6 +309,16 @@ func arrayTest4() int {
 	var memo2d [3][4]int
 	memo2d[0][1] = 12
 	return memo2d[0][1]
+}
+
+func arrayTest5() int {
+	var memo1 [3]int
+	memo1[2] = 22
+
+	var memo2 [3]int = memo1
+	memo1[2] = 10
+
+	return memo2[2]
 }
 
 func runeTest1() int {

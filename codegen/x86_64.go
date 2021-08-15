@@ -37,6 +37,51 @@ func register(nth int, byteCount int) string {
 	}
 }
 
+func word(byteCount int) string {
+	if byteCount == 8 {
+		return "QWORD"
+	} else if byteCount == 1 {
+		return "BYTE"
+	} else {
+		panic("違法なバイト数の指定です")
+	}
+}
+
+func assign(lhs *parse.Node, rhs *parse.Node) {
+	genLvalue(lhs)
+	gen(rhs)
+
+	fmt.Println("  pop rdi")
+	fmt.Println("  pop rax")
+
+	if lhs.ExprType.Kind == lang.TypeArray {
+		var size = lang.Sizeof(*lhs.ExprType.PtrTo)
+
+		for i := 0; i < lhs.ExprType.ArraySize; i++ {
+			fmt.Printf("  mov r10, %s PTR [rdi+%d]\n", word(size), size*i)
+			fmt.Printf("  mov %s PTR [rax+%d], r10\n", word(size), size*i)
+		}
+		return
+	}
+	fmt.Println("  mov [rax], " + register(1, lang.Sizeof(lhs.ExprType)))
+}
+
+// 多値を返す関数の返り値を左辺にある複数の変数に代入する
+func assignMultiple(lhss []*parse.Node, rhs *parse.Node) {
+	gen(rhs)
+
+	// 分解する
+	// 右端の変数から代入されることになる
+	for i := len(lhss) - 1; i >= 0; i-- {
+		var l = lhss[i]
+		genLvalue(l)
+
+		fmt.Println("  pop rax")
+		fmt.Println("  pop rdi")
+		fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
+	}
+}
+
 func genLvalue(node *parse.Node) {
 	if node.Kind == parse.NodeDeref {
 		gen(node.Target)
@@ -105,6 +150,12 @@ func gen(node *parse.Node) {
 	if node.Kind == parse.NodeVariable {
 		genLvalue(node)
 		fmt.Println("  pop rax")
+
+		if node.ExprType.Kind == lang.TypeArray {
+			fmt.Println("  push rax")
+			return
+		}
+
 		if lang.Sizeof(node.ExprType) == 1 {
 			fmt.Println("  movzx rax, BYTE PTR [rax]")
 		} else { // 8
@@ -114,34 +165,17 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeAssign {
-		// TODO: 左辺が配列だった場合は丸々コピーさせる必要がある
 		var lhs = node.Children[0]
 		var rhs = node.Children[1]
 
 		if rhs.ExprType.Kind == lang.TypeMultiple && len(rhs.Children) == 1 {
-			gen(rhs.Children[0])
-
-			// 分解する
-			// 右端の変数から代入されることになる
-			for i := len(lhs.Children) - 1; i >= 0; i-- {
-				var l = lhs.Children[i]
-				genLvalue(l)
-				fmt.Println("  pop rax")
-				fmt.Println("  pop rdi")
-				fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
-			}
+			assignMultiple(lhs.Children, rhs.Children[0])
 			return
 		}
 
 		for i, l := range lhs.Children {
 			r := rhs.Children[i]
-
-			genLvalue(l)
-			gen(r)
-
-			fmt.Println("  pop rdi")
-			fmt.Println("  pop rax")
-			fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
+			assign(l, r)
 		}
 		return
 	}
@@ -204,6 +238,7 @@ func gen(node *parse.Node) {
 			gen(argument)
 		}
 		for i := range node.Arguments {
+			// 配列や構造体は先頭のアドレスだけ渡しておいてNodeFunctionDef側でうまいこと代入してもらう
 			fmt.Println("  pop " + register(len(node.Arguments)-i, 8))
 		}
 		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
@@ -271,42 +306,19 @@ func gen(node *parse.Node) {
 		var rhs = node.Children[1]
 
 		if rhs.ExprType.Kind == lang.TypeMultiple && len(rhs.Children) == 1 {
-			gen(rhs.Children[0])
-
-			// 分解する
-			// 右端の変数から代入されることになる
-			for i := len(lhs.Children) - 1; i >= 0; i-- {
-				var l = lhs.Children[i]
-				genLvalue(l)
-				fmt.Println("  pop rax")
-				fmt.Println("  pop rdi")
-				fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
-			}
+			assignMultiple(lhs.Children, rhs.Children[0])
 			return
 		}
 
 		for i, l := range lhs.Children {
 			r := rhs.Children[i]
-
-			genLvalue(l)
-			gen(r)
-
-			fmt.Println("  pop rdi")
-			fmt.Println("  pop rax")
-
-			fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
+			assign(l, r)
 		}
 		return
 	}
 	if node.Kind == parse.NodeLocalVarStmt {
 		if len(node.Children) == 2 {
-			genLvalue(node.Children[0]) // lhs
-			gen(node.Children[1])       // rhs
-
-			fmt.Println("  pop rdi")
-			fmt.Println("  pop rax")
-
-			fmt.Println("  mov [rax], " + register(1, lang.Sizeof(node.Children[0].ExprType)))
+			assign(node.Children[0], node.Children[1])
 		}
 		return
 	}

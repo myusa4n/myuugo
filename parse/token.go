@@ -60,6 +60,7 @@ const (
 	TokenBool               TokenKind = "BOOL"
 	TokenDoubleAmpersand    TokenKind = "&&"
 	TokenDoubleVerticalLine TokenKind = "||"
+	TokenDot                TokenKind = "."
 )
 
 type Token struct {
@@ -100,7 +101,7 @@ func (t *Tokenizer) Tokenize(path string) {
 
 	var symbols = []TokenKind{
 		TokenDoubleEqual, TokenNotEqual, TokenGreaterEqual, TokenLessEqual, TokenColonEqual, TokenDoubleAmpersand, TokenDoubleVerticalLine,
-		TokenPlus, TokenMinus, TokenStar, TokenSlash, TokenLparen, TokenRparen, TokenLess, TokenGreater, TokenSemicolon, TokenNewLine, TokenEqual, TokenLbrace, TokenRbrace, TokenComma, TokenAmpersand, TokenLSBrace, TokenRSBrace, TokenBang,
+		TokenPlus, TokenMinus, TokenStar, TokenSlash, TokenLparen, TokenRparen, TokenLess, TokenGreater, TokenSemicolon, TokenNewLine, TokenEqual, TokenLbrace, TokenRbrace, TokenComma, TokenAmpersand, TokenLSBrace, TokenRSBrace, TokenBang, TokenDot,
 	}
 	var keywords = []TokenKind{
 		TokenPackage,

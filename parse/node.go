@@ -43,6 +43,7 @@ const (
 	NodeNot              NodeKind = "[NODE] NOT"          // 否定
 	NodeLogicalAnd       NodeKind = "[NODE] LOGICAL AND"  // 論理積
 	NodeLogicalOr        NodeKind = "[NODE] LOGICAL OR"   // 論理和
+	NodeMember           NodeKind = "[NODE] MEMBER"       // A.B
 )
 
 type Node struct {
@@ -141,5 +142,5 @@ func NewNodeBool(val int) *Node {
 }
 
 func NewForNode(init *Node, cond *Node, update *Node, body *Node) *Node {
-	return &Node{Kind: NodeFor, Init: init, Condition: cond, Update: update, Body: body}
+	return &Node{Kind: NodeFor, Init: init, Condition: cond, Update: update, Body: body, Env: Env}
 }
