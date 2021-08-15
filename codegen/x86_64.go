@@ -24,6 +24,19 @@ func getFrameSize(functionName string) int {
 	return size
 }
 
+func register(nth int, byteCount int) string {
+	var regs64 = []string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
+	var regs8 = []string{"al", "dil", "sil", "dl", "cl", "r8b", "r9b"}
+
+	if byteCount == 8 {
+		return regs64[nth]
+	} else if byteCount == 1 {
+		return regs8[nth]
+	} else {
+		panic(strconv.Itoa(byteCount) + "Bのレジスタは存在しません")
+	}
+}
+
 func genLvalue(node *parse.Node) {
 	if node.Kind == parse.NodeDeref {
 		gen(node.Target)
@@ -77,9 +90,8 @@ func gen(node *parse.Node) {
 				gen(e)
 			}
 
-			var registers = [7]string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 			for i := range exprs {
-				fmt.Println("  pop " + registers[len(exprs)-i-1])
+				fmt.Println("  pop " + register(len(exprs)-i-1, 8))
 			}
 		} else {
 			// void型
@@ -199,12 +211,11 @@ func gen(node *parse.Node) {
 	}
 	if node.Kind == parse.NodeFunctionCall {
 		// TODO: rune型と配列型の扱いについて考える
-		var registers = [7]string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
 		for _, argument := range node.Arguments {
 			gen(argument)
 		}
 		for i := range node.Arguments {
-			fmt.Println("  pop " + registers[len(node.Arguments)-i])
+			fmt.Println("  pop " + register(len(node.Arguments)-i, 8))
 		}
 		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
 		fmt.Println("  call " + node.Label)
@@ -214,7 +225,7 @@ func gen(node *parse.Node) {
 		if fn != nil && fn.ReturnValueType.Kind == lang.TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.Components {
-				fmt.Println("  push " + registers[i])
+				fmt.Println("  push " + register(i, 8))
 			}
 			return
 		}
@@ -230,13 +241,11 @@ func gen(node *parse.Node) {
 
 		fmt.Printf("  sub rsp, %d\n", getFrameSize(node.Label))
 
-		var registers [6]string = [6]string{"rdi", "rsi", "rdx", "rcx", "r8", "r9"}
-
 		for i, param := range node.Parameters { // 引数
-			// TODO: サイズによって、代入する値を変える必要があるはず
 			genLvalue(param)
 			fmt.Println("  pop rax")
-			fmt.Println("  mov [rax], " + registers[i])
+
+			fmt.Println("  mov [rax], " + register(i+1, lang.Sizeof(param.ExprType)))
 		}
 
 		gen(node.Body) // 関数本体
