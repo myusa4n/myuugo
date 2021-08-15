@@ -1,47 +1,12 @@
 package parse
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/myuu222/myuugo/lang"
-	"github.com/myuu222/myuugo/util"
 )
 
 var tokenizer *Tokenizer
 var userInput string
 var filename string
-
-// エラーの起きた場所を報告するための関数
-// 下のようなフォーマットでエラーメッセージを表示する
-//
-// foo.c:10: x = y + + 5;
-//                   ^ 式ではありません
-func errorAt(rest string, message string) {
-	// 行番号と、restがその行の何番目から始まるかを見つける
-	var lineNumber = 1
-	var startIndex = 0
-	for _, c := range userInput[:len(userInput)-len(rest)] {
-		if c == '\n' {
-			lineNumber += 1
-			startIndex = 0
-		} else if c == '\t' {
-			startIndex += 4 // タブは空白4文字扱いとする
-		} else {
-			startIndex += 1
-		}
-	}
-	for i, line := range strings.Split(userInput, "\n") {
-		if i+1 == lineNumber {
-			// 見つかった行をファイル名と行番号と一緒に表示
-			var indent, _ = fmt.Fprintf(os.Stderr, "%s:%d: ", filename, lineNumber)
-			fmt.Fprintln(os.Stderr, line)
-			fmt.Fprintf(os.Stderr, "%*s^ %s\n", indent+startIndex, " ", message)
-		}
-	}
-	os.Exit(1)
-}
 
 // トークナイザ拡張
 
@@ -53,7 +18,7 @@ func (t *Tokenizer) consumeEndLine() bool {
 
 func (t *Tokenizer) expectEndLine() {
 	if !t.consumeEndLine() {
-		util.Alarm("文の終端記号ではありません")
+		BadToken(t.Fetch(), "文の終端記号ではありません")
 	}
 }
 
@@ -74,7 +39,7 @@ func (t *Tokenizer) consumeIdentifier() (Token, bool) {
 func (t *Tokenizer) expectIdentifier() Token {
 	token, ok := t.consumeIdentifier()
 	if !ok {
-		errorAt(token.rest, "識別子ではありません")
+		BadToken(token, "識別子ではありません")
 	}
 	return token
 }
@@ -84,7 +49,7 @@ func (t *Tokenizer) expectIdentifier() Token {
 func (t *Tokenizer) expectNumber() int {
 	token := t.Fetch()
 	if !t.Test(TokenNumber) {
-		errorAt(token.rest, "数ではありません")
+		BadToken(token, "数ではありません")
 	}
 	var val = token.val
 	tokenizer.Succ()
@@ -96,7 +61,7 @@ func (t *Tokenizer) expectNumber() int {
 func (t *Tokenizer) expectBool() int {
 	token := t.Fetch()
 	if !t.Test(TokenBool) {
-		errorAt(token.rest, "真偽値ではありません")
+		BadToken(token, "真偽値ではありません")
 	}
 	var val = token.val
 	tokenizer.Succ()
@@ -108,7 +73,7 @@ func (t *Tokenizer) expectBool() int {
 func (t *Tokenizer) expectString() string {
 	token := t.Fetch()
 	if !t.Test(TokenString) {
-		errorAt(token.rest, "文字列ではありません")
+		BadToken(token, "文字列ではありません")
 	}
 	var val = token.str
 	tokenizer.Succ()
@@ -122,7 +87,7 @@ func (t *Tokenizer) atEof() bool {
 func (t *Tokenizer) expectType() lang.Type {
 	ty, ok := t.consumeType()
 	if !ok {
-		util.Alarm("型ではありません")
+		BadToken(t.Fetch(), "型ではありません")
 	}
 	return ty
 }
@@ -203,7 +168,7 @@ func localStmtList() *Node {
 
 	for !(tokenizer.Test(TokenRbrace)) {
 		if endLineRequired {
-			errorAt(tokenizer.Fetch().rest, "文の区切り文字が必要です")
+			BadToken(tokenizer.Fetch(), "文の区切り文字が必要です")
 		}
 		if tokenizer.consumeEndLine() {
 			continue
@@ -226,7 +191,7 @@ func topLevelStmtList() *Node {
 
 	for !tokenizer.atEof() && !(tokenizer.Test(TokenRbrace)) {
 		if endLineRequired {
-			errorAt(tokenizer.Fetch().rest, "文の区切り文字が必要です")
+			BadToken(tokenizer.Fetch(), "文の区切り文字が必要です")
 		}
 		if tokenizer.consumeEndLine() {
 			continue
@@ -255,15 +220,16 @@ func topLevelStmt() *Node {
 
 	// 許可されていないもの
 	if tokenizer.Test(TokenIf) {
-		util.Alarm("if文はトップレベルでは使用できません")
+		BadToken(tokenizer.Fetch(), "if文はトップレベルでは使用できません")
 	}
 	if tokenizer.Test(TokenFor) {
-		util.Alarm("for文はトップレベルでは使用できません")
+		BadToken(tokenizer.Fetch(), "for文はトップレベルでは使用できません")
 	}
 	if tokenizer.Test(TokenReturn) {
-		util.Alarm("return文はトップレベルでは使用できません")
+		BadToken(tokenizer.Fetch(), "return文はトップレベルでは使用できません")
 	}
-	panic("トップレベルの文として許可されていません")
+	BadToken(tokenizer.Fetch(), "トップレベルの文として許可されていません")
+	return nil // 到達しない
 }
 
 func simpleStmt() *Node {
@@ -404,11 +370,12 @@ func forStmt() *Node {
 		return NewForNode(nil, nil, nil, body)
 	}
 
+	var st = tokenizer.Fetch()
 	var s = simpleStmt()
 	if tokenizer.Consume(TokenLbrace) {
 		// while文
 		if s.Kind != NodeExprStmt {
-			util.Alarm("for文の条件に式以外が書かれています")
+			BadToken(st, "for文の条件に式以外が書かれています")
 		}
 		var cond = s.Children[0] // expr
 		var body = localStmtList()
@@ -434,7 +401,7 @@ func forStmt() *Node {
 func metaIfStmt() *Node {
 	token := tokenizer.Fetch()
 	if !token.Test(TokenIf) {
-		errorAt(token.rest, "'"+string(TokenIf)+"'ではありません")
+		BadToken(token, "'"+string(TokenIf)+"'ではありません")
 	}
 
 	var ifNode = ifStmt()
@@ -633,7 +600,7 @@ func variableRef() *Node {
 	var node = NewLeafNode(NodeVariable)
 	node.Variable = Env.FindVar(tok.str)
 	if node.Variable == nil {
-		errorAt(tok.rest, "未定義の変数です")
+		BadToken(tok, "未定義の変数です")
 	}
 	return node
 }
@@ -643,7 +610,7 @@ func localVariableDeclaration() *Node {
 	var node = NewLeafNode(NodeVariable)
 	lvar := Env.FindLocalVar(tok.str)
 	if lvar != nil {
-		errorAt(tok.rest, "すでに定義済みの変数です")
+		BadToken(tok, "すでに定義済みの変数です")
 	}
 	node.Variable = Env.AddLocalVar(lang.NewUndefinedType(), tok.str)
 	return node
@@ -654,7 +621,7 @@ func topLevelVariableDeclaration() *Node {
 	var node = NewLeafNode(NodeVariable)
 	lvar := Env.program.FindTopLevelVariable(tok.str)
 	if lvar != nil {
-		errorAt(tok.rest, "すでに定義済みの変数です")
+		BadToken(tok, "すでに定義済みの変数です")
 	}
 	node.Variable = Env.program.AddTopLevelVariable(lang.NewUndefinedType(), tok.str)
 	return node

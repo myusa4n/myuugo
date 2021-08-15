@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"io/ioutil"
 	"strconv"
 	"strings"
 	"unicode"
@@ -67,7 +66,8 @@ type Token struct {
 	kind TokenKind // トークンの型
 	val  int       // kindがNumberの場合、その数値
 	str  string    // トークン文字列
-	rest string    // 自信を含めた残りすべてのトークン文字列
+	rest string    // 自身を含めた残りすべてのトークン文字列
+	path string    // トークナイズされたファイルのパス
 }
 
 func (t Token) Test(kind TokenKind) bool {
@@ -75,7 +75,11 @@ func (t Token) Test(kind TokenKind) bool {
 }
 
 func NewToken(kind TokenKind, str string, rest string) Token {
-	return Token{kind: kind, str: str, rest: rest}
+	return Token{kind: kind, str: str, rest: rest, path: filename}
+}
+
+func BadToken(token Token, message string) {
+	util.ErrorAt(token.path, token.rest, message)
 }
 
 type Tokenizer struct {
@@ -87,19 +91,8 @@ func NewTokenizer() *Tokenizer {
 	return &Tokenizer{}
 }
 
-func readFile(path string) string {
-	bytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		util.Alarm("ファイル%sの読み取りに失敗しました", path)
-	}
-	if len(bytes) == 0 || bytes[len(bytes)-1] != '\n' {
-		bytes = append(bytes, '\n')
-	}
-	return string(bytes)
-}
-
 func (t *Tokenizer) Tokenize(path string) {
-	userInput = readFile(path)
+	userInput = util.ReadFile(path)
 	filename = path
 	t.tokens = []Token{}
 	t.pos = 0
@@ -131,7 +124,7 @@ func (t *Tokenizer) Tokenize(path string) {
 			input = input[2:]
 			var start = strings.Index(input, "*/")
 			if start == -1 {
-				errorAt(input, "コメントが閉じられていません")
+				util.ErrorAt(filename, input, "コメントが閉じられていません")
 			}
 			input = input[start+2:]
 			continue
@@ -220,7 +213,7 @@ func (t *Tokenizer) Tokenize(path string) {
 			input = input[pos+1:]
 			continue
 		}
-		errorAt(input, "トークナイズできません")
+		util.ErrorAt(filename, input, "トークナイズできません")
 	}
 	t.tokens = append(t.tokens, NewToken(TokenEof, "", ""))
 }
@@ -256,6 +249,6 @@ func (t *Tokenizer) Consume(kind TokenKind) bool {
 // それ以外の場合にはエラーを報告する。
 func (t *Tokenizer) Expect(kind TokenKind) {
 	if !t.Consume(kind) {
-		util.Alarm("'%s'ではありません", kind)
+		BadToken(t.Fetch(), "'"+string(kind)+"'ではありません")
 	}
 }
