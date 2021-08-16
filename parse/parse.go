@@ -456,16 +456,25 @@ func exprList() *Node {
 }
 
 func expr() *Node {
-	return logicalEquality()
+	return logicalOr()
 }
 
-func logicalEquality() *Node {
+func logicalOr() *Node {
+	var n = logicalAnd()
+	for {
+		if tokenizer.Consume(TokenDoubleVerticalLine) {
+			n = NewBinaryOperationNode(NodeLogicalOr, n, logicalAnd())
+		} else {
+			return n
+		}
+	}
+}
+
+func logicalAnd() *Node {
 	var n = equality()
 	for {
 		if tokenizer.Consume(TokenDoubleAmpersand) {
 			n = NewBinaryOperationNode(NodeLogicalAnd, n, equality())
-		} else if tokenizer.Consume(TokenDoubleVerticalLine) {
-			n = NewBinaryOperationNode(NodeLogicalOr, n, equality())
 		} else {
 			return n
 		}
