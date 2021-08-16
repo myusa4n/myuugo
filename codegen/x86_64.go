@@ -47,6 +47,39 @@ func word(byteCount int) string {
 	}
 }
 
+func entitySizeOf(ty lang.Type) int {
+	if ty.Kind == lang.TypeArray {
+		return ty.ArraySize * entitySizeOf(*ty.PtrTo)
+	}
+	return lang.Sizeof(ty)
+}
+
+func declare(node *parse.Node) {
+	var variable = node.Variable
+
+	if variable.Kind == lang.VariableTopLevel {
+		fmt.Println(".data")
+		fmt.Println(variable.Name + ":")
+
+		fmt.Printf("  .zero %d\n", entitySizeOf(variable.Type))
+		fmt.Println(".text")
+		return
+	}
+	// 基本的に何もしないが配列の場合は動的にメモリを確保し、あらかじめ割り当てる
+	if variable.Type.Kind == lang.TypeArray {
+		fmt.Println("  mov rax, rbp")
+		fmt.Printf("  sub rax, %d\n", variable.Offset)
+		fmt.Println("  push rax")
+
+		fmt.Printf("  mov rdi, %d\n", variable.Type.ArraySize)
+		fmt.Printf("  mov rsi, %d\n", entitySizeOf(*variable.Type.PtrTo))
+		fmt.Println("  call calloc")
+		fmt.Println("  pop rdi")
+		fmt.Println("  mov [rdi], rax")
+		return
+	}
+}
+
 func assign(lhs *parse.Node, rhs *parse.Node) {
 	genLvalue(lhs)
 	gen(rhs)
@@ -87,9 +120,16 @@ func genLvalue(node *parse.Node) {
 		gen(node.Target)
 		return
 	} else if node.Kind == parse.NodeVariable {
-		if node.Variable.Kind == lang.VariableLocal {
+		var variable = node.Variable
+		if variable.Kind == lang.VariableLocal {
 			fmt.Println("  mov rax, rbp")
 			fmt.Printf("  sub rax, %d\n", node.Variable.Offset)
+
+			// 配列だけじゃなくて構造体の時もやる気がする
+			if variable.Type.Kind == lang.TypeArray {
+				fmt.Println("  mov rax, [rax]")
+			}
+
 			fmt.Println("  push rax")
 		} else {
 			fmt.Printf("  mov rax, OFFSET FLAT:%s\n", node.Variable.Name)
@@ -148,13 +188,14 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeVariable {
+		var variable = node.Variable
 		genLvalue(node)
-		fmt.Println("  pop rax")
 
-		if node.ExprType.Kind == lang.TypeArray {
-			fmt.Println("  push rax")
+		if variable.Type.Kind == lang.TypeArray {
 			return
 		}
+
+		fmt.Println("  pop rax")
 
 		if lang.Sizeof(node.ExprType) == 1 {
 			fmt.Println("  movzx rax, BYTE PTR [rax]")
@@ -305,6 +346,10 @@ func gen(node *parse.Node) {
 		var lhs = node.Children[0]
 		var rhs = node.Children[1]
 
+		for _, v := range lhs.Children {
+			declare(v)
+		}
+
 		if rhs.ExprType.Kind == lang.TypeMultiple && len(rhs.Children) == 1 {
 			assignMultiple(lhs.Children, rhs.Children[0])
 			return
@@ -317,17 +362,14 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeLocalVarStmt {
+		declare(node.Children[0])
 		if len(node.Children) == 2 {
 			assign(node.Children[0], node.Children[1])
 		}
 		return
 	}
 	if node.Kind == parse.NodeTopLevelVarStmt {
-		fmt.Println(".data")
-		var tvar = node.Children[0]
-		fmt.Println(tvar.Variable.Name + ":")
-		fmt.Printf("  .zero %d\n", lang.Sizeof(tvar.Variable.Type))
-		fmt.Println(".text")
+		declare(node.Children[0])
 		return
 	}
 	if node.Kind == parse.NodeExprStmt {

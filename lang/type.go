@@ -42,14 +42,11 @@ func NewUndefinedType() Type {
 }
 
 func Sizeof(ty Type) int {
-	if ty.Kind == TypeInt || ty.Kind == TypePtr {
+	if ty.Kind == TypeInt || ty.Kind == TypePtr || ty.Kind == TypeArray {
 		return 8
 	}
 	if ty.Kind == TypeRune || ty.Kind == TypeBool {
 		return 1
-	}
-	if ty.Kind == TypeArray {
-		return ty.ArraySize * Sizeof(*ty.PtrTo)
 	}
 	// 未定義
 	return 0
