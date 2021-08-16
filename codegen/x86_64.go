@@ -1,7 +1,6 @@
 package codegen
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/myuu222/myuugo/lang"
@@ -12,70 +11,28 @@ import (
 var labelNumber = 0
 var program *parse.Program
 
-func getFrameSize(functionName string) int {
-	fn := program.FindFunction(functionName)
-	if fn == nil {
-		panic("関数 \"" + functionName + " は存在しません")
-	}
-	var size int = 0
-	for _, lvar := range fn.LocalVariables {
-		size += lang.Sizeof(lvar.Type)
-	}
-	return size
-}
-
-func register(nth int, byteCount int) string {
-	var regs64 = []string{"rax", "rdi", "rsi", "rdx", "rcx", "r8", "r9"}
-	var regs8 = []string{"al", "dil", "sil", "dl", "cl", "r8b", "r9b"}
-
-	if byteCount == 8 {
-		return regs64[nth]
-	} else if byteCount == 1 {
-		return regs8[nth]
-	} else {
-		panic(strconv.Itoa(byteCount) + "Bのレジスタは存在しません")
-	}
-}
-
-func word(byteCount int) string {
-	if byteCount == 8 {
-		return "QWORD"
-	} else if byteCount == 1 {
-		return "BYTE"
-	} else {
-		panic("違法なバイト数の指定です")
-	}
-}
-
-func entitySizeOf(ty lang.Type) int {
-	if ty.Kind == lang.TypeArray {
-		return ty.ArraySize * entitySizeOf(*ty.PtrTo)
-	}
-	return lang.Sizeof(ty)
-}
-
 func declare(node *parse.Node) {
 	var variable = node.Variable
 
 	if variable.Kind == lang.VariableTopLevel {
-		fmt.Println(".data")
-		fmt.Println(variable.Name + ":")
+		p(".data")
+		p(variable.Name + ":")
 
-		fmt.Printf("  .zero %d\n", entitySizeOf(variable.Type))
-		fmt.Println(".text")
+		emit(".zero %d\n", entitySizeOf(variable.Type))
+		p(".text")
 		return
 	}
 	// 基本的に何もしないが配列の場合は動的にメモリを確保し、あらかじめ割り当てる
 	if variable.Type.Kind == lang.TypeArray {
-		fmt.Println("  mov rax, rbp")
-		fmt.Printf("  sub rax, %d\n", variable.Offset)
-		fmt.Println("  push rax")
+		emit("mov rax, rbp")
+		emit("sub rax, %d", variable.Offset)
+		emit("push rax")
 
-		fmt.Printf("  mov rdi, %d\n", variable.Type.ArraySize)
-		fmt.Printf("  mov rsi, %d\n", entitySizeOf(*variable.Type.PtrTo))
-		fmt.Println("  call calloc")
-		fmt.Println("  pop rdi")
-		fmt.Println("  mov [rdi], rax")
+		emit("mov rdi, %d", variable.Type.ArraySize)
+		emit("mov rsi, %d", entitySizeOf(*variable.Type.PtrTo))
+		emit("call calloc")
+		emit("pop rdi")
+		emit("mov [rdi], rax")
 		return
 	}
 }
@@ -84,19 +41,19 @@ func assign(lhs *parse.Node, rhs *parse.Node) {
 	genLvalue(lhs)
 	gen(rhs)
 
-	fmt.Println("  pop rdi")
-	fmt.Println("  pop rax")
+	emit("pop rdi")
+	emit("pop rax")
 
 	if lhs.ExprType.Kind == lang.TypeArray {
 		var size = lang.Sizeof(*lhs.ExprType.PtrTo)
 
 		for i := 0; i < lhs.ExprType.ArraySize; i++ {
-			fmt.Printf("  mov r10, %s PTR [rdi+%d]\n", word(size), size*i)
-			fmt.Printf("  mov %s PTR [rax+%d], r10\n", word(size), size*i)
+			emit("mov r10, %s PTR [rdi+%d]", word(size), size*i)
+			emit("mov %s PTR [rax+%d], r10", word(size), size*i)
 		}
 		return
 	}
-	fmt.Println("  mov [rax], " + register(1, lang.Sizeof(lhs.ExprType)))
+	emit("mov [rax], " + register(1, lang.Sizeof(lhs.ExprType)))
 }
 
 // 多値を返す関数の返り値を左辺にある複数の変数に代入する
@@ -109,9 +66,9 @@ func assignMultiple(lhss []*parse.Node, rhs *parse.Node) {
 		var l = lhss[i]
 		genLvalue(l)
 
-		fmt.Println("  pop rax")
-		fmt.Println("  pop rdi")
-		fmt.Println("  mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
+		emit("pop rax")
+		emit("pop rdi")
+		emit("mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
 	}
 }
 
@@ -122,28 +79,28 @@ func genLvalue(node *parse.Node) {
 	} else if node.Kind == parse.NodeVariable {
 		var variable = node.Variable
 		if variable.Kind == lang.VariableLocal {
-			fmt.Println("  mov rax, rbp")
-			fmt.Printf("  sub rax, %d\n", node.Variable.Offset)
+			emit("mov rax, rbp")
+			emit("sub rax, %d", node.Variable.Offset)
 
 			// 配列だけじゃなくて構造体の時もやる気がする
 			if variable.Type.Kind == lang.TypeArray {
-				fmt.Println("  mov rax, [rax]")
+				emit("mov rax, [rax]")
 			}
 
-			fmt.Println("  push rax")
+			emit("push rax")
 		} else {
-			fmt.Printf("  mov rax, OFFSET FLAT:%s\n", node.Variable.Name)
-			fmt.Println("  push rax")
+			emit("mov rax, OFFSET FLAT:%s", node.Variable.Name)
+			emit("push rax")
 		}
 		return
 	} else if node.Kind == parse.NodeIndex {
 		genLvalue(node.Seq)
 		gen(node.Index)
-		fmt.Println("  pop rdi")
-		fmt.Printf("  imul rdi, %d\n", lang.Sizeof(node.ExprType))
-		fmt.Println("  pop rax")
-		fmt.Println("  add rax, rdi")
-		fmt.Println("  push rax")
+		emit("pop rdi")
+		emit("imul rdi, %d", lang.Sizeof(node.ExprType))
+		emit("pop rax")
+		emit("add rax, rdi")
+		emit("push rax")
 		return
 	}
 	util.Alarm("代入の左辺値が変数またはポインタ参照ではありません")
@@ -155,11 +112,11 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeNum {
-		fmt.Printf("  push %d\n", node.Val)
+		emit("push %d", node.Val)
 		return
 	}
 	if node.Kind == parse.NodeBool {
-		fmt.Printf("  push %d\n", node.Val)
+		emit("push %d", node.Val)
 		return
 	}
 	if node.Kind == parse.NodeStmtList {
@@ -176,15 +133,15 @@ func gen(node *parse.Node) {
 			}
 
 			for i := range exprs {
-				fmt.Println("  pop " + register(len(exprs)-i-1, 8))
+				emit("pop " + register(len(exprs)-i-1, 8))
 			}
 		} else {
 			// void型
-			fmt.Println("  mov rax, 0")
+			emit("mov rax, 0")
 		}
-		fmt.Println("  mov rsp, rbp")
-		fmt.Println("  pop rbp")
-		fmt.Println("  ret")
+		emit("mov rsp, rbp")
+		emit("pop rbp")
+		emit("ret")
 		return
 	}
 	if node.Kind == parse.NodeVariable {
@@ -195,14 +152,14 @@ func gen(node *parse.Node) {
 			return
 		}
 
-		fmt.Println("  pop rax")
+		emit("pop rax")
 
 		if lang.Sizeof(node.ExprType) == 1 {
-			fmt.Println("  movzx rax, BYTE PTR [rax]")
+			emit("movzx rax, BYTE PTR [rax]")
 		} else { // 8
-			fmt.Println("  mov rax, [rax]")
+			emit("mov rax, [rax]")
 		}
-		fmt.Println("  push rax")
+		emit("push rax")
 		return
 	}
 	if node.Kind == parse.NodeAssign {
@@ -225,12 +182,12 @@ func gen(node *parse.Node) {
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
 		gen(node.If)
-		fmt.Println(elseLabel + ":")
+		p("%s:", elseLabel)
 
 		if node.Else != nil {
 			gen(node.Else)
 		}
-		fmt.Println(endLabel + ":")
+		p("%s:", endLabel)
 		return
 	}
 	if node.Kind == parse.NodeIf {
@@ -239,11 +196,11 @@ func gen(node *parse.Node) {
 		labelNumber += 1
 
 		gen(node.Condition)
-		fmt.Println("  pop rax")
-		fmt.Println("  cmp rax, 0")
-		fmt.Println("  je " + elseLabel)
+		emit("pop rax")
+		emit("cmp rax, 0")
+		emit("je " + elseLabel)
 		gen(node.Body)
-		fmt.Println("  jmp " + endLabel)
+		emit("jmp " + endLabel)
 		return
 	}
 	if node.Kind == parse.NodeElse {
@@ -258,19 +215,19 @@ func gen(node *parse.Node) {
 		if node.Init != nil {
 			gen(node.Init)
 		}
-		fmt.Println(beginLabel + ":")
+		p("%s:", beginLabel)
 		if node.Condition != nil {
 			gen(node.Condition) // 条件
-			fmt.Println("  pop rax")
-			fmt.Println("  cmp rax, 0")
-			fmt.Println("  je " + endLabel)
+			emit("pop rax")
+			emit("cmp rax, 0")
+			emit("je " + endLabel)
 		}
 		gen(node.Body)
 		if node.Update != nil {
 			gen(node.Update)
 		}
-		fmt.Println("  jmp " + beginLabel)
-		fmt.Println(endLabel + ":")
+		emit("jmp %s", beginLabel)
+		p("%s:", endLabel)
 		return
 	}
 	if node.Kind == parse.NodeFunctionCall {
@@ -280,55 +237,55 @@ func gen(node *parse.Node) {
 		}
 		for i := range node.Arguments {
 			// 配列や構造体は先頭のアドレスだけ渡しておいてNodeFunctionDef側でうまいこと代入してもらう
-			fmt.Println("  pop " + register(len(node.Arguments)-i, 8))
+			emit("pop " + register(len(node.Arguments)-i, 8))
 		}
-		fmt.Println("  mov al, 0") // 可変長引数の関数を呼び出すためのルール
-		fmt.Println("  call " + node.Label)
+		emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
+		emit("call " + node.Label)
 
 		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
 		fn := program.FindFunction(node.Label)
 		if fn != nil && fn.ReturnValueType.Kind == lang.TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.Components {
-				fmt.Println("  push " + register(i, 8))
+				emit("push " + register(i, 8))
 			}
 			return
 		}
-		fmt.Println("  push rax")
+		emit("push rax")
 		return
 	}
 	if node.Kind == parse.NodeFunctionDef {
-		fmt.Println(node.Label + ":")
+		p("%s:", node.Label)
 
 		// プロローグ
-		fmt.Println("  push rbp")
-		fmt.Println("  mov rbp, rsp")
+		emit("push rbp")
+		emit("mov rbp, rsp")
 
-		fmt.Printf("  sub rsp, %d\n", getFrameSize(node.Label))
+		emit("sub rsp, %d", getFrameSize(program, node.Label))
 
 		for i, param := range node.Parameters { // 引数
 			genLvalue(param)
-			fmt.Println("  pop rax")
+			emit("pop rax")
 
-			fmt.Println("  mov [rax], " + register(i+1, lang.Sizeof(param.ExprType)))
+			emit("mov [rax], " + register(i+1, lang.Sizeof(param.ExprType)))
 		}
 
 		gen(node.Body) // 関数本体
 
 		// エピローグ
 		// 関数の返り値の型が void 型だと仮定する
-		fmt.Println("  mov rax, 0")
-		fmt.Println("  mov rsp, rbp")
-		fmt.Println("  pop rbp")
-		fmt.Println("  ret")
+		emit("mov rax, 0")
+		emit("mov rsp, rbp")
+		emit("pop rbp")
+		emit("ret")
 
 		return
 	}
 	if node.Kind == parse.NodeNot {
 		gen(node.Target)
-		fmt.Println("  pop rax")
-		fmt.Println("  xor rax, 1")
-		fmt.Println("  push rax")
+		emit("pop rax")
+		emit("xor rax, 1")
+		emit("push rax")
 		return
 	}
 	if node.Kind == parse.NodeAddr {
@@ -337,9 +294,9 @@ func gen(node *parse.Node) {
 	}
 	if node.Kind == parse.NodeDeref {
 		gen(node.Target)
-		fmt.Println("  pop rax")
-		fmt.Println("  mov rax, [rax]")
-		fmt.Println("  push rax")
+		emit("pop rax")
+		emit("mov rax, [rax]")
+		emit("push rax")
 		return
 	}
 	if node.Kind == parse.NodeShortVarDeclStmt {
@@ -376,76 +333,76 @@ func gen(node *parse.Node) {
 		gen(node.Children[0])
 		if node.Children[0].ExprType.Kind == lang.TypeMultiple {
 			for range node.Children[0].ExprType.Components {
-				fmt.Println("  pop rax")
+				emit("pop rax")
 			}
 			return
 		}
-		fmt.Println("  pop rax")
+		emit("pop rax")
 		return
 	}
 	if node.Kind == parse.NodeIndex {
 		genLvalue(node)
-		fmt.Println("  pop rax")
+		emit("pop rax")
 		if lang.Sizeof(node.ExprType) == 1 {
-			fmt.Println("  movzx rax, BYTE PTR [rax]")
+			emit("movzx rax, BYTE PTR [rax]")
 		} else {
-			fmt.Println("  mov rax, [rax]")
+			emit("mov rax, [rax]")
 		}
-		fmt.Println("  push rax")
+		emit("push rax")
 		return
 	}
 	if node.Kind == parse.NodeString {
-		fmt.Printf("  mov rax, OFFSET FLAT:%s\n", node.Str.Label)
-		fmt.Println("  push rax")
+		emit("mov rax, OFFSET FLAT:%s", node.Str.Label)
+		emit("push rax")
 		return
 	}
 	if node.Kind == parse.NodeLogicalAnd {
 		gen(node.Lhs)
-		fmt.Println("  pop rax")
-		fmt.Println("  push 0")
-		fmt.Println("  cmp rax, 0")
+		emit("pop rax")
+		emit("push 0")
+		emit("cmp rax, 0")
 
 		var label = ".Land" + strconv.Itoa(labelNumber)
 		labelNumber++
 
 		// 短絡評価する
-		fmt.Println("  je " + label)
+		emit("je " + label)
 
-		fmt.Println("  pop rax") // スタックから0を削除する
+		emit("pop rax") // スタックから0を削除する
 		gen(node.Rhs)
 
-		fmt.Println("  pop rax")
-		fmt.Println("  cmp rax, 1")
-		fmt.Println("  sete al")
-		fmt.Println("  movzb rax, al")
-		fmt.Println("  push rax")
+		emit("pop rax")
+		emit("cmp rax, 1")
+		emit("sete al")
+		emit("movzb rax, al")
+		emit("push rax")
 
-		fmt.Println(label + ":")
+		p("%s:", label)
 
 		return
 	}
 	if node.Kind == parse.NodeLogicalOr {
 		gen(node.Lhs)
-		fmt.Println("  pop rax")
-		fmt.Println("  push 1")
-		fmt.Println("  cmp rax, 1")
+		emit("pop rax")
+		emit("push 1")
+		emit("cmp rax, 1")
 
 		var label = ".Lor" + strconv.Itoa(labelNumber)
 		labelNumber++
 
 		// 短絡評価する
-		fmt.Println("  je " + label)
+		emit("je " + label)
 
-		fmt.Println("  pop rax") // スタックから1を削除する
+		emit("pop rax") // スタックから1を削除する
 		gen(node.Rhs)
 
-		fmt.Println("  pop rax")
-		fmt.Println("  cmp rax, 1")
-		fmt.Println("  sete al")
-		fmt.Println("  movzb rax, al")
-		fmt.Println("  push rax")
+		emit("pop rax")
+		emit("cmp rax, 1")
+		emit("sete al")
+		emit("movzb rax, al")
+		emit("push rax")
 
-		fmt.Println(label + ":")
+		p("%s:", label)
 
 		return
 	}
@@ -453,61 +410,61 @@ func gen(node *parse.Node) {
 	gen(node.Lhs)
 	gen(node.Rhs)
 
-	fmt.Println("  pop rdi")
-	fmt.Println("  pop rax")
+	emit("pop rdi")
+	emit("pop rax")
 
 	switch node.Kind {
 	case parse.NodeAdd:
-		fmt.Println("  add rax, rdi")
+		emit("add rax, rdi")
 	case parse.NodeSub:
-		fmt.Println("  sub rax, rdi")
+		emit("sub rax, rdi")
 	case parse.NodeMul:
-		fmt.Println("  imul rax, rdi")
+		emit("imul rax, rdi")
 	case parse.NodeDiv:
-		fmt.Println("  cqo")
-		fmt.Println("  idiv rdi")
+		emit("cqo")
+		emit("idiv rdi")
 	case parse.NodeEql:
-		fmt.Println("  cmp rax, rdi")
-		fmt.Println("  sete al")
-		fmt.Println("  movzb rax, al")
+		emit("cmp rax, rdi")
+		emit("sete al")
+		emit("movzb rax, al")
 	case parse.NodeNotEql:
-		fmt.Println("  cmp rax, rdi")
-		fmt.Println("  setne al")
-		fmt.Println("  movzb rax, al")
+		emit("cmp rax, rdi")
+		emit("setne al")
+		emit("movzb rax, al")
 	case parse.NodeLess:
-		fmt.Println("  cmp rax, rdi")
-		fmt.Println("  setl al")
-		fmt.Println("  movzb rax, al")
+		emit("cmp rax, rdi")
+		emit("setl al")
+		emit("movzb rax, al")
 	case parse.NodeLessEql:
-		fmt.Println("  cmp rax, rdi")
-		fmt.Println("  setle al")
-		fmt.Println("  movzb rax, al")
+		emit("cmp rax, rdi")
+		emit("setle al")
+		emit("movzb rax, al")
 	case parse.NodeGreater:
-		fmt.Println("  cmp rdi, rax")
-		fmt.Println("  setl al")
-		fmt.Println("  movzb rax, al")
+		emit("cmp rdi, rax")
+		emit("setl al")
+		emit("movzb rax, al")
 	case parse.NodeGreaterEql:
-		fmt.Println("  cmp rdi, rax")
-		fmt.Println("  setle al")
-		fmt.Println("  movzb rax, al")
+		emit("cmp rdi, rax")
+		emit("setle al")
+		emit("movzb rax, al")
 	}
-	fmt.Println("  push rax")
+	emit("push rax")
 }
 
-func GenX86_64(p *parse.Program) {
-	program = p
+func GenX86_64(prog *parse.Program) {
+	program = prog
 	// アセンブリの前半部分
-	fmt.Println(".intel_syntax noprefix")
-	fmt.Println(".globl main")
+	p(".intel_syntax noprefix")
+	p(".globl main")
 
-	fmt.Println(".data")
-	for _, str := range p.StringLiterals {
-		fmt.Println(str.Label + ":")
-		fmt.Println("  .string " + str.Value)
+	p(".data")
+	for _, str := range prog.StringLiterals {
+		p(str.Label + ":")
+		emit(".string %s", str.Value)
 	}
-	fmt.Println(".text")
+	p(".text")
 
-	for _, c := range p.Code {
+	for _, c := range prog.Code {
 		// 抽象構文木を下りながらコード生成
 		gen(c)
 	}
