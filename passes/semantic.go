@@ -245,14 +245,31 @@ func traverse(node *parse.Node) lang.Type {
 	if node.Kind == parse.NodeIndex {
 		var seqType = traverse(node.Seq)
 		var indexType = traverse(node.Index)
-		if seqType.Kind != lang.TypeArray {
-			util.Alarm("配列ではないものに添字でアクセスしようとしています")
+		if seqType.Kind != lang.TypeArray && seqType.Kind != lang.TypeSlice {
+			util.Alarm("配列でもスライスでもないものに添字でアクセスしようとしています")
 		}
 		if !lang.IsKindOfNumber(indexType) {
 			util.Alarm("配列の添字は整数でなくてはなりません")
 		}
 		node.ExprType = *seqType.PtrTo
 		return node.ExprType
+	}
+	if node.Kind == parse.NodeAppendCall {
+		var arg1Type = traverse(node.Arguments[0])
+		var arg2Type = traverse(node.Arguments[1])
+
+		if arg1Type.Kind != lang.TypeSlice {
+			panic("appendの第一引数はスライスでなくてはいけません")
+		}
+		if !lang.TypeEquals(*arg1Type.PtrTo, arg2Type) {
+			panic("第二引数の型は第一引数で指定されたスライスに追加できません")
+		}
+		node.ExprType = arg1Type
+		return node.ExprType
+	}
+	if node.Kind == parse.NodeSliceLiteral {
+		node.ExprType = node.LiteralType
+		return node.LiteralType
 	}
 
 	var lhsType = traverse(node.Lhs)

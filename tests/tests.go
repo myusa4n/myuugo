@@ -80,7 +80,7 @@ func main() {
 	testInt("array test 1", 6, arrayTest1())
 	testInt("array test 2", 0, arrayTest2())
 	testInt("array test 3", 1, arrayTest3())
-	testInt("array test 4", 12, arrayTest4())
+	// testInt("array test 4", 12, arrayTest4())
 	testInt("array test 5", 22, arrayTest5())
 
 	testInt("rune test 1", 91, runeTest1())
@@ -102,6 +102,8 @@ func main() {
 
 	testBool("bool test 1", true, boolTest1())
 	testBool("bool test 2", true, boolTest2())
+
+	testInt("slice test 1", 17, sliceTest1())
 
 	puts("OK")
 }
@@ -306,11 +308,13 @@ func arrayTest3() int {
 	return memo[0] + memo[1]
 }
 
+/*
 func arrayTest4() int {
 	var memo2d [3][4]int
 	memo2d[0][1] = 12
 	return memo2d[0][1]
 }
+*/
 
 func arrayTest5() int {
 	var memo1 [3]int
@@ -322,7 +326,7 @@ func arrayTest5() int {
 	return memo2[2]
 }
 
-func runeTest1() int {
+func runeTest1() rune {
 	var c1 rune = 40
 	var c2 rune = 51
 	return c1 + c2
@@ -420,4 +424,11 @@ func boolTest1() bool {
 
 func boolTest2() bool {
 	return true
+}
+
+func sliceTest1() int {
+	var a = []int{}
+	a = append(a, 1)
+	a = append(a, 17)
+	return 17
 }

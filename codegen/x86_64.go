@@ -24,10 +24,7 @@ func declare(node *parse.Node) {
 	}
 	// 基本的に何もしないが配列の場合は動的にメモリを確保し、あらかじめ割り当てる
 	if variable.Type.Kind == lang.TypeArray {
-		emit("mov rax, rbp")
-		emit("sub rax, %d", variable.Offset)
-		emit("push rax")
-
+		genLvalue(node)
 		emit("mov rdi, %d", variable.Type.ArraySize)
 		emit("mov rsi, %d", entitySizeOf(*variable.Type.PtrTo))
 		emit("call calloc")
@@ -38,13 +35,13 @@ func declare(node *parse.Node) {
 }
 
 func assign(lhs *parse.Node, rhs *parse.Node) {
-	genLvalue(lhs)
-	gen(rhs)
-
-	emit("pop rdi")
-	emit("pop rax")
-
 	if lhs.ExprType.Kind == lang.TypeArray {
+		gen(lhs)
+		gen(rhs)
+
+		emit("pop rdi")
+		emit("pop rax")
+
 		var size = lang.Sizeof(*lhs.ExprType.PtrTo)
 
 		for i := 0; i < lhs.ExprType.ArraySize; i++ {
@@ -53,6 +50,13 @@ func assign(lhs *parse.Node, rhs *parse.Node) {
 		}
 		return
 	}
+
+	genLvalue(lhs)
+	gen(rhs)
+
+	emit("pop rdi")
+	emit("pop rax")
+
 	emit("mov [rax], " + register(1, lang.Sizeof(lhs.ExprType)))
 }
 
@@ -81,12 +85,6 @@ func genLvalue(node *parse.Node) {
 		if variable.Kind == lang.VariableLocal {
 			emit("mov rax, rbp")
 			emit("sub rax, %d", node.Variable.Offset)
-
-			// 配列だけじゃなくて構造体の時もやる気がする
-			if variable.Type.Kind == lang.TypeArray {
-				emit("mov rax, [rax]")
-			}
-
 			emit("push rax")
 		} else {
 			emit("mov rax, OFFSET FLAT:%s", node.Variable.Name)
@@ -94,10 +92,15 @@ func genLvalue(node *parse.Node) {
 		}
 		return
 	} else if node.Kind == parse.NodeIndex {
-		genLvalue(node.Seq)
+		gen(node.Seq)
 		gen(node.Index)
 		emit("pop rdi")
 		emit("imul rdi, %d", lang.Sizeof(node.ExprType))
+
+		if node.Seq.ExprType.Kind == lang.TypeSlice {
+			emit("add rdi, 8") // 要素数を表す値のオフセットの分だけずらしておく
+		}
+
 		emit("pop rax")
 		emit("add rax, rdi")
 		emit("push rax")
@@ -145,10 +148,9 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeVariable {
-		var variable = node.Variable
 		genLvalue(node)
 
-		if variable.Type.Kind == lang.TypeArray {
+		if node.Variable.Kind == lang.VariableTopLevel && node.ExprType.Kind == lang.TypeArray {
 			return
 		}
 
@@ -404,6 +406,40 @@ func gen(node *parse.Node) {
 
 		p("%s:", label)
 
+		return
+	}
+	if node.Kind == parse.NodeSliceLiteral {
+		emit("mov rdi, %d", 1)
+		emit("mov rsi, %d", 8) // 要素サイズ用の値
+		emit("call calloc")
+		emit("push rax")
+		return
+	}
+	if node.Kind == parse.NodeAppendCall {
+		gen(node.Arguments[1])
+		gen(node.Arguments[0])
+
+		var elemType = node.Arguments[1].ExprType
+
+		emit("pop rdi")
+		emit("add QWORD PTR [rdi], 1") // 要素数を増やす
+		emit("mov rsi, [rdi]")
+		emit("imul rsi, %d", lang.Sizeof(elemType))
+		emit("add rsi, 8") // 要素数分のアドレス
+
+		emit("call realloc") // 8 + 要素数 x 要素サイズ分のメモリを確保
+
+		emit("mov r10, rax") // 退避
+
+		emit("mov rdi, [rax]") // rdiに要素数を代入
+		emit("sub rdi, 1")
+		emit("imul rdi, %d", lang.Sizeof(elemType))
+		emit("add rdi, 8")   // 要素数用のオフセットを加算
+		emit("add rax, rdi") // 代入するべき要素のアドレス
+
+		emit("pop rdi") // 追加する要素の値
+		emit("mov %s PTR [rax], rdi", word(lang.Sizeof(elemType)))
+		emit("push r10")
 		return
 	}
 

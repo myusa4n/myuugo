@@ -99,6 +99,11 @@ func (t *Tokenizer) consumeType() (lang.Type, bool) {
 		return lang.NewPointerType(&ty), true
 	}
 	if t.Consume(TokenLSBrace) {
+		if t.Consume(TokenRSBrace) {
+			// スライス
+			ty := t.expectType()
+			return lang.NewSliceType(ty), true
+		}
 		var arraySize = t.expectNumber()
 		t.Expect(TokenRSBrace)
 		ty := t.expectType()
@@ -574,6 +579,25 @@ func primary() *Node {
 		n.Str = Env.program.AddStringLiteral(tokenizer.Fetch().str)
 		tokenizer.Succ()
 		return n
+	}
+	// スライス型の値
+	// TODO: 配列や構造体のリテラルもここで処理する
+	if tokenizer.Test(TokenLSBrace) {
+		ty := tokenizer.expectType()
+		tokenizer.Expect(TokenLbrace)
+		tokenizer.Expect(TokenRbrace)
+		return NewSliceLiteral(ty, []*Node{})
+	}
+
+	// append関数の呼び出し
+	if tokenizer.Fetch().str == "append" && tokenizer.Prefetch(1).Test(TokenLparen) {
+		tokenizer.Expect(TokenIdentifier)
+		tokenizer.Expect(TokenLparen)
+		var arg1 = expr()
+		tokenizer.Expect(TokenComma)
+		var arg2 = expr()
+		tokenizer.Expect(TokenRparen)
+		return NewAppendCallNode(arg1, arg2)
 	}
 
 	var n *Node = named()
