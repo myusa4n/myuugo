@@ -104,6 +104,7 @@ func main() {
 	testBool("bool test 2", true, boolTest2())
 
 	testInt("slice test 1", 17, sliceTest1())
+	testInt("slice test 2", 4, sliceTest2())
 
 	puts("OK")
 }
@@ -431,4 +432,12 @@ func sliceTest1() int {
 	a = append(a, 1)
 	a = append(a, 17)
 	return 17
+}
+
+func sliceTest2() int {
+	s := [][]int{}
+	s = append(s, []int{})
+	s = append(s, []int{})
+	s[0] = append(s[0], 4)
+	return s[0][0]
 }
