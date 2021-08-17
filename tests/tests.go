@@ -431,13 +431,13 @@ func sliceTest1() int {
 	var a = []int{}
 	a = append(a, 1)
 	a = append(a, 17)
-	return 17
+	return a[1]
 }
 
 func sliceTest2() int {
-	s := [][]int{}
-	s = append(s, []int{})
-	s = append(s, []int{})
-	s[0] = append(s[0], 4)
-	return s[0][0]
+	var s = []string{}
+	s = append(s, "hello")
+	s = append(s, "world")
+	puts(s[0])
+	return 4
 }

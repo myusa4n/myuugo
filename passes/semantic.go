@@ -186,19 +186,23 @@ func traverse(node *parse.Node) lang.Type {
 	}
 	if node.Kind == parse.NodeFunctionCall {
 		fn := program.FindFunction(node.Label)
-		if fn != nil {
-			if len(fn.ParameterTypes) != len(node.Arguments) {
-				util.Alarm("関数%sの引数の数が正しくありません", fn.Label)
+		if fn == nil {
+			for _, argument := range node.Arguments {
+				traverse(argument)
 			}
-			for i, argument := range node.Arguments {
-				if !lang.TypeCompatable(fn.ParameterTypes[i], traverse(argument)) {
-					util.Alarm("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
-				}
-			}
-			node.ExprType = fn.ReturnValueType
-			return fn.ReturnValueType
+			node.ExprType = lang.NewUndefinedType()
+			return node.ExprType
 		}
-		return node.ExprType // おそらくundefined
+		if len(fn.ParameterTypes) != len(node.Arguments) {
+			util.Alarm("関数%sの引数の数が正しくありません", fn.Label)
+		}
+		for i, argument := range node.Arguments {
+			if !lang.TypeCompatable(fn.ParameterTypes[i], traverse(argument)) {
+				util.Alarm("関数%sの%d番目の引数の型が一致しません", fn.Label, i)
+			}
+		}
+		node.ExprType = fn.ReturnValueType
+		return node.ExprType
 	}
 	if node.Kind == parse.NodeLocalVarStmt || node.Kind == parse.NodeTopLevelVarStmt {
 		if len(node.Children) == 2 {
