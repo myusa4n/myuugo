@@ -409,10 +409,20 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeSliceLiteral {
-		emit("mov rdi, %d", 1)
-		emit("mov rsi, %d", 8) // 要素サイズ用の値
-		emit("call calloc")
+		var elemType = *node.LiteralType.PtrTo
+
+		emit("mov rdi, %d", 8+lang.Sizeof(elemType)*len(node.Children))
+		emit("call malloc")
+		emit("mov QWORD PTR [rax], %d", len(node.Children)) // 要素数を表す領域
 		emit("push rax")
+
+		for i := 0; i < len(node.Children); i++ {
+			gen(node.Children[i])
+			emit("pop rdi")
+			emit("pop rax")
+			emit("mov %s PTR [rax+%d], rdi", word(lang.Sizeof(elemType)), 8+i*lang.Sizeof(elemType))
+			emit("push rax")
+		}
 		return
 	}
 	if node.Kind == parse.NodeAppendCall {

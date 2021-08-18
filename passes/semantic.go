@@ -273,6 +273,12 @@ func traverse(node *parse.Node) lang.Type {
 	}
 	if node.Kind == parse.NodeSliceLiteral {
 		node.ExprType = node.LiteralType
+		for _, c := range node.Children {
+			ty := traverse(c)
+			if !lang.TypeCompatable(*node.LiteralType.PtrTo, ty) {
+				panic("スライスの型と中身の要素の型が一致しません")
+			}
+		}
 		return node.LiteralType
 	}
 

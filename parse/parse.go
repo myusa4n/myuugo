@@ -581,12 +581,21 @@ func primary() *Node {
 		return n
 	}
 	// スライス型の値
-	// TODO: 配列や構造体のリテラルもここで処理する
 	if tokenizer.Test(TokenLSBrace) {
 		ty := tokenizer.expectType()
-		tokenizer.Expect(TokenLbrace)
-		tokenizer.Expect(TokenRbrace)
-		return NewSliceLiteral(ty, []*Node{})
+
+		if ty.Kind == lang.TypeSlice {
+			elements := []*Node{}
+			tokenizer.Expect(TokenLbrace)
+			for !tokenizer.Consume(TokenRbrace) {
+				if len(elements) > 0 {
+					tokenizer.Expect(TokenComma)
+				}
+				elements = append(elements, expr())
+			}
+			return NewSliceLiteral(ty, elements)
+		}
+		panic("未実装の型のリテラルです")
 	}
 
 	// append関数の呼び出し

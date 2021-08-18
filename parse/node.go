@@ -153,6 +153,7 @@ func NewNodeBool(val int) *Node {
 func NewSliceLiteral(ty lang.Type, elements []*Node) *Node {
 	n := newNodeBase(NodeSliceLiteral)
 	n.LiteralType = ty
+	n.Children = elements
 	return n
 }
 
