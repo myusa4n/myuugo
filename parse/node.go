@@ -43,9 +43,10 @@ const (
 	NodeNot              NodeKind = "[NODE] NOT"           // 否定
 	NodeLogicalAnd       NodeKind = "[NODE] LOGICAL AND"   // 論理積
 	NodeLogicalOr        NodeKind = "[NODE] LOGICAL OR"    // 論理和
-	NodeMember           NodeKind = "[NODE] MEMBER"        // A.B
+	NodeDot              NodeKind = "[NODE] DOT"           // A.B
 	NodeAppendCall       NodeKind = "[NODE] APPEND CALL"   // append(..., ...)
 	NodeSliceLiteral     NodeKind = "[NODE] SLICE LITERAL" // []type{...}
+	NodeTypeStmt         NodeKind = "[NODE] TYPE STMT"     // type A struct{}
 )
 
 type Node struct {
@@ -89,6 +90,10 @@ type Node struct {
 
 	// kindがNodeReturn, NodeAddr, NodeDerefの場合にのみ使う
 	Target *Node
+
+	// kindがNodeDotの場合にのみ使う
+	Owner      *Node
+	MemberName string
 
 	// kindがNodeSliceLiteralの場合にのみ使う
 	LiteralType lang.Type
@@ -150,6 +155,10 @@ func NewNodeBool(val int) *Node {
 	return &Node{Kind: NodeBool, Val: val, Env: Env}
 }
 
+func NewTypeStmtNode() *Node {
+	return newNodeBase(NodeTypeStmt)
+}
+
 func NewSliceLiteral(ty lang.Type, elements []*Node) *Node {
 	n := newNodeBase(NodeSliceLiteral)
 	n.LiteralType = ty
@@ -163,6 +172,13 @@ func NewForNode(init *Node, cond *Node, update *Node, body *Node) *Node {
 	n.Condition = cond
 	n.Update = update
 	n.Body = body
+	return n
+}
+
+func NewDotNode(owner *Node, memberName string) *Node {
+	n := newNodeBase(NodeDot)
+	n.Owner = owner
+	n.MemberName = memberName
 	return n
 }
 

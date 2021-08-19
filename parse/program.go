@@ -11,8 +11,9 @@ type Program struct {
 	functions         []*lang.Function
 
 	// そのうち削除するかも
-	StringLiterals []*lang.StringLiteral
-	Code           []*Node
+	StringLiterals   []*lang.StringLiteral
+	Code             []*Node
+	UserDefinedTypes []lang.Type
 }
 
 func NewProgram() *Program {
@@ -56,6 +57,31 @@ func (p *Program) FindFunction(name string) *lang.Function {
 		}
 	}
 	return nil
+}
+
+func (p *Program) RegisterType(udt lang.Type) {
+	_, ok := p.FindType(udt.DefinedName)
+	if ok {
+		panic("型" + udt.DefinedName + "は既に定義されています")
+	}
+
+	// 元が構造体だった場合はオフセットを修正
+	if udt.PtrTo.Kind == lang.TypeStruct {
+		entityType := udt.PtrTo
+		for i := 1; i < len(entityType.MemberNames); i++ {
+			entityType.MemberOffsets[i] = entityType.MemberOffsets[i-1] + lang.Sizeof(entityType.MemberTypes[i-1])
+		}
+	}
+	p.UserDefinedTypes = append(p.UserDefinedTypes, udt)
+}
+
+func (p *Program) FindType(name string) (lang.Type, bool) {
+	for _, t := range p.UserDefinedTypes {
+		if t.DefinedName == name {
+			return t, true
+		}
+	}
+	return lang.Type{}, false
 }
 
 func (p *Program) AddStringLiteral(value string) *lang.StringLiteral {

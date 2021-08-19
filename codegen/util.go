@@ -44,8 +44,18 @@ func word(byteCount int) string {
 }
 
 func entitySizeOf(ty lang.Type) int {
+	if ty.Kind == lang.TypeUserDefined {
+		return entitySizeOf(*ty.PtrTo)
+	}
 	if ty.Kind == lang.TypeArray {
-		return ty.ArraySize * entitySizeOf(*ty.PtrTo)
+		return ty.ArraySize * lang.Sizeof(*ty.PtrTo)
+	}
+	if ty.Kind == lang.TypeStruct {
+		sum := 0
+		for _, ty := range ty.MemberTypes {
+			sum += lang.Sizeof(ty)
+		}
+		return sum
 	}
 	return lang.Sizeof(ty)
 }

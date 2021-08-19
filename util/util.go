@@ -12,7 +12,8 @@ import (
 func ReadFile(path string) string {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		Alarm("ファイル%sの読み取りに失敗しました", path)
+		fmt.Println(path)
+		Alarm("ファイル '" + path + "' の読み取りに失敗しました")
 	}
 	if len(bytes) == 0 || bytes[len(bytes)-1] != '\n' {
 		bytes = append(bytes, '\n')

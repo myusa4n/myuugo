@@ -30,6 +30,10 @@ func Semantic(p *parse.Program) {
 // 式の型を決定するのに使う
 func traverse(node *parse.Node) lang.Type {
 	var stmtType = lang.NewType(lang.TypeStmt)
+	if node.Kind == parse.NodeTypeStmt {
+		node.ExprType = stmtType
+		return stmtType
+	}
 	if node.Kind == parse.NodePackageStmt {
 		node.ExprType = stmtType
 		return stmtType
@@ -280,6 +284,21 @@ func traverse(node *parse.Node) lang.Type {
 			}
 		}
 		return node.LiteralType
+	}
+	if node.Kind == parse.NodeDot {
+		ty := traverse(node.Owner)
+		if ty.Kind != lang.TypeUserDefined {
+			panic(".は現在ユーザ定義の型の値に対してのみ実装されています")
+		}
+		entityType := ty.PtrTo
+		for i := 0; i < len(entityType.MemberNames); i++ {
+			name := entityType.MemberNames[i]
+			if node.MemberName == name {
+				node.ExprType = entityType.MemberTypes[i]
+				return node.ExprType
+			}
+		}
+		panic("型" + ty.DefinedName + "は" + node.MemberName + "という名前のメンバーを持ちません")
 	}
 
 	var lhsType = traverse(node.Lhs)

@@ -93,7 +93,6 @@ func (t *Tokenizer) expectType() lang.Type {
 }
 
 func (t *Tokenizer) consumeType() (lang.Type, bool) {
-	var varType lang.Type = lang.Type{}
 	if t.Consume(TokenStar) {
 		ty := t.expectType()
 		return lang.NewPointerType(&ty), true
@@ -126,7 +125,21 @@ func (t *Tokenizer) consumeType() (lang.Type, bool) {
 		var r = lang.NewType(lang.TypeRune)
 		return lang.NewPointerType(&r), true
 	}
-	return varType, true
+	if tok.str == "struct" {
+		tokenizer.Expect(TokenLbrace)
+		tokenizer.Expect(TokenNewLine)
+		names, types := []string{}, []lang.Type{}
+		for !tokenizer.Consume(TokenRbrace) {
+			name := tokenizer.expectIdentifier().str
+			ty := tokenizer.expectType()
+			tokenizer.Expect(TokenNewLine)
+
+			names = append(names, name)
+			types = append(types, ty)
+		}
+		return lang.NewStructType(names, types), true
+	}
+	return Env.program.FindType(tok.str)
 }
 
 var Env *Environment
@@ -213,6 +226,17 @@ func topLevelStmtList() *Node {
 	return node
 }
 
+func typeStmt() *Node {
+	tokenizer.Expect(TokenType)
+	typeName := tokenizer.expectIdentifier().str
+	entityType := tokenizer.expectType()
+	definedType := lang.NewUserDefinedType(typeName, entityType)
+
+	Env.program.RegisterType(definedType)
+
+	return NewNode(NodeTypeStmt, []*Node{})
+}
+
 func topLevelStmt() *Node {
 	// 関数定義
 	if tokenizer.Test(TokenFunc) {
@@ -221,6 +245,10 @@ func topLevelStmt() *Node {
 	// var文
 	if tokenizer.Test(TokenVar) {
 		return topLevelVarStmt()
+	}
+	// typ文
+	if tokenizer.Test(TokenType) {
+		return typeStmt()
 	}
 
 	// 許可されていないもの
@@ -615,6 +643,12 @@ func primary() *Node {
 		if tokenizer.Consume(TokenLSBrace) {
 			n = NewIndexNode(n, expr())
 			tokenizer.Expect(TokenRSBrace)
+			continue
+		}
+		if tokenizer.Consume(TokenDot) {
+			// メソッド呼び出しは一旦無視
+			name := tokenizer.expectIdentifier()
+			n = NewDotNode(n, name.str)
 			continue
 		}
 		break

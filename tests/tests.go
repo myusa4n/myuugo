@@ -107,6 +107,8 @@ func main() {
 	testInt("slice test 2", 4, sliceTest2())
 	testInt("slice test 3", 1000, sliceTest3())
 
+	testInt("struct test 1", 100, structTest1())
+
 	puts("OK")
 }
 
@@ -446,4 +448,16 @@ func sliceTest2() int {
 func sliceTest3() int {
 	var a = []int{1, 10, 100, 1000, 10000}
 	return a[3]
+}
+
+type Streamer struct {
+	Name  string
+	Power int
+}
+
+func structTest1() int {
+	var s Streamer
+	s.Name = "stylishotaku"
+	s.Power = 100
+	return s.Power
 }

@@ -22,12 +22,11 @@ func declare(node *parse.Node) {
 		p(".text")
 		return
 	}
-	// 基本的に何もしないが配列の場合は動的にメモリを確保し、あらかじめ割り当てる
-	if variable.Type.Kind == lang.TypeArray {
+	// 基本的に何もしないが配列または構造体の場合は動的にメモリを確保し、あらかじめ割り当てる
+	if variable.Type.Kind == lang.TypeArray || variable.Type.Kind == lang.TypeUserDefined {
 		genLvalue(node)
-		emit("mov rdi, %d", variable.Type.ArraySize)
-		emit("mov rsi, %d", entitySizeOf(*variable.Type.PtrTo))
-		emit("call calloc")
+		emit("mov rdi, %d", entitySizeOf(variable.Type))
+		emit("call malloc")
 		emit("pop rdi")
 		emit("mov [rdi], rax")
 		return
@@ -105,12 +104,29 @@ func genLvalue(node *parse.Node) {
 		emit("add rax, rdi")
 		emit("push rax")
 		return
+	} else if node.Kind == parse.NodeDot {
+		gen(node.Owner)
+		entityType := *node.Owner.ExprType.PtrTo
+
+		for i := 0; i < len(entityType.MemberNames); i++ {
+			if entityType.MemberNames[i] == node.MemberName {
+				emit("pop rax")
+				emit("add rax, %d", entityType.MemberOffsets[i])
+				emit("push rax")
+				return
+			}
+		}
+		panic("到達しないはず")
 	}
 	util.Alarm("代入の左辺値が変数またはポインタ参照ではありません")
 }
 
 func gen(node *parse.Node) {
 	if node.Kind == parse.NodePackageStmt {
+		// 何もしない
+		return
+	}
+	if node.Kind == parse.NodeTypeStmt {
 		// 何もしない
 		return
 	}
@@ -343,6 +359,17 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeIndex {
+		genLvalue(node)
+		emit("pop rax")
+		if lang.Sizeof(node.ExprType) == 1 {
+			emit("movzx rax, BYTE PTR [rax]")
+		} else {
+			emit("mov rax, [rax]")
+		}
+		emit("push rax")
+		return
+	}
+	if node.Kind == parse.NodeDot {
 		genLvalue(node)
 		emit("pop rax")
 		if lang.Sizeof(node.ExprType) == 1 {
