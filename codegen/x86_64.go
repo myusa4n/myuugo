@@ -5,7 +5,6 @@ import (
 
 	"github.com/myuu222/myuugo/lang"
 	"github.com/myuu222/myuugo/parse"
-	"github.com/myuu222/myuugo/util"
 )
 
 var labelNumber = 0
@@ -126,6 +125,10 @@ func genLvalue(node *parse.Node) {
 		gen(node.Owner)
 		entityType := *node.Owner.ExprType.PtrTo
 
+		if node.Owner.ExprType.Kind == lang.TypePtr {
+			entityType = *entityType.PtrTo
+		}
+
 		for i := 0; i < len(entityType.MemberNames); i++ {
 			if entityType.MemberNames[i] == node.MemberName {
 				emit("pop rax")
@@ -136,7 +139,7 @@ func genLvalue(node *parse.Node) {
 		}
 		panic("到達しないはず")
 	}
-	util.Alarm("代入の左辺値が変数またはポインタ参照ではありません")
+	panic("代入の左辺値が変数またはポインタ参照ではありません")
 }
 
 func gen(node *parse.Node) {
@@ -325,6 +328,10 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeAddr {
+		if node.Target.ExprType.Kind == lang.TypeUserDefined && node.Target.ExprType.PtrTo.Kind == lang.TypeStruct {
+			gen(node.Target)
+			return
+		}
 		genLvalue(node.Target)
 		return
 	}
