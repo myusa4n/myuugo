@@ -7,46 +7,47 @@ import (
 type NodeKind string
 
 const (
-	NodeAdd              NodeKind = "ADD"                  // +
-	NodeSub              NodeKind = "SUB"                  // -
-	NodeMul              NodeKind = "MUL"                  // *
-	NodeDiv              NodeKind = "DIV"                  // /
-	NodeEql              NodeKind = "EQL"                  // ==
-	NodeNotEql           NodeKind = "NOT EQL"              // !=
-	NodeLess             NodeKind = "LESS"                 // <
-	NodeLessEql          NodeKind = "LESS EQL"             // <=
-	NodeGreater          NodeKind = "GREATER"              // >
-	NodeGreaterEql       NodeKind = "GREATER EQL"          // >=
-	NodeAssign           NodeKind = "ASSIGN"               // =
-	NodeReturn           NodeKind = "RETURN"               // return
-	NodeVariable         NodeKind = "VARIABLE"             // 変数参照
-	NodeNum              NodeKind = "NUM"                  // 整数
-	NodeBool             NodeKind = "BOOL"                 // 真偽値
-	NodeMetaIf           NodeKind = "META IF"              // if ... else ...
-	NodeIf               NodeKind = "IF"                   // if
-	NodeElse             NodeKind = "ELSE"                 // else
-	NodeStmtList         NodeKind = "STMT LIST"            // stmt*
-	NodeFor              NodeKind = "FOR"                  // for
-	NodeFunctionCall     NodeKind = "FUNCTION CALL"        // fn()
-	NodeFunctionDef      NodeKind = "FUNCTION DEF"         // func fn() { ... }
-	NodeAddr             NodeKind = "ADDR"                 // &
-	NodeDeref            NodeKind = "DEREF"                // *addr
-	NodeLocalVarStmt     NodeKind = "LOCAL VAR STMT"       // (local) var ...
-	NodeTopLevelVarStmt  NodeKind = "TOPLEVEL VAR STMT"    // (toplevel) var ...
-	NodePackageStmt      NodeKind = "PACKAGE STMT"         // package ...
-	NodeExprStmt         NodeKind = "EXPR STMT"            // 式文
-	NodeIndex            NodeKind = "INDEX"                // 添字アクセス
-	NodeString           NodeKind = "STRING"               // 文字列
-	NodeShortVarDeclStmt NodeKind = "SHORT VAR DECL STMT"  // 短絡変数宣言
-	NodeExprList         NodeKind = "EXPR LIST"            // 複数の要素からなる式
-	NodeLocalVarList     NodeKind = "LOCAL VAR LIST"       // 複数の変数からなる式
-	NodeNot              NodeKind = "[NODE] NOT"           // 否定
-	NodeLogicalAnd       NodeKind = "[NODE] LOGICAL AND"   // 論理積
-	NodeLogicalOr        NodeKind = "[NODE] LOGICAL OR"    // 論理和
-	NodeDot              NodeKind = "[NODE] DOT"           // A.B
-	NodeAppendCall       NodeKind = "[NODE] APPEND CALL"   // append(..., ...)
-	NodeSliceLiteral     NodeKind = "[NODE] SLICE LITERAL" // []type{...}
-	NodeTypeStmt         NodeKind = "[NODE] TYPE STMT"     // type A struct{}
+	NodeAdd              NodeKind = "ADD"                   // +
+	NodeSub              NodeKind = "SUB"                   // -
+	NodeMul              NodeKind = "MUL"                   // *
+	NodeDiv              NodeKind = "DIV"                   // /
+	NodeEql              NodeKind = "EQL"                   // ==
+	NodeNotEql           NodeKind = "NOT EQL"               // !=
+	NodeLess             NodeKind = "LESS"                  // <
+	NodeLessEql          NodeKind = "LESS EQL"              // <=
+	NodeGreater          NodeKind = "GREATER"               // >
+	NodeGreaterEql       NodeKind = "GREATER EQL"           // >=
+	NodeAssign           NodeKind = "ASSIGN"                // =
+	NodeReturn           NodeKind = "RETURN"                // return
+	NodeVariable         NodeKind = "VARIABLE"              // 変数参照
+	NodeNum              NodeKind = "NUM"                   // 整数
+	NodeBool             NodeKind = "BOOL"                  // 真偽値
+	NodeMetaIf           NodeKind = "META IF"               // if ... else ...
+	NodeIf               NodeKind = "IF"                    // if
+	NodeElse             NodeKind = "ELSE"                  // else
+	NodeStmtList         NodeKind = "STMT LIST"             // stmt*
+	NodeFor              NodeKind = "FOR"                   // for
+	NodeFunctionCall     NodeKind = "FUNCTION CALL"         // fn()
+	NodeFunctionDef      NodeKind = "FUNCTION DEF"          // func fn() { ... }
+	NodeAddr             NodeKind = "ADDR"                  // &
+	NodeDeref            NodeKind = "DEREF"                 // *addr
+	NodeLocalVarStmt     NodeKind = "LOCAL VAR STMT"        // (local) var ...
+	NodeTopLevelVarStmt  NodeKind = "TOPLEVEL VAR STMT"     // (toplevel) var ...
+	NodePackageStmt      NodeKind = "PACKAGE STMT"          // package ...
+	NodeExprStmt         NodeKind = "EXPR STMT"             // 式文
+	NodeIndex            NodeKind = "INDEX"                 // 添字アクセス
+	NodeString           NodeKind = "STRING"                // 文字列
+	NodeShortVarDeclStmt NodeKind = "SHORT VAR DECL STMT"   // 短絡変数宣言
+	NodeExprList         NodeKind = "EXPR LIST"             // 複数の要素からなる式
+	NodeLocalVarList     NodeKind = "LOCAL VAR LIST"        // 複数の変数からなる式
+	NodeNot              NodeKind = "[NODE] NOT"            // 否定
+	NodeLogicalAnd       NodeKind = "[NODE] LOGICAL AND"    // 論理積
+	NodeLogicalOr        NodeKind = "[NODE] LOGICAL OR"     // 論理和
+	NodeDot              NodeKind = "[NODE] DOT"            // A.B
+	NodeAppendCall       NodeKind = "[NODE] APPEND CALL"    // append(..., ...)
+	NodeSliceLiteral     NodeKind = "[NODE] SLICE LITERAL"  // []type{...}
+	NodeStructLiteral    NodeKind = "[NODE] STRUCT LITERAL" // typeName{...}
+	NodeTypeStmt         NodeKind = "[NODE] TYPE STMT"      // type A struct{}
 )
 
 type Node struct {
@@ -95,8 +96,12 @@ type Node struct {
 	Owner      *Node
 	MemberName string
 
-	// kindがNodeSliceLiteralの場合にのみ使う
+	// kindがNodeSliceLiteralまたはNodeStructLiteralの場合にのみ使う
 	LiteralType lang.Type
+
+	// kindがNodeStructLiteralの場合にのみ使う
+	MemberNames  []string
+	MemberValues []*Node
 }
 
 func newNodeBase(kind NodeKind) *Node {
@@ -163,6 +168,14 @@ func NewSliceLiteral(ty lang.Type, elements []*Node) *Node {
 	n := newNodeBase(NodeSliceLiteral)
 	n.LiteralType = ty
 	n.Children = elements
+	return n
+}
+
+func NewStructLiteral(ty lang.Type, memberNames []string, memberValues []*Node) *Node {
+	n := newNodeBase(NodeStructLiteral)
+	n.LiteralType = ty
+	n.MemberNames = memberNames
+	n.MemberValues = memberValues
 	return n
 }
 

@@ -49,6 +49,24 @@ func assign(lhs *parse.Node, rhs *parse.Node) {
 		}
 		return
 	}
+	if lhs.ExprType.Kind == lang.TypeStruct {
+		gen(lhs)
+		gen(rhs)
+
+		emit("pop rdi")
+		emit("pop rax")
+
+		entityType := *lhs.ExprType.PtrTo
+		offset := 0
+
+		for i := 0; i < len(entityType.MemberOffsets); i++ {
+			ty := entityType.MemberTypes[i]
+			emit("mov r10, %s PTR [rdi+%d]", word(lang.Sizeof(ty)), offset)
+			emit("mov %s PTR [rax+%d], r10", word(lang.Sizeof(ty)), offset)
+			offset += entityType.MemberOffsets[i]
+		}
+		return
+	}
 
 	genLvalue(lhs)
 	gen(rhs)
@@ -433,6 +451,35 @@ func gen(node *parse.Node) {
 
 		p("%s:", label)
 
+		return
+	}
+	if node.Kind == parse.NodeStructLiteral {
+		var entityType = *node.LiteralType.PtrTo
+
+		emit("mov rdi, %d", entitySizeOf(entityType))
+		emit("call malloc")
+		emit("push rax")
+
+		for i := 0; i < len(node.MemberNames); i++ {
+			name := node.MemberNames[i]
+			gen(node.MemberValues[i])
+
+			offset := 0
+			memberSize := 0
+			for j := 0; j < len(entityType.MemberNames); j++ {
+				if entityType.MemberNames[j] == name {
+					offset = entityType.MemberOffsets[j]
+					memberSize = lang.Sizeof(entityType.MemberTypes[j])
+					break
+				}
+			}
+
+			emit("pop rdi")
+			emit("pop rax")
+
+			emit("mov %s PTR [rax+%d], rdi", word(memberSize), offset)
+			emit("push rax")
+		}
 		return
 	}
 	if node.Kind == parse.NodeSliceLiteral {

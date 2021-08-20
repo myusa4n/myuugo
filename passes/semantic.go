@@ -285,6 +285,30 @@ func traverse(node *parse.Node) lang.Type {
 		}
 		return node.LiteralType
 	}
+	if node.Kind == parse.NodeStructLiteral {
+		node.ExprType = node.LiteralType
+		entityType := *node.ExprType.PtrTo
+
+		for i := 0; i < len(node.MemberNames); i++ {
+			name := node.MemberNames[i]
+			value := node.MemberValues[i]
+			ty := traverse(value)
+
+			var found = false
+			for j := 0; j < len(entityType.MemberNames); j++ {
+				if entityType.MemberNames[j] == name {
+					found = true
+					if !lang.TypeCompatable(ty, entityType.MemberTypes[j]) {
+						panic(node.ExprType.DefinedName + "のメンバーの型と一致しません")
+					}
+				}
+			}
+			if !found {
+				panic(node.ExprType.DefinedName + "のメンバーに" + name + "は存在しません")
+			}
+		}
+		return node.ExprType
+	}
 	if node.Kind == parse.NodeDot {
 		ty := traverse(node.Owner)
 		if ty.Kind != lang.TypeUserDefined {

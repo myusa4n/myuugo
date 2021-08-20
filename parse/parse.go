@@ -589,6 +589,25 @@ func unary() *Node {
 	return primary()
 }
 
+func structTypeLiteral() *Node {
+	tok := tokenizer.expectIdentifier()
+	ty, ok := Env.program.FindType(tok.str)
+	if !ok {
+		BadToken(tok, "未定義の型のリテラルです")
+	}
+	names, values := []string{}, []*Node{}
+	tokenizer.Expect(TokenLbrace)
+	for !tokenizer.Consume(TokenRbrace) {
+		if len(names) > 0 {
+			tokenizer.Expect(TokenComma)
+		}
+		names = append(names, tokenizer.expectIdentifier().str)
+		tokenizer.Expect(TokenColon)
+		values = append(values, expr())
+	}
+	return NewStructLiteral(ty, names, values)
+}
+
 func primary() *Node {
 	// 次のトークンが "(" なら、"(" expr ")" のはず
 	if tokenizer.Consume(TokenLparen) {
@@ -608,7 +627,7 @@ func primary() *Node {
 		tokenizer.Succ()
 		return n
 	}
-	// スライス型の値
+
 	if tokenizer.Test(TokenLSBrace) {
 		ty := tokenizer.expectType()
 
@@ -624,6 +643,24 @@ func primary() *Node {
 			return NewSliceLiteral(ty, elements)
 		}
 		panic("未実装の型のリテラルです")
+	}
+
+	var tok = tokenizer.Fetch()
+	ty, ok := Env.program.FindType(tok.str)
+	// struct型のリテラル
+	if ok {
+		names, values := []string{}, []*Node{}
+		tokenizer.expectType()
+		tokenizer.Expect(TokenLbrace)
+		for !tokenizer.Consume(TokenRbrace) {
+			if len(names) > 0 {
+				tokenizer.Expect(TokenComma)
+			}
+			names = append(names, tokenizer.expectIdentifier().str)
+			tokenizer.Expect(TokenColon)
+			values = append(values, expr())
+		}
+		return NewStructLiteral(ty, names, values)
 	}
 
 	// append関数の呼び出し
