@@ -5,7 +5,7 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/08/18更新)
+## 現状(2021/08/21更新)
 ```go
 package main
 
@@ -37,6 +37,11 @@ func setMinusOne(n *int) {
 	*n = -1
 }
 
+type FibonacciNumber struct {
+	Nth   int
+	Value int
+}
+
 /*
   1番目から10番目までの
   フィボナッチ数の総和を計算するプログラム
@@ -46,10 +51,10 @@ func main() {
 		setMinusOne(&memo[n]) // 初期化
 	}
 
-	var fibs []int = []int{1}
+	var fibs []FibonacciNumber = []FibonacciNumber{}
 	for n := 1; n <= 10; n = n + 1 {
-		fibs = append(fibs, fib(n))
-		printf("%d: %d\n", n, fibs[n])
+		fibs = append(fibs, FibonacciNumber{Nth: n, Value: fib(n)})
+		printf("%d: %d\n", n, fibs[n-1].Value)
 	}
 
 	return
