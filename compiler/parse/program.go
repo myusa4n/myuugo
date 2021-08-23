@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/myuu222/myuugo/lang"
+	"github.com/myuu222/myuugo/compiler/lang"
 )
 
 type Program struct {

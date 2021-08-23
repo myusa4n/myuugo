@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/myuu222/myuugo/codegen"
-	"github.com/myuu222/myuugo/parse"
-	"github.com/myuu222/myuugo/passes"
+	"github.com/myuu222/myuugo/compiler/codegen"
+	"github.com/myuu222/myuugo/compiler/parse"
+	"github.com/myuu222/myuugo/compiler/passes"
 )
 
 func usage() {

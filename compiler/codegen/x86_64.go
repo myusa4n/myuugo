@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/myuu222/myuugo/lang"
-	"github.com/myuu222/myuugo/parse"
-	"github.com/myuu222/myuugo/util"
+	"github.com/myuu222/myuugo/compiler/lang"
+	"github.com/myuu222/myuugo/compiler/parse"
+	"github.com/myuu222/myuugo/compiler/util"
 )
 
 var labelNumber = 0

@@ -1,7 +1,7 @@
 package parse
 
 import (
-	"github.com/myuu222/myuugo/lang"
+	"github.com/myuu222/myuugo/compiler/lang"
 )
 
 type NodeKind string

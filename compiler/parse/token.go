@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/myuu222/myuugo/util"
+	"github.com/myuu222/myuugo/compiler/util"
 )
 
 // (先頭の識別子, 識別子を切り出して得られた残りの文字列)  を返す

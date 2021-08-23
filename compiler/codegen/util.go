@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/myuu222/myuugo/lang"
-	"github.com/myuu222/myuugo/parse"
+	"github.com/myuu222/myuugo/compiler/lang"
+	"github.com/myuu222/myuugo/compiler/parse"
 )
 
 func getFrameSize(program *parse.Program, functionName string) int {
