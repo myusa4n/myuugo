@@ -30,6 +30,10 @@ func Semantic(p *parse.Program) {
 // 式の型を決定するのに使う
 func traverse(node *parse.Node) lang.Type {
 	var stmtType = lang.NewType(lang.TypeStmt)
+	if node.Kind == parse.NodeImportStmt {
+		node.ExprType = stmtType
+		return stmtType
+	}
 	if node.Kind == parse.NodeTypeStmt {
 		node.ExprType = stmtType
 		return stmtType

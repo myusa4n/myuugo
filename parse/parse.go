@@ -167,8 +167,40 @@ func Parse(path string) *Program {
 	Env.program.Code = []*Node{packageStmt()}
 	tokenizer.expectEndLine()
 
+	for {
+		for tokenizer.consumeEndLine() {
+		}
+		if tokenizer.Test(TokenImport) {
+			Env.program.Code = append(Env.program.Code, importStmt())
+		} else {
+			break
+		}
+	}
+
 	Env.program.Code = append(Env.program.Code, topLevelStmtList().Children...)
 	return Env.program
+}
+
+func importStmt() *Node {
+	tokenizer.Expect(TokenImport)
+	packages := []string{}
+
+	if tokenizer.Consume(TokenLparen) {
+		// グループ化
+		tokenizer.Expect(TokenNewLine)
+
+		for !tokenizer.Consume(TokenRparen) {
+			pkg := tokenizer.expectString()
+			packages = append(packages, pkg)
+			tokenizer.Expect(TokenNewLine)
+
+			Env.program.AddPackageToImport(pkg)
+		}
+		return NewImportStmtNode(packages)
+	}
+	packages = append(packages, tokenizer.expectString())
+	Env.program.AddPackageToImport(packages[0])
+	return NewImportStmtNode(packages)
 }
 
 func packageStmt() *Node {
@@ -674,8 +706,15 @@ func primary() *Node {
 		return NewAppendCallNode(arg1, arg2)
 	}
 
-	var n *Node = named()
+	var name = tokenizer.Fetch().str
+	_, ok = Env.program.FindPackageToImport(name)
 
+	if ok {
+		tokenizer.expectIdentifier()
+		tokenizer.Expect(TokenDot)
+	}
+
+	var n *Node = named()
 	for {
 		if tokenizer.Consume(TokenLSBrace) {
 			n = NewIndexNode(n, expr())

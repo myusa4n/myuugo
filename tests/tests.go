@@ -1,11 +1,16 @@
 package main
 
+import (
+	"fmt"
+	"os"
+)
+
 func testInt(name string, expected int, actual int) {
 	if expected == actual {
 		printf("[%s]: %d => %d\n", name, expected, actual)
 	} else {
 		printf("[%s]: %d expected, but got %d\n", name, expected, actual)
-		exit(1)
+		os.Exit(1)
 	}
 }
 
@@ -14,7 +19,7 @@ func testBool(name string, expected bool, actual bool) {
 		printf("[%s]: %hhx => %hhx\n", name, expected, actual)
 	} else {
 		printf("[%s]: %hhx expected, but got %hhx\n", name, expected, actual)
-		exit(1)
+		os.Exit(1)
 	}
 }
 
@@ -90,7 +95,7 @@ func main() {
 	testInt("string test 1", 0, stringTest1())
 	testInt("string test 2", 0, stringTest2())
 
-	puts("comment test 1")
+	fmt.Println("comment test 1")
 	commentTest1()
 
 	testInt("short var decl test 1", 22, shortVarDeclTest1())
@@ -111,7 +116,7 @@ func main() {
 	testInt("struct test 2", 200, structTest2())
 	testInt("struct test 3", 300, structTest3())
 
-	puts("OK")
+	fmt.Println("OK")
 }
 
 func localVarTest1() int {
@@ -353,7 +358,7 @@ func runeTest3() int {
 
 func stringTest1() int {
 	var msg string = "hello world"
-	puts(msg)
+	fmt.Println(msg)
 	return 0
 }
 
@@ -443,7 +448,7 @@ func sliceTest2() int {
 	var s = []string{}
 	s = append(s, "hello")
 	s = append(s, "world")
-	puts(s[0])
+	fmt.Println(s[0])
 	return 4
 }
 

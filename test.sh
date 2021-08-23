@@ -4,8 +4,10 @@ assert() {
   expected="$1"
   input="$2"
 
+  ./main "library/fmt/fmt.go" > tmp_fmt.s
+  ./main "library/os/os.go" > tmp_os.s
   ./main "$input" > tmp.s
-  gcc -no-pie -o tmp tmp.s
+  gcc -no-pie -o tmp tmp.s tmp_fmt.s tmp_os.s
   ./tmp
   actual="$?"
 

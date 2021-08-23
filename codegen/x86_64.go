@@ -2,9 +2,11 @@ package codegen
 
 import (
 	"strconv"
+	"unicode"
 
 	"github.com/myuu222/myuugo/lang"
 	"github.com/myuu222/myuugo/parse"
+	"github.com/myuu222/myuugo/util"
 )
 
 var labelNumber = 0
@@ -144,6 +146,10 @@ func genLvalue(node *parse.Node) {
 
 func gen(node *parse.Node) {
 	if node.Kind == parse.NodePackageStmt {
+		// 何もしない
+		return
+	}
+	if node.Kind == parse.NodeImportStmt {
 		// 何もしない
 		return
 	}
@@ -582,7 +588,12 @@ func GenX86_64(prog *parse.Program) {
 	program = prog
 	// アセンブリの前半部分
 	p(".intel_syntax noprefix")
-	p(".globl main")
+
+	for _, fn := range program.Functions {
+		if fn.Label == "main" || unicode.IsUpper(util.RuneAt(fn.Label, 0)) {
+			p(".globl %s", fn.Label)
+		}
+	}
 
 	p(".data")
 	for _, str := range prog.StringLiterals {

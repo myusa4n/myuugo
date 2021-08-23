@@ -2,26 +2,29 @@ package parse
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/myuu222/myuugo/lang"
 )
 
 type Program struct {
-	topLevelVariables []*lang.Variable
-	functions         []*lang.Function
+	TopLevelVariables []*lang.Variable
+	Functions         []*lang.Function
 
 	// そのうち削除するかも
 	StringLiterals   []*lang.StringLiteral
 	Code             []*Node
 	UserDefinedTypes []lang.Type
+	PackagesToImport []string
 }
 
 func NewProgram() *Program {
 	return &Program{
-		topLevelVariables: []*lang.Variable{},
-		functions:         []*lang.Function{},
+		TopLevelVariables: []*lang.Variable{},
+		Functions:         []*lang.Function{},
 		StringLiterals:    []*lang.StringLiteral{},
 		Code:              []*Node{},
+		PackagesToImport:  []string{},
 	}
 }
 
@@ -30,12 +33,12 @@ func (p *Program) AddTopLevelVariable(ty lang.Type, name string) *lang.Variable 
 		return p.FindTopLevelVariable(name)
 	}
 	var newVar = lang.NewTopLevelVariable(ty, name)
-	p.topLevelVariables = append(p.topLevelVariables, newVar)
+	p.TopLevelVariables = append(p.TopLevelVariables, newVar)
 	return newVar
 }
 
 func (p *Program) FindTopLevelVariable(name string) *lang.Variable {
-	for _, v := range p.topLevelVariables {
+	for _, v := range p.TopLevelVariables {
 		if v.Name == name {
 			return v
 		}
@@ -43,15 +46,34 @@ func (p *Program) FindTopLevelVariable(name string) *lang.Variable {
 	return nil
 }
 
+func (p *Program) AddPackageToImport(name string) string {
+	pkg, ok := p.FindPackageToImport(name)
+	if ok {
+		return pkg
+	}
+	p.PackagesToImport = append(p.PackagesToImport, name)
+	return name
+}
+
+func (p *Program) FindPackageToImport(name string) (string, bool) {
+	for _, pkg := range p.PackagesToImport {
+		sections := strings.Split(strings.Trim(pkg, "\""), "/")
+		if sections[len(sections)-1] == name {
+			return pkg, true
+		}
+	}
+	return "", false
+}
+
 func (p *Program) RegisterFunction(fn *lang.Function) {
 	if p.FindFunction(fn.Label) != nil {
 		panic("関数" + fn.Label + "は既に存在しています")
 	}
-	p.functions = append(p.functions, fn)
+	p.Functions = append(p.Functions, fn)
 }
 
 func (p *Program) FindFunction(name string) *lang.Function {
-	for _, f := range p.functions {
+	for _, f := range p.Functions {
 		if f.Label == name {
 			return f
 		}

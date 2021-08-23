@@ -48,6 +48,7 @@ const (
 	NodeSliceLiteral     NodeKind = "[NODE] SLICE LITERAL"  // []type{...}
 	NodeStructLiteral    NodeKind = "[NODE] STRUCT LITERAL" // typeName{...}
 	NodeTypeStmt         NodeKind = "[NODE] TYPE STMT"      // type A struct{}
+	NodeImportStmt       NodeKind = "[NODE] IMPORT STMT"    // import (
 )
 
 type Node struct {
@@ -55,7 +56,7 @@ type Node struct {
 	Val      int                 // kindがNodeNumの場合にのみ使う
 	Variable *lang.Variable      // kindがNodeLocalVarの場合にのみ使う
 	Str      *lang.StringLiteral // kindがNodeStringの場合にのみ使う
-	Label    string              // kindがNodeFunctionCallまたはNodePackageの場合にのみ使う
+	Label    string              // kindがNodeFunctionCallまたはNodePackage、NodePackageStmtの場合にのみ使う
 	ExprType lang.Type           // ノードが表す式の型
 	Children []*Node             // 子。
 	Env      *Environment        // そのノードで管理している変数などの情報をまとめたもの
@@ -102,6 +103,9 @@ type Node struct {
 	// kindがNodeStructLiteralの場合にのみ使う
 	MemberNames  []string
 	MemberValues []*Node
+
+	// kindがNodeImportStmtの場合にのみ使う
+	Packages []string
 }
 
 func newNodeBase(kind NodeKind) *Node {
@@ -192,6 +196,12 @@ func NewDotNode(owner *Node, memberName string) *Node {
 	n := newNodeBase(NodeDot)
 	n.Owner = owner
 	n.MemberName = memberName
+	return n
+}
+
+func NewImportStmtNode(packages []string) *Node {
+	n := newNodeBase(NodeImportStmt)
+	n.Packages = packages
 	return n
 }
 

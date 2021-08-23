@@ -35,6 +35,7 @@ const (
 	TokenVar                TokenKind = "var"
 	TokenPackage            TokenKind = "package"
 	TokenType               TokenKind = "type"
+	TokenImport             TokenKind = "import"
 	TokenEqual              TokenKind = "="
 	TokenDoubleEqual        TokenKind = "=="
 	TokenNotEqual           TokenKind = "!="
@@ -107,7 +108,7 @@ func (t *Tokenizer) Tokenize(path string) {
 	}
 	var keywords = []TokenKind{
 		TokenPackage,
-		TokenReturn,
+		TokenReturn, TokenImport,
 		TokenFunc, TokenElse, TokenType,
 		TokenFor, TokenVar,
 		TokenIf,
