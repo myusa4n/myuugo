@@ -45,6 +45,7 @@ const (
 	NodeLogicalOr        NodeKind = "[NODE] LOGICAL OR"     // 論理和
 	NodeDot              NodeKind = "[NODE] DOT"            // A.B
 	NodeAppendCall       NodeKind = "[NODE] APPEND CALL"    // append(..., ...)
+	NodeStringCall       NodeKind = "[NODE] STRING CALL"    // append(..., ...)
 	NodeSliceLiteral     NodeKind = "[NODE] SLICE LITERAL"  // []type{...}
 	NodeStructLiteral    NodeKind = "[NODE] STRUCT LITERAL" // typeName{...}
 	NodeTypeStmt         NodeKind = "[NODE] TYPE STMT"      // type A struct{}
@@ -209,5 +210,11 @@ func NewImportStmtNode(packages []string) *Node {
 func NewAppendCallNode(arg1 *Node, arg2 *Node) *Node {
 	n := newNodeBase(NodeAppendCall)
 	n.Arguments = []*Node{arg1, arg2}
+	return n
+}
+
+func NewStringCallNode(arg *Node) *Node {
+	n := newNodeBase(NodeStringCall)
+	n.Arguments = []*Node{arg}
 	return n
 }

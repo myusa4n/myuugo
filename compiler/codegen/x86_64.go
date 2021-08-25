@@ -507,7 +507,7 @@ func gen(node *parse.Node) {
 			gen(node.Children[i])
 			emit("pop rdi")
 			emit("pop rax")
-			emit("mov %s PTR [rax+%d], rdi", word(lang.Sizeof(elemType)), 8+i*lang.Sizeof(elemType))
+			emit("mov %s PTR [rax+%d], %s", word(lang.Sizeof(elemType)), 8+i*lang.Sizeof(elemType), register(1, lang.Sizeof(elemType)))
 			emit("push rax")
 		}
 		return
@@ -538,6 +538,17 @@ func gen(node *parse.Node) {
 		emit("mov %s PTR [rax], rdi", word(lang.Sizeof(elemType)))
 		emit("push r10")
 		return
+	}
+	if node.Kind == parse.NodeStringCall {
+		gen(node.Arguments[0])
+		var argType = node.Arguments[0].ExprType
+		if argType.Kind == lang.TypeSlice && argType.PtrTo.Kind == lang.TypeRune {
+			emit("pop rax")
+			emit("add rax, 8")
+			emit("push rax")
+			return
+		}
+		panic("string関数の引数として許可されていない型です")
 	}
 
 	gen(node.Lhs)
@@ -596,6 +607,8 @@ func GenX86_64(prog *parse.Program) {
 	}
 
 	p(".data")
+	p(".LBuffer:")
+	emit(".zero 1000") // 1000バイトだけsprintf用のバッファを用いる
 	for _, str := range prog.StringLiterals {
 		p(str.Label + ":")
 		emit(".string %s", str.Value)

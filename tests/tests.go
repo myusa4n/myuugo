@@ -94,6 +94,7 @@ func main() {
 
 	testInt("string test 1", 0, stringTest1())
 	testInt("string test 2", 0, stringTest2())
+	testInt("string test 3", 0, stringTest3())
 
 	fmt.Println("comment test 1")
 	commentTest1()
@@ -366,6 +367,11 @@ func stringTest2() int {
 	var a = 3
 	var b = 2
 	printf("%d + %d = %d\n", a, b, a+b)
+	return 0
+}
+
+func stringTest3() int {
+	fmt.Println(string([]rune{'h', 'e', 0}))
 	return 0
 }
 

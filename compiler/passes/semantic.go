@@ -250,8 +250,7 @@ func traverse(node *parse.Node) lang.Type {
 		return node.Variable.Type
 	}
 	if node.Kind == parse.NodeString {
-		var runeType = lang.NewType(lang.TypeRune)
-		node.ExprType = lang.NewPointerType(&runeType)
+		node.ExprType = lang.NewType(lang.TypeString)
 		return node.ExprType
 	}
 	if node.Kind == parse.NodeIndex {
@@ -277,6 +276,11 @@ func traverse(node *parse.Node) lang.Type {
 			panic("第二引数の型は第一引数で指定されたスライスに追加できません")
 		}
 		node.ExprType = arg1Type
+		return node.ExprType
+	}
+	if node.Kind == parse.NodeStringCall {
+		traverse(node.Arguments[0])
+		node.ExprType = lang.NewType(lang.TypeString)
 		return node.ExprType
 	}
 	if node.Kind == parse.NodeSliceLiteral {

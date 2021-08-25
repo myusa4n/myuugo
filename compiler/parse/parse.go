@@ -122,8 +122,7 @@ func (t *Tokenizer) consumeType() (lang.Type, bool) {
 		return lang.NewType(lang.TypeBool), true
 	}
 	if tok.str == "string" {
-		var r = lang.NewType(lang.TypeRune)
-		return lang.NewPointerType(&r), true
+		return lang.NewType(lang.TypeString), true
 	}
 	if tok.str == "struct" {
 		tokenizer.Expect(TokenLbrace)
@@ -695,17 +694,6 @@ func primary() *Node {
 		return NewStructLiteral(ty, names, values)
 	}
 
-	// append関数の呼び出し
-	if tokenizer.Fetch().str == "append" && tokenizer.Prefetch(1).Test(TokenLparen) {
-		tokenizer.Expect(TokenIdentifier)
-		tokenizer.Expect(TokenLparen)
-		var arg1 = expr()
-		tokenizer.Expect(TokenComma)
-		var arg2 = expr()
-		tokenizer.Expect(TokenRparen)
-		return NewAppendCallNode(arg1, arg2)
-	}
-
 	var name = tokenizer.Fetch().str
 	_, ok = Env.program.FindPackageToImport(name)
 
@@ -734,6 +722,25 @@ func primary() *Node {
 
 func named() *Node {
 	if tokenizer.Prefetch(1).Test(TokenLparen) {
+		// append関数の呼び出し
+		if tokenizer.Fetch().str == "append" {
+			tokenizer.Expect(TokenIdentifier)
+			tokenizer.Expect(TokenLparen)
+			var arg1 = expr()
+			tokenizer.Expect(TokenComma)
+			var arg2 = expr()
+			tokenizer.Expect(TokenRparen)
+			return NewAppendCallNode(arg1, arg2)
+		}
+		// string関数の呼び出し
+		if tokenizer.Fetch().str == "string" {
+			tokenizer.Expect(TokenIdentifier)
+			tokenizer.Expect(TokenLparen)
+			var arg = expr()
+			tokenizer.Expect(TokenRparen)
+			return NewStringCallNode(arg)
+		}
+
 		// 関数呼び出し
 		var tok = tokenizer.expectIdentifier()
 		tokenizer.Expect(TokenLparen)

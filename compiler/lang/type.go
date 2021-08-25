@@ -10,6 +10,7 @@ const (
 	TypeArray       TypeKind = "[TYPE] ARRAY"
 	TypeSlice       TypeKind = "[TYPE] SLICE"
 	TypeBool        TypeKind = "[TYPE] BOOL"
+	TypeString      TypeKind = "[TYPE] STRING"
 	TypeStmt        TypeKind = "[TYPE] STMT"         // 簡便のため存在させている
 	TypeMultiple    TypeKind = "[TYPE] MULTIPLE"     // 関数の返り値が複数だった場合に使う
 	TypeUndefined   TypeKind = "[TYPE] UNDEFINED"    // まだ型を決めることができていない
@@ -70,7 +71,7 @@ func Sizeof(ty Type) int {
 	if ty.Kind == TypeUserDefined {
 		return Sizeof(*ty.PtrTo)
 	}
-	if ty.Kind == TypeInt || ty.Kind == TypePtr || ty.Kind == TypeArray || ty.Kind == TypeSlice || ty.Kind == TypeStruct {
+	if ty.Kind == TypeInt || ty.Kind == TypePtr || ty.Kind == TypeArray || ty.Kind == TypeSlice || ty.Kind == TypeStruct || ty.Kind == TypeString {
 		return 8
 	}
 	if ty.Kind == TypeRune || ty.Kind == TypeBool {
