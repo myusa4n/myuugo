@@ -8,6 +8,8 @@ import (
 	"github.com/myuu222/myuugo/compiler/parse"
 )
 
+var depth = 0
+
 func getFrameSize(program *parse.Program, functionName string) int {
 	fn := program.FindFunction(functionName)
 	if fn == nil {
@@ -67,4 +69,28 @@ func emit(format string, args ...interface{}) {
 func p(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 	fmt.Printf("\n")
+}
+
+func push(fmt string, args ...interface{}) {
+	emit("push "+fmt, args...)
+	depth++
+}
+
+func pop(fmt string, args ...interface{}) {
+	emit("pop "+fmt, args...)
+	depth--
+}
+
+func call(fmt string, args ...interface{}) {
+	var modified = false
+	if depth%2 == 1 {
+		emit("sub rsp, 8")
+		modified = true
+		depth++
+	}
+	emit("call "+fmt, args...)
+	if modified {
+		emit("add rsp, 8")
+		depth--
+	}
 }

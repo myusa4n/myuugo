@@ -17,12 +17,12 @@ func fromBuffer() {
 	emit("mov rdi, rax")
 	emit("add rdi, 1") // NULL文字分の長さを追加
 	emit("mov rsi, 1") // 1文字のサイズ数
-	emit("call calloc")
+	call("calloc")
 
-	emit("push rax")
+	push("rax")
 	emit("mov rdi, rax")
 	emit("mov rsi, OFFSET FLAT:.LBuffer")
-	emit("call strcpy")
+	call("strcpy")
 }
 
 func declare(node *parse.Node) {
@@ -40,8 +40,8 @@ func declare(node *parse.Node) {
 	if variable.Type.Kind == lang.TypeArray || variable.Type.Kind == lang.TypeUserDefined {
 		genLvalue(node)
 		emit("mov rdi, %d", entitySizeOf(variable.Type))
-		emit("call malloc")
-		emit("pop rdi")
+		call("malloc")
+		pop("rdi")
 		emit("mov [rdi], rax")
 		return
 	}
@@ -52,8 +52,8 @@ func assign(lhs *parse.Node, rhs *parse.Node) {
 		gen(lhs)
 		gen(rhs)
 
-		emit("pop rdi")
-		emit("pop rax")
+		pop("rdi")
+		pop("rax")
 
 		var size = lang.Sizeof(*lhs.ExprType.PtrTo)
 
@@ -67,8 +67,8 @@ func assign(lhs *parse.Node, rhs *parse.Node) {
 		gen(lhs)
 		gen(rhs)
 
-		emit("pop rdi")
-		emit("pop rax")
+		pop("rdi")
+		pop("rax")
 
 		entityType := *lhs.ExprType.PtrTo
 		offset := 0
@@ -85,8 +85,8 @@ func assign(lhs *parse.Node, rhs *parse.Node) {
 	genLvalue(lhs)
 	gen(rhs)
 
-	emit("pop rdi")
-	emit("pop rax")
+	pop("rdi")
+	pop("rax")
 
 	emit("mov [rax], " + register(1, lang.Sizeof(lhs.ExprType)))
 }
@@ -101,8 +101,8 @@ func assignMultiple(lhss []*parse.Node, rhs *parse.Node) {
 		var l = lhss[i]
 		genLvalue(l)
 
-		emit("pop rax")
-		emit("pop rdi")
+		pop("rax")
+		pop("rdi")
 		emit("mov [rax], " + register(1, lang.Sizeof(l.ExprType)))
 	}
 }
@@ -116,25 +116,25 @@ func genLvalue(node *parse.Node) {
 		if variable.Kind == lang.VariableLocal {
 			emit("mov rax, rbp")
 			emit("sub rax, %d", node.Variable.Offset)
-			emit("push rax")
+			push("rax")
 		} else {
 			emit("mov rax, OFFSET FLAT:%s", node.Variable.Name)
-			emit("push rax")
+			push("rax")
 		}
 		return
 	} else if node.Kind == parse.NodeIndex {
 		gen(node.Seq)
 		gen(node.Index)
-		emit("pop rdi")
+		pop("rdi")
 		emit("imul rdi, %d", lang.Sizeof(node.ExprType))
 
 		if node.Seq.ExprType.Kind == lang.TypeSlice {
 			emit("add rdi, 8") // 要素数を表す値のオフセットの分だけずらしておく
 		}
 
-		emit("pop rax")
+		pop("rax")
 		emit("add rax, rdi")
-		emit("push rax")
+		push("rax")
 		return
 	} else if node.Kind == parse.NodeDot {
 		gen(node.Owner)
@@ -146,9 +146,9 @@ func genLvalue(node *parse.Node) {
 
 		for i := 0; i < len(entityType.MemberNames); i++ {
 			if entityType.MemberNames[i] == node.MemberName {
-				emit("pop rax")
+				pop("rax")
 				emit("add rax, %d", entityType.MemberOffsets[i])
-				emit("push rax")
+				push("rax")
 				return
 			}
 		}
@@ -171,11 +171,11 @@ func gen(node *parse.Node) {
 		return
 	}
 	if node.Kind == parse.NodeNum {
-		emit("push %d", node.Val)
+		push("%d", node.Val)
 		return
 	}
 	if node.Kind == parse.NodeBool {
-		emit("push %d", node.Val)
+		push("%d", node.Val)
 		return
 	}
 	if node.Kind == parse.NodeStmtList {
@@ -192,14 +192,14 @@ func gen(node *parse.Node) {
 			}
 
 			for i := range exprs {
-				emit("pop " + register(len(exprs)-i-1, 8))
+				pop("" + register(len(exprs)-i-1, 8))
 			}
 		} else {
 			// void型
 			emit("mov rax, 0")
 		}
 		emit("mov rsp, rbp")
-		emit("pop rbp")
+		pop("rbp")
 		emit("ret")
 		return
 	}
@@ -210,14 +210,14 @@ func gen(node *parse.Node) {
 			return
 		}
 
-		emit("pop rax")
+		pop("rax")
 
 		if lang.Sizeof(node.ExprType) == 1 {
 			emit("movzx rax, BYTE PTR [rax]")
 		} else { // 8
 			emit("mov rax, [rax]")
 		}
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeAssign {
@@ -254,7 +254,7 @@ func gen(node *parse.Node) {
 		labelNumber += 1
 
 		gen(node.Condition)
-		emit("pop rax")
+		pop("rax")
 		emit("cmp rax, 0")
 		emit("je " + elseLabel)
 		gen(node.Body)
@@ -276,7 +276,7 @@ func gen(node *parse.Node) {
 		p("%s:", beginLabel)
 		if node.Condition != nil {
 			gen(node.Condition) // 条件
-			emit("pop rax")
+			pop("rax")
 			emit("cmp rax, 0")
 			emit("je " + endLabel)
 		}
@@ -295,35 +295,36 @@ func gen(node *parse.Node) {
 		}
 		for i := range node.Arguments {
 			// 配列や構造体は先頭のアドレスだけ渡しておいてNodeFunctionDef側でうまいこと代入してもらう
-			emit("pop " + register(len(node.Arguments)-i, 8))
+			pop("" + register(len(node.Arguments)-i, 8))
 		}
 		emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
-		emit("call " + node.Label)
+		call("" + node.Label)
 
 		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
 		fn := program.FindFunction(node.Label)
 		if fn != nil && fn.ReturnValueType.Kind == lang.TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.Components {
-				emit("push " + register(i, 8))
+				push("" + register(i, 8))
 			}
 			return
 		}
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeFunctionDef {
+		depth = 0
 		p("%s:", node.Label)
 
 		// プロローグ
-		emit("push rbp")
+		push("rbp")
 		emit("mov rbp, rsp")
 
 		emit("sub rsp, %d", getFrameSize(program, node.Label))
 
 		for i, param := range node.Parameters { // 引数
 			genLvalue(param)
-			emit("pop rax")
+			pop("rax")
 
 			emit("mov [rax], " + register(i+1, lang.Sizeof(param.ExprType)))
 		}
@@ -334,16 +335,16 @@ func gen(node *parse.Node) {
 		// 関数の返り値の型が void 型だと仮定する
 		emit("mov rax, 0")
 		emit("mov rsp, rbp")
-		emit("pop rbp")
+		pop("rbp")
 		emit("ret")
 
 		return
 	}
 	if node.Kind == parse.NodeNot {
 		gen(node.Target)
-		emit("pop rax")
+		pop("rax")
 		emit("xor rax, 1")
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeAddr {
@@ -356,9 +357,9 @@ func gen(node *parse.Node) {
 	}
 	if node.Kind == parse.NodeDeref {
 		gen(node.Target)
-		emit("pop rax")
+		pop("rax")
 		emit("mov rax, [rax]")
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeShortVarDeclStmt {
@@ -395,44 +396,44 @@ func gen(node *parse.Node) {
 		gen(node.Children[0])
 		if node.Children[0].ExprType.Kind == lang.TypeMultiple {
 			for range node.Children[0].ExprType.Components {
-				emit("pop rax")
+				pop("rax")
 			}
 			return
 		}
-		emit("pop rax")
+		pop("rax")
 		return
 	}
 	if node.Kind == parse.NodeIndex {
 		genLvalue(node)
-		emit("pop rax")
+		pop("rax")
 		if lang.Sizeof(node.ExprType) == 1 {
 			emit("movzx rax, BYTE PTR [rax]")
 		} else {
 			emit("mov rax, [rax]")
 		}
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeDot {
 		genLvalue(node)
-		emit("pop rax")
+		pop("rax")
 		if lang.Sizeof(node.ExprType) == 1 {
 			emit("movzx rax, BYTE PTR [rax]")
 		} else {
 			emit("mov rax, [rax]")
 		}
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeString {
 		emit("mov rax, OFFSET FLAT:%s", node.Str.Label)
-		emit("push rax")
+		push("rax")
 		return
 	}
 	if node.Kind == parse.NodeLogicalAnd {
 		gen(node.Lhs)
-		emit("pop rax")
-		emit("push 0")
+		pop("rax")
+		push("0")
 		emit("cmp rax, 0")
 
 		var label = ".Land" + strconv.Itoa(labelNumber)
@@ -441,14 +442,14 @@ func gen(node *parse.Node) {
 		// 短絡評価する
 		emit("je " + label)
 
-		emit("pop rax") // スタックから0を削除する
+		pop("rax") // スタックから0を削除する
 		gen(node.Rhs)
 
-		emit("pop rax")
+		pop("rax")
 		emit("cmp rax, 1")
 		emit("sete al")
 		emit("movzb rax, al")
-		emit("push rax")
+		push("rax")
 
 		p("%s:", label)
 
@@ -456,8 +457,8 @@ func gen(node *parse.Node) {
 	}
 	if node.Kind == parse.NodeLogicalOr {
 		gen(node.Lhs)
-		emit("pop rax")
-		emit("push 1")
+		pop("rax")
+		push("1")
 		emit("cmp rax, 1")
 
 		var label = ".Lor" + strconv.Itoa(labelNumber)
@@ -466,14 +467,14 @@ func gen(node *parse.Node) {
 		// 短絡評価する
 		emit("je " + label)
 
-		emit("pop rax") // スタックから1を削除する
+		pop("rax") // スタックから1を削除する
 		gen(node.Rhs)
 
-		emit("pop rax")
+		pop("rax")
 		emit("cmp rax, 1")
 		emit("sete al")
 		emit("movzb rax, al")
-		emit("push rax")
+		push("rax")
 
 		p("%s:", label)
 
@@ -483,8 +484,8 @@ func gen(node *parse.Node) {
 		var entityType = *node.LiteralType.PtrTo
 
 		emit("mov rdi, %d", entitySizeOf(entityType))
-		emit("call malloc")
-		emit("push rax")
+		call("malloc")
+		push("rax")
 
 		for i := 0; i < len(node.MemberNames); i++ {
 			name := node.MemberNames[i]
@@ -500,11 +501,11 @@ func gen(node *parse.Node) {
 				}
 			}
 
-			emit("pop rdi")
-			emit("pop rax")
+			pop("rdi")
+			pop("rax")
 
 			emit("mov %s PTR [rax+%d], rdi", word(memberSize), offset)
-			emit("push rax")
+			push("rax")
 		}
 		return
 	}
@@ -512,16 +513,16 @@ func gen(node *parse.Node) {
 		var elemType = *node.LiteralType.PtrTo
 
 		emit("mov rdi, %d", 8+lang.Sizeof(elemType)*len(node.Children))
-		emit("call malloc")
+		call("malloc")
 		emit("mov QWORD PTR [rax], %d", len(node.Children)) // 要素数を表す領域
-		emit("push rax")
+		push("rax")
 
 		for i := 0; i < len(node.Children); i++ {
 			gen(node.Children[i])
-			emit("pop rdi")
-			emit("pop rax")
+			pop("rdi")
+			pop("rax")
 			emit("mov %s PTR [rax+%d], %s", word(lang.Sizeof(elemType)), 8+i*lang.Sizeof(elemType), register(1, lang.Sizeof(elemType)))
-			emit("push rax")
+			push("rax")
 		}
 		return
 	}
@@ -531,13 +532,13 @@ func gen(node *parse.Node) {
 
 		var elemType = node.Arguments[1].ExprType
 
-		emit("pop rdi")
+		pop("rdi")
 		emit("add QWORD PTR [rdi], 1") // 要素数を増やす
 		emit("mov rsi, [rdi]")
 		emit("imul rsi, %d", lang.Sizeof(elemType))
 		emit("add rsi, 8") // 要素数分のアドレス
 
-		emit("call realloc") // 8 + 要素数 x 要素サイズ分のメモリを確保
+		call("realloc") // 8 + 要素数 x 要素サイズ分のメモリを確保
 
 		emit("mov r10, rax") // 退避
 
@@ -547,26 +548,26 @@ func gen(node *parse.Node) {
 		emit("add rdi, 8")   // 要素数用のオフセットを加算
 		emit("add rax, rdi") // 代入するべき要素のアドレス
 
-		emit("pop rdi") // 追加する要素の値
+		pop("rdi") // 追加する要素の値
 		emit("mov %s PTR [rax], rdi", word(lang.Sizeof(elemType)))
-		emit("push r10")
+		push("r10")
 		return
 	}
 	if node.Kind == parse.NodeStringCall {
 		gen(node.Arguments[0])
 		var argType = node.Arguments[0].ExprType
 		if argType.Kind == lang.TypeSlice && argType.PtrTo.Kind == lang.TypeRune {
-			emit("pop rax")
+			pop("rax")
 			emit("add rax, 8")
-			emit("push rax")
+			push("rax")
 			return
 		}
 		if argType.Kind == lang.TypeInt {
 			emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
 			emit("mov rdi, OFFSET FLAT:.LBuffer")
 			emit("mov rsi, OFFSET FLAT:.LFmtD")
-			emit("pop rdx")
-			emit("call sprintf")
+			pop("rdx")
+			call("sprintf")
 			fromBuffer()
 			return
 		}
@@ -576,8 +577,8 @@ func gen(node *parse.Node) {
 	gen(node.Lhs)
 	gen(node.Rhs)
 
-	emit("pop rdi")
-	emit("pop rax")
+	pop("rdi")
+	pop("rax")
 
 	switch node.Kind {
 	case parse.NodeAdd:
@@ -589,9 +590,9 @@ func gen(node *parse.Node) {
 			emit("mov rdi, OFFSET FLAT:.LBuffer")
 			emit("mov rsi, OFFSET FLAT:.LFmtSS")
 
-			emit("call sprintf")
+			call("sprintf")
 			fromBuffer()
-			emit("pop rax")
+			pop("rax")
 		} else {
 			emit("add rax, rdi")
 		}
@@ -627,7 +628,7 @@ func gen(node *parse.Node) {
 		emit("setle al")
 		emit("movzb rax, al")
 	}
-	emit("push rax")
+	push("rax")
 }
 
 func GenX86_64(prog *parse.Program) {
