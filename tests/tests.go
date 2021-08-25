@@ -7,19 +7,30 @@ import (
 
 func testInt(name string, expected int, actual int) {
 	if expected == actual {
-		printf("[%s]: %d => %d\n", name, expected, actual)
-		// fmt.Println("[" + name + "]: " + string(expected) + " => " + string(actual) + "\n")
+		// printf("[%s]: %d => %d\n", name, expected, actual)
+		fmt.Println("[" + name + "]: " + string(expected) + " => " + string(actual))
 	} else {
-		printf("[%s]: %d expected, but got %d\n", name, expected, actual)
+		// printf("[%s]: %d expected, but got %d\n", name, expected, actual)
+		fmt.Println("[" + name + "]: " + string(expected) + " expected, but got " + string(actual))
 		os.Exit(1)
+	}
+}
+
+func boolToString(v bool) string {
+	if v {
+		return "true"
+	} else {
+		return "false"
 	}
 }
 
 func testBool(name string, expected bool, actual bool) {
 	if expected == actual {
-		printf("[%s]: %hhx => %hhx\n", name, expected, actual)
+		// printf("[%s]: %hhx => %hhx\n", name, expected, actual)
+		fmt.Println("[" + name + "]: " + boolToString(expected) + " => " + boolToString(actual))
 	} else {
-		printf("[%s]: %hhx expected, but got %hhx\n", name, expected, actual)
+		// printf("[%s]: %hhx expected, but got %hhx\n", name, expected, actual)
+		fmt.Println("[" + name + "]: " + boolToString(expected) + " expected, but got " + boolToString(actual))
 		os.Exit(1)
 	}
 }
@@ -369,7 +380,7 @@ func stringTest1() int {
 func stringTest2() int {
 	var a = 3
 	var b = 2
-	printf("%d + %d = %d\n", a, b, a+b)
+	fmt.Println(string(a) + " + " + string(b) + " = " + string(a+b))
 	return 0
 }
 
