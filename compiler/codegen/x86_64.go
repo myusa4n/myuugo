@@ -581,7 +581,20 @@ func gen(node *parse.Node) {
 
 	switch node.Kind {
 	case parse.NodeAdd:
-		emit("add rax, rdi")
+		if node.Lhs.ExprType.Kind == lang.TypeString {
+			emit("mov rcx, rdi")
+			emit("mov rdx, rax")
+
+			emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
+			emit("mov rdi, OFFSET FLAT:.LBuffer")
+			emit("mov rsi, OFFSET FLAT:.LFmtSS")
+			emit("call sprintf")
+
+			fromBuffer()
+			return
+		} else {
+			emit("add rax, rdi")
+		}
 	case parse.NodeSub:
 		emit("sub rax, rdi")
 	case parse.NodeMul:
@@ -634,6 +647,8 @@ func GenX86_64(prog *parse.Program) {
 	emit(".zero 1024") // 1024バイトだけsprintf用のバッファを用いる
 	p(".LFmtD:")
 	emit("  .string \"%s\"", "%d")
+	p(".LFmtSS:")
+	emit("  .string \"%s\"", "%s%s")
 
 	for _, str := range prog.StringLiterals {
 		p(str.Label + ":")

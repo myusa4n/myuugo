@@ -344,8 +344,10 @@ func traverse(node *parse.Node) lang.Type {
 	}
 
 	switch node.Kind {
-	case parse.NodeAdd, parse.NodeSub, parse.NodeMul, parse.NodeDiv:
+	case parse.NodeSub, parse.NodeMul, parse.NodeDiv:
 		node.ExprType = lang.NewType(lang.TypeInt)
+	case parse.NodeAdd:
+		node.ExprType = lhsType
 	case parse.NodeEql, parse.NodeNotEql, parse.NodeLess, parse.NodeLessEql, parse.NodeGreater, parse.NodeGreaterEql:
 		node.ExprType = lang.NewType(lang.TypeBool)
 	case parse.NodeLogicalAnd, parse.NodeLogicalOr:

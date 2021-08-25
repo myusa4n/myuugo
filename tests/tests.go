@@ -95,6 +95,7 @@ func main() {
 	testInt("string test 1", 0, stringTest1())
 	testInt("string test 2", 0, stringTest2())
 	testInt("string test 3", 0, stringTest3())
+	testInt("string test 4", 0, stringTest4())
 
 	fmt.Println("comment test 1")
 	commentTest1()
@@ -373,6 +374,13 @@ func stringTest2() int {
 func stringTest3() int {
 	fmt.Println(string([]rune{'h', 'e', 0}))
 	fmt.Println(string(1024))
+	return 0
+}
+
+func stringTest4() int {
+	var l = "Hello, "
+	var r = "golang!"
+	fmt.Println(l + r)
 	return 0
 }
 
