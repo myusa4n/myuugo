@@ -12,6 +12,19 @@ import (
 var labelNumber = 0
 var program *parse.Program
 
+// raxに文字列の長さが入っている状態からスタートする
+func fromBuffer() {
+	emit("mov rdi, rax")
+	emit("add rdi, 1") // NULL文字分の長さを追加
+	emit("mov rsi, 1") // 1文字のサイズ数
+	emit("call calloc")
+
+	emit("push rax")
+	emit("mov rdi, rax")
+	emit("mov rsi, OFFSET FLAT:.LBuffer")
+	emit("call strcpy")
+}
+
 func declare(node *parse.Node) {
 	var variable = node.Variable
 
@@ -548,6 +561,15 @@ func gen(node *parse.Node) {
 			emit("push rax")
 			return
 		}
+		if argType.Kind == lang.TypeInt {
+			emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
+			emit("mov rdi, OFFSET FLAT:.LBuffer")
+			emit("mov rsi, OFFSET FLAT:.LFmtD")
+			emit("pop rdx")
+			emit("call sprintf")
+			fromBuffer()
+			return
+		}
 		panic("string関数の引数として許可されていない型です")
 	}
 
@@ -607,8 +629,12 @@ func GenX86_64(prog *parse.Program) {
 	}
 
 	p(".data")
+
 	p(".LBuffer:")
-	emit(".zero 1000") // 1000バイトだけsprintf用のバッファを用いる
+	emit(".zero 1024") // 1024バイトだけsprintf用のバッファを用いる
+	p(".LFmtD:")
+	emit("  .string \"%s\"", "%d")
+
 	for _, str := range prog.StringLiterals {
 		p(str.Label + ":")
 		emit(".string %s", str.Value)

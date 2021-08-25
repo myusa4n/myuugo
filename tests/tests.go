@@ -372,6 +372,7 @@ func stringTest2() int {
 
 func stringTest3() int {
 	fmt.Println(string([]rune{'h', 'e', 0}))
+	fmt.Println(string(1024))
 	return 0
 }
 
