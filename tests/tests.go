@@ -8,6 +8,7 @@ import (
 func testInt(name string, expected int, actual int) {
 	if expected == actual {
 		printf("[%s]: %d => %d\n", name, expected, actual)
+		// fmt.Println("[" + name + "]: " + string(expected) + " => " + string(actual) + "\n")
 	} else {
 		printf("[%s]: %d expected, but got %d\n", name, expected, actual)
 		os.Exit(1)
@@ -96,6 +97,7 @@ func main() {
 	testInt("string test 2", 0, stringTest2())
 	testInt("string test 3", 0, stringTest3())
 	testInt("string test 4", 0, stringTest4())
+	// testInt("string test 5", 0, stringTest5(21, 0, 0, 0))
 
 	fmt.Println("comment test 1")
 	commentTest1()
@@ -381,6 +383,7 @@ func stringTest4() int {
 	var l = "Hello, "
 	var r = "golang!"
 	fmt.Println(l + r)
+	fmt.Println("ok" + ", google")
 	return 0
 }
 

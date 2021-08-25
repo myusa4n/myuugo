@@ -588,10 +588,10 @@ func gen(node *parse.Node) {
 			emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
 			emit("mov rdi, OFFSET FLAT:.LBuffer")
 			emit("mov rsi, OFFSET FLAT:.LFmtSS")
-			emit("call sprintf")
 
+			emit("call sprintf")
 			fromBuffer()
-			return
+			emit("pop rax")
 		} else {
 			emit("add rax, rdi")
 		}
