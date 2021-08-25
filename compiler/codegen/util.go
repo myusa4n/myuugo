@@ -13,10 +13,8 @@ func getFrameSize(program *parse.Program, functionName string) int {
 	if fn == nil {
 		panic("関数 \"" + functionName + " は存在しません")
 	}
-	var size int = 0
-	for _, lvar := range fn.LocalVariables {
-		size += lang.Sizeof(lvar.Type)
-	}
+	var size int = len(fn.LocalVariables) * 8
+	size = ((size + 16 - 1) / 16) * 16
 	return size
 }
 

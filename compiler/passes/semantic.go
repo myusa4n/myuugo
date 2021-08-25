@@ -15,7 +15,7 @@ func alignLocalVars(functionName string) {
 	}
 	var offset = 0
 	for _, lvar := range fn.LocalVariables {
-		offset += lang.Sizeof(lvar.Type)
+		offset += 8
 		lvar.Offset = offset
 	}
 }
