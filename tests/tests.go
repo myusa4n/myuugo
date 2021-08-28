@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 func testInt(name string, expected int, actual int) {
@@ -380,13 +381,13 @@ func stringTest1() int {
 func stringTest2() int {
 	var a = 3
 	var b = 2
-	fmt.Println(string(a) + " + " + string(b) + " = " + string(a+b))
+	fmt.Println(strconv.Itoa(334))
 	return 0
 }
 
 func stringTest3() int {
 	fmt.Println(string([]rune{'h', 'e', 0}))
-	fmt.Println(string(1024))
+	fmt.Println(strconv.Itoa(1024))
 	return 0
 }
 
