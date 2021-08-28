@@ -8,6 +8,25 @@ import (
 	"unicode"
 )
 
+// Enumerate the paths of Go files directly under `path`.
+func EnumerateGoFilePaths(path string) []string {
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
+	files, err := os.ReadDir(path)
+	if err != nil {
+		Alarm("Failed to enumerate Go files.")
+	}
+	paths := []string{}
+	for _, file := range files {
+		name := file.Name()
+		if strings.HasSuffix(name, ".go") {
+			paths = append(paths, path+file.Name())
+		}
+	}
+	return paths
+}
+
 // ファイルの末尾に改行を付与して読み込む
 func ReadFile(path string) string {
 	bytes, err := ioutil.ReadFile(path)

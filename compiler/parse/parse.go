@@ -2,6 +2,7 @@ package parse
 
 import (
 	"github.com/myuu222/myuugo/compiler/lang"
+	"github.com/myuu222/myuugo/compiler/util"
 )
 
 var tokenizer *Tokenizer
@@ -156,27 +157,31 @@ func stepOut() {
 	Env = Env.parent
 }
 
+// Create an AST for all Go files directly under `path`.
 func Parse(path string) *Program {
-	tokenizer = NewTokenizer()
-	tokenizer.Tokenize(path)
+	goFilePaths := util.EnumerateGoFilePaths(path)
 	Env = NewEnvironment()
 
-	for tokenizer.consumeEndLine() {
-	}
-	Env.program.Code = []*Node{packageStmt()}
-	tokenizer.expectEndLine()
+	for _, p := range goFilePaths {
+		tokenizer = NewTokenizer()
+		tokenizer.Tokenize(p)
 
-	for {
 		for tokenizer.consumeEndLine() {
 		}
-		if tokenizer.Test(TokenImport) {
-			Env.program.Code = append(Env.program.Code, importStmt())
-		} else {
-			break
-		}
-	}
+		Env.program.Code = append(Env.program.Code, packageStmt())
+		tokenizer.expectEndLine()
 
-	Env.program.Code = append(Env.program.Code, topLevelStmtList().Children...)
+		for {
+			for tokenizer.consumeEndLine() {
+			}
+			if tokenizer.Test(TokenImport) {
+				Env.program.Code = append(Env.program.Code, importStmt())
+			} else {
+				break
+			}
+		}
+		Env.program.Code = append(Env.program.Code, topLevelStmtList().Children...)
+	}
 	return Env.program
 }
 
