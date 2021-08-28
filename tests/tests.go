@@ -6,13 +6,15 @@ import (
 	"strconv"
 )
 
+func Itoa(arg int) string
+
 func testInt(name string, expected int, actual int) {
 	if expected == actual {
 		// printf("[%s]: %d => %d\n", name, expected, actual)
-		fmt.Println("[" + name + "]: " + string(expected) + " => " + string(actual))
+		fmt.Println("[" + name + "]: " + strconv.Itoa(expected) + " => " + strconv.Itoa(actual))
 	} else {
 		// printf("[%s]: %d expected, but got %d\n", name, expected, actual)
-		fmt.Println("[" + name + "]: " + string(expected) + " expected, but got " + string(actual))
+		fmt.Println("[" + name + "]: " + strconv.Itoa(expected) + " expected, but got " + strconv.Itoa(actual))
 		os.Exit(1)
 	}
 }

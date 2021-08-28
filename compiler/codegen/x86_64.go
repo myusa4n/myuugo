@@ -170,6 +170,10 @@ func gen(node *parse.Node) {
 		// 何もしない
 		return
 	}
+	if node.Kind == parse.NodeStatementFunctionDeclaration {
+		// 何もしない
+		return
+	}
 	if node.Kind == parse.NodeNum {
 		push("%d", node.Val)
 		return
@@ -637,7 +641,7 @@ func GenX86_64(prog *parse.Program) {
 	p(".intel_syntax noprefix")
 
 	for _, fn := range program.Functions {
-		if fn.Label == "main" || unicode.IsUpper(util.RuneAt(fn.Label, 0)) {
+		if fn.IsDefined && (fn.Label == "main" || unicode.IsUpper(util.RuneAt(fn.Label, 0))) {
 			p(".globl %s", fn.Label)
 		}
 	}

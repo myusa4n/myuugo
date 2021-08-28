@@ -406,17 +406,21 @@ func funcDefinition() *Node {
 			fn.ReturnValueType = ty
 		}
 	}
-	tokenizer.Expect(TokenLbrace)
 
-	var functionName = identifier.str
-	var body = localStmtList()
+	var node *Node
 
-	tokenizer.Expect(TokenRbrace)
+	if tokenizer.Consume(TokenLbrace) {
+		var functionName = identifier.str
+		var body = localStmtList()
 
-	var node = NewFunctionDefNode(functionName, parameters, body)
-
+		tokenizer.Expect(TokenRbrace)
+		node = NewFunctionDefNode(functionName, parameters, body)
+		fn.IsDefined = true
+	} else {
+		// 関数宣言
+		node = NewLeafNode(NodeStatementFunctionDeclaration)
+	}
 	stepOut()
-
 	return node
 }
 
