@@ -83,7 +83,7 @@ func pop(fmt string, args ...interface{}) {
 
 func call(fmt string, args ...interface{}) {
 	var modified = false
-	if depth%2 == 1 {
+	if depth%2 == 0 {
 		emit("sub rsp, 8")
 		modified = true
 		depth++
