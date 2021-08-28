@@ -1,5 +1,12 @@
 package main
 
+import (
+	"fmt"
+	"strconv"
+)
+
+func Itoa(arg int) string
+
 var memo [11]int
 
 // フィボナッチ数をメモ化再帰で計算する
@@ -45,8 +52,6 @@ func main() {
 	var fibs []FibonacciNumber = []FibonacciNumber{}
 	for n := 1; n <= 10; n = n + 1 {
 		fibs = append(fibs, FibonacciNumber{Nth: n, Value: fib(n)})
-		printf("%d: %d\n", n, fibs[n-1].Value)
+		fmt.Println(strconv.Itoa(n) + ": " + strconv.Itoa(fibs[n-1].Value))
 	}
-
-	return
 }
