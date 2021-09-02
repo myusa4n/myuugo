@@ -668,8 +668,11 @@ func GenX86_64(prog *parse.Program) {
 	}
 	p(".text")
 
-	for _, c := range prog.Code {
-		// 抽象構文木を下りながらコード生成
-		gen(c)
+	for _, s := range prog.Sources {
+		for _, c := range s.Code {
+			// 抽象構文木を下りながらコード生成
+			gen(c)
+		}
 	}
+
 }

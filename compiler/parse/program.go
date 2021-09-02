@@ -2,7 +2,6 @@ package parse
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/myuu222/myuugo/compiler/lang"
 )
@@ -10,12 +9,11 @@ import (
 type Program struct {
 	TopLevelVariables []*lang.Variable
 	Functions         []*lang.Function
+	Sources           []*Source
 
 	// そのうち削除するかも
 	StringLiterals   []*lang.StringLiteral
-	Code             []*Node
 	UserDefinedTypes []lang.Type
-	PackagesToImport []string
 }
 
 func NewProgram() *Program {
@@ -23,8 +21,7 @@ func NewProgram() *Program {
 		TopLevelVariables: []*lang.Variable{},
 		Functions:         []*lang.Function{},
 		StringLiterals:    []*lang.StringLiteral{},
-		Code:              []*Node{},
-		PackagesToImport:  []string{},
+		Sources:           []*Source{},
 	}
 }
 
@@ -44,25 +41,6 @@ func (p *Program) FindTopLevelVariable(name string) *lang.Variable {
 		}
 	}
 	return nil
-}
-
-func (p *Program) AddPackageToImport(name string) string {
-	pkg, ok := p.FindPackageToImport(name)
-	if ok {
-		return pkg
-	}
-	p.PackagesToImport = append(p.PackagesToImport, name)
-	return name
-}
-
-func (p *Program) FindPackageToImport(name string) (string, bool) {
-	for _, pkg := range p.PackagesToImport {
-		sections := strings.Split(strings.Trim(pkg, "\""), "/")
-		if sections[len(sections)-1] == name {
-			return pkg, true
-		}
-	}
-	return "", false
 }
 
 func (p *Program) RegisterFunction(fn *lang.Function) {

@@ -157,30 +157,36 @@ func stepOut() {
 	Env = Env.parent
 }
 
+var source *Source
+
 // Create an AST for all Go files directly under `path`.
 func Parse(path string) *Program {
 	goFilePaths := util.EnumerateGoFilePaths(path)
 	Env = NewEnvironment()
 
 	for _, p := range goFilePaths {
+		source = NewSource(p)
 		tokenizer = NewTokenizer()
 		tokenizer.Tokenize(p)
 
 		for tokenizer.consumeEndLine() {
 		}
-		Env.program.Code = append(Env.program.Code, packageStmt())
+		stepIn()
+		source.Code = append(source.Code, packageStmt())
 		tokenizer.expectEndLine()
 
 		for {
 			for tokenizer.consumeEndLine() {
 			}
 			if tokenizer.Test(TokenImport) {
-				Env.program.Code = append(Env.program.Code, importStmt())
+				source.Code = append(source.Code, importStmt())
 			} else {
 				break
 			}
 		}
-		Env.program.Code = append(Env.program.Code, topLevelStmtList().Children...)
+		source.Code = append(source.Code, topLevelStmtList().Children...)
+		Env.program.Sources = append(Env.program.Sources, source)
+		stepOut()
 	}
 	return Env.program
 }
@@ -198,12 +204,12 @@ func importStmt() *Node {
 			packages = append(packages, pkg)
 			tokenizer.Expect(TokenNewLine)
 
-			Env.program.AddPackageToImport(pkg)
+			source.AddPackage(pkg)
 		}
 		return NewImportStmtNode(packages)
 	}
 	packages = append(packages, tokenizer.expectString())
-	Env.program.AddPackageToImport(packages[0])
+	source.AddPackage(packages[0])
 	return NewImportStmtNode(packages)
 }
 
@@ -704,7 +710,7 @@ func primary() *Node {
 	}
 
 	var name = tokenizer.Fetch().str
-	_, ok = Env.program.FindPackageToImport(name)
+	_, ok = source.FindPackage(name)
 
 	if ok {
 		tokenizer.expectIdentifier()

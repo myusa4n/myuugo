@@ -101,6 +101,8 @@ func main() {
 	testInt("struct test 2", 200, structTest2())
 	testInt("struct test 3", 300, structTest3())
 
+	testInt("multiple test 1", 10, multipleFileTest1())
+
 	fmt.Println("OK")
 }
 
@@ -479,4 +481,9 @@ func structTest3() int {
 	var s *Streamer = &Streamer{Name: "hello", Power: 0}
 	s.Power = 300
 	return s.Power
+}
+
+func multipleFileTest1() int {
+	test2 = 10
+	return test2
 }

@@ -22,8 +22,10 @@ func alignLocalVars(functionName string) {
 
 func Semantic(p *parse.Program) {
 	program = p
-	for _, node := range p.Code {
-		traverse(node)
+	for _, source := range p.Sources {
+		for _, node := range source.Code {
+			traverse(node)
+		}
 	}
 }
 
