@@ -19,7 +19,8 @@ const (
 	NodeGreaterEql                   NodeKind = "GREATER EQL"                           // >=
 	NodeAssign                       NodeKind = "ASSIGN"                                // =
 	NodeReturn                       NodeKind = "RETURN"                                // return
-	NodeVariable                     NodeKind = "VARIABLE"                              // 変数参照
+	NodeTopLevelVariable             NodeKind = "[NODE] TOP LEVEL VARIABLE"             // トップレベル変数参照
+	NodeLocalVariable                NodeKind = "[NODE] LOCAL VARIABLE"                 // ローカル変数参照
 	NodeNum                          NodeKind = "NUM"                                   // 整数
 	NodeBool                         NodeKind = "BOOL"                                  // 真偽値
 	NodeMetaIf                       NodeKind = "META IF"                               // if ... else ...

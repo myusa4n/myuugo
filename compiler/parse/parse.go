@@ -768,17 +768,20 @@ func named() *Node {
 
 func variableRef() *Node {
 	var tok = tokenizer.expectIdentifier()
-	var node = NewLeafNode(NodeVariable)
-	node.Variable = Env.FindVar(tok.str)
-	if node.Variable == nil {
-		BadToken(tok, "未定義の変数です")
+	var v = Env.FindVar(tok.str)
+	if v != nil && v.Kind == lang.VariableLocal {
+		var node = NewLeafNode(NodeLocalVariable)
+		node.Variable = v
+		return node
 	}
+	var node = NewLeafNode(NodeTopLevelVariable)
+	node.Label = tok.str
 	return node
 }
 
 func localVariableDeclaration() *Node {
 	var tok = tokenizer.expectIdentifier()
-	var node = NewLeafNode(NodeVariable)
+	var node = NewLeafNode(NodeLocalVariable)
 	lvar := Env.FindLocalVar(tok.str)
 	if lvar != nil {
 		BadToken(tok, "すでに定義済みの変数です")
@@ -789,11 +792,12 @@ func localVariableDeclaration() *Node {
 
 func topLevelVariableDeclaration() *Node {
 	var tok = tokenizer.expectIdentifier()
-	var node = NewLeafNode(NodeVariable)
-	lvar := Env.program.FindTopLevelVariable(tok.str)
-	if lvar != nil {
+	var node = NewLeafNode(NodeTopLevelVariable)
+	tvar := Env.program.FindTopLevelVariable(tok.str)
+	if tvar != nil {
 		BadToken(tok, "すでに定義済みの変数です")
 	}
 	node.Variable = Env.program.AddTopLevelVariable(lang.NewUndefinedType(), tok.str)
+	node.Label = tok.str
 	return node
 }

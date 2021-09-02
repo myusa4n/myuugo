@@ -111,16 +111,14 @@ func genLvalue(node *parse.Node) {
 	if node.Kind == parse.NodeDeref {
 		gen(node.Target)
 		return
-	} else if node.Kind == parse.NodeVariable {
-		var variable = node.Variable
-		if variable.Kind == lang.VariableLocal {
-			emit("mov rax, rbp")
-			emit("sub rax, %d", node.Variable.Offset)
-			push("rax")
-		} else {
-			emit("mov rax, OFFSET FLAT:%s", node.Variable.Name)
-			push("rax")
-		}
+	} else if node.Kind == parse.NodeTopLevelVariable {
+		emit("mov rax, OFFSET FLAT:%s", node.Variable.Name)
+		push("rax")
+		return
+	} else if node.Kind == parse.NodeLocalVariable {
+		emit("mov rax, rbp")
+		emit("sub rax, %d", node.Variable.Offset)
+		push("rax")
 		return
 	} else if node.Kind == parse.NodeIndex {
 		gen(node.Seq)
@@ -207,15 +205,24 @@ func gen(node *parse.Node) {
 		emit("ret")
 		return
 	}
-	if node.Kind == parse.NodeVariable {
+	if node.Kind == parse.NodeLocalVariable {
+		genLvalue(node)
+		pop("rax")
+		if lang.Sizeof(node.ExprType) == 1 {
+			emit("movzx rax, BYTE PTR [rax]")
+		} else { // 8
+			emit("mov rax, [rax]")
+		}
+		push("rax")
+		return
+	}
+	if node.Kind == parse.NodeTopLevelVariable {
 		genLvalue(node)
 
-		if node.Variable.Kind == lang.VariableTopLevel && node.ExprType.Kind == lang.TypeArray {
+		if node.ExprType.Kind == lang.TypeArray {
 			return
 		}
-
 		pop("rax")
-
 		if lang.Sizeof(node.ExprType) == 1 {
 			emit("movzx rax, BYTE PTR [rax]")
 		} else { // 8

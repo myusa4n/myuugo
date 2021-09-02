@@ -249,9 +249,18 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = lang.NewType(lang.TypeBool)
 		return node.ExprType
 	}
-	if node.Kind == parse.NodeVariable {
+	if node.Kind == parse.NodeLocalVariable {
 		node.ExprType = node.Variable.Type
 		return node.Variable.Type
+	}
+	if node.Kind == parse.NodeTopLevelVariable {
+		v := program.FindTopLevelVariable(node.Label)
+		if v == nil {
+			panic("トップレベル変数" + node.Label + "は未定義です")
+		}
+		node.Variable = v
+		node.ExprType = v.Type
+		return node.ExprType
 	}
 	if node.Kind == parse.NodeString {
 		node.ExprType = lang.NewType(lang.TypeString)
