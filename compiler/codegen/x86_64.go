@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"strconv"
+	"strings"
 	"unicode"
 
 	"github.com/myuu222/myuugo/compiler/lang"
@@ -11,6 +12,14 @@ import (
 
 var labelNumber = 0
 var program *parse.Program
+
+func getLabel(packageName string, label string) string {
+	if label == "main" || packageName == "" {
+		return label
+	}
+	name := strings.Replace(strings.Replace(packageName, "/", "_", -1), ".", "_", -1)
+	return name + "_" + label
+}
 
 // raxに文字列の長さが入っている状態からスタートする
 func fromBuffer() {
@@ -180,6 +189,10 @@ func gen(node *parse.Node) {
 		push("%d", node.Val)
 		return
 	}
+	if node.Kind == parse.NodePackageDot {
+		gen(node.Children[0])
+		return
+	}
 	if node.Kind == parse.NodeStmtList {
 		for _, stmt := range node.Children {
 			gen(stmt)
@@ -309,10 +322,12 @@ func gen(node *parse.Node) {
 			pop("" + register(len(node.Arguments)-i, 8))
 		}
 		emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
-		call("" + node.Label)
+
+		call(getLabel(node.In, node.Label))
 
 		// 今見ている関数が多値だった場合は、rax, rdi, rsi, ...から取り出していく
 		fn := program.FindFunction(node.Label)
+
 		if fn != nil && fn.ReturnValueType.Kind == lang.TypeMultiple {
 			// raxから順にスタックに突っ込んでいく
 			for i := range fn.ReturnValueType.Components {
@@ -325,7 +340,7 @@ func gen(node *parse.Node) {
 	}
 	if node.Kind == parse.NodeFunctionDef {
 		depth = 0
-		p("%s:", node.Label)
+		p("%s:", getLabel(node.In, node.Label))
 
 		// プロローグ
 		push("rbp")
@@ -644,12 +659,13 @@ func gen(node *parse.Node) {
 
 func GenX86_64(prog *parse.Program) {
 	program = prog
+
 	// アセンブリの前半部分
 	p(".intel_syntax noprefix")
 
 	for _, fn := range program.Functions {
 		if fn.IsDefined && (fn.Label == "main" || unicode.IsUpper(util.RuneAt(fn.Label, 0))) {
-			p(".globl %s", fn.Label)
+			p(".globl %s", getLabel(program.Name, fn.Label))
 		}
 	}
 

@@ -25,7 +25,7 @@ func (s *Source) FindPackage(name string) (string, bool) {
 	for _, pkg := range s.Packages {
 		sections := strings.Split(strings.Trim(pkg, "\""), "/")
 		if sections[len(sections)-1] == name {
-			return pkg, true
+			return pkg[1 : len(pkg)-1], true
 		}
 	}
 	return "", false

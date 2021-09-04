@@ -52,6 +52,7 @@ const (
 	NodeTypeStmt                     NodeKind = "[NODE] TYPE STMT"                      // type A struct{}
 	NodeImportStmt                   NodeKind = "[NODE] IMPORT STMT"                    // import (
 	NodeStatementFunctionDeclaration NodeKind = "[NODE] STATEMENT FUNCTION DECLARATION" // 関数宣言
+	NodePackageDot                   NodeKind = "[NODE] PACKAGE DOT"
 )
 
 type Node struct {
@@ -63,6 +64,7 @@ type Node struct {
 	ExprType lang.Type           // ノードが表す式の型
 	Children []*Node             // 子。
 	Env      *Environment        // そのノードで管理している変数などの情報をまとめたもの
+	In       string              // 関数や変数が属している名前
 
 	// 二項演算を行うノードの場合にのみ使う
 	Lhs *Node
@@ -112,59 +114,59 @@ type Node struct {
 }
 
 func newNodeBase(kind NodeKind) *Node {
-	return &Node{Kind: kind, Env: Env}
+	return &Node{Kind: kind, Env: Env, In: Env.program.Name}
 }
 
 func NewFunctionDefNode(name string, parameters []*Node, body *Node) *Node {
-	return &Node{Kind: NodeFunctionDef, Label: name, Parameters: parameters, Body: body, Env: Env}
+	return &Node{Kind: NodeFunctionDef, Label: name, Parameters: parameters, Body: body, Env: Env, In: Env.program.Name}
 }
 
 func NewFunctionCallNode(name string, arguments []*Node) *Node {
-	return &Node{Kind: NodeFunctionCall, Label: name, Arguments: arguments, Env: Env}
+	return &Node{Kind: NodeFunctionCall, Label: name, Arguments: arguments, Env: Env, In: Env.program.Name}
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {
-	return &Node{Kind: kind, Children: children, Env: Env}
+	return &Node{Kind: kind, Children: children, Env: Env, In: Env.program.Name}
 }
 
 func NewBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{Kind: kind, Children: []*Node{lhs, rhs}, Env: Env}
+	return &Node{Kind: kind, Children: []*Node{lhs, rhs}, Env: Env, In: Env.program.Name}
 }
 
 func NewBinaryOperationNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{Kind: kind, Lhs: lhs, Rhs: rhs, Env: Env}
+	return &Node{Kind: kind, Lhs: lhs, Rhs: rhs, Env: Env, In: Env.program.Name}
 }
 
 func NewUnaryOperationNode(kind NodeKind, target *Node) *Node {
-	return &Node{Kind: kind, Target: target, Env: Env}
+	return &Node{Kind: kind, Target: target, Env: Env, In: Env.program.Name}
 }
 
 func NewIndexNode(seq *Node, index *Node) *Node {
-	return &Node{Kind: NodeIndex, Seq: seq, Index: index, Env: Env}
+	return &Node{Kind: NodeIndex, Seq: seq, Index: index, Env: Env, In: Env.program.Name}
 }
 
 func NewMetaIfNode(ifn *Node, elsen *Node) *Node {
-	return &Node{Kind: NodeMetaIf, If: ifn, Else: elsen, Env: Env}
+	return &Node{Kind: NodeMetaIf, If: ifn, Else: elsen, Env: Env, In: Env.program.Name}
 }
 
 func NewIfNode(cond *Node, body *Node) *Node {
-	return &Node{Kind: NodeIf, Condition: cond, Body: body, Env: Env}
+	return &Node{Kind: NodeIf, Condition: cond, Body: body, Env: Env, In: Env.program.Name}
 }
 
 func NewElseNode(body *Node) *Node {
-	return &Node{Kind: NodeElse, Body: body, Env: Env}
+	return &Node{Kind: NodeElse, Body: body, Env: Env, In: Env.program.Name}
 }
 
 func NewLeafNode(kind NodeKind) *Node {
-	return &Node{Kind: kind, Env: Env}
+	return &Node{Kind: kind, Env: Env, In: Env.program.Name}
 }
 
 func NewNodeNum(val int) *Node {
-	return &Node{Kind: NodeNum, Val: val, Env: Env}
+	return &Node{Kind: NodeNum, Val: val, Env: Env, In: Env.program.Name}
 }
 
 func NewNodeBool(val int) *Node {
-	return &Node{Kind: NodeBool, Val: val, Env: Env}
+	return &Node{Kind: NodeBool, Val: val, Env: Env, In: Env.program.Name}
 }
 
 func NewTypeStmtNode() *Node {

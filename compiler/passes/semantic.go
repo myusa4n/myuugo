@@ -48,6 +48,11 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = stmtType
 		return stmtType
 	}
+	if node.Kind == parse.NodePackageDot {
+		node.ExprType = traverse(node.Children[0])
+		node.Children[0].In = node.Label
+		return node.ExprType
+	}
 	if node.Kind == parse.NodeLocalVarList {
 		for _, c := range node.Children {
 			traverse(c)
@@ -199,8 +204,10 @@ func traverse(node *parse.Node) lang.Type {
 		return *ty.PtrTo
 	}
 	if node.Kind == parse.NodeFunctionCall {
+
 		fn := program.FindFunction(node.Label)
 		if fn == nil {
+			node.In = ""
 			for _, argument := range node.Arguments {
 				traverse(argument)
 			}

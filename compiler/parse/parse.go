@@ -1,6 +1,9 @@
 package parse
 
 import (
+	"os"
+	"strings"
+
 	"github.com/myuu222/myuugo/compiler/lang"
 	"github.com/myuu222/myuugo/compiler/util"
 )
@@ -159,8 +162,32 @@ func stepOut() {
 
 var source *Source
 
+func forceTrailingSlash(path string) string {
+	if !strings.HasSuffix(path, "/") {
+		path = path + "/"
+	}
+	return path
+}
+
+// path直下にgo.modがあれば読み込んで、module名を返す。
+// なければ空文字列を返す。
+func readModuleNameIfExists(path string) string {
+	path = forceTrailingSlash(path)
+	_, err := os.Stat(path + "go.mod")
+	if err != nil {
+		return ""
+	}
+	content := util.ReadFile(path + "go.mod")
+	firstLine := strings.Split(content, "\n")[0]
+	return strings.Split(firstLine, " ")[0]
+}
+
+var sourcePrefix string
+
 // Create an AST for all Go files directly under `path`.
 func Parse(path string) *Program {
+	sourcePrefix = readModuleNameIfExists(path)
+
 	goFilePaths := util.EnumerateGoFilePaths(path)
 	Env = NewEnvironment()
 
@@ -188,6 +215,7 @@ func Parse(path string) *Program {
 		Env.program.Sources = append(Env.program.Sources, source)
 		stepOut()
 	}
+
 	return Env.program
 }
 
@@ -217,7 +245,12 @@ func packageStmt() *Node {
 	var n = NewLeafNode(NodePackageStmt)
 
 	tokenizer.Expect(TokenPackage)
-	n.Label = tokenizer.expectIdentifier().str
+	if sourcePrefix == "" {
+		n.Label = tokenizer.expectIdentifier().str
+	} else {
+		n.Label = sourcePrefix + "/" + tokenizer.expectIdentifier().str
+	}
+	Env.program.Name = n.Label
 
 	return n
 }
@@ -709,8 +742,9 @@ func primary() *Node {
 		return NewStructLiteral(ty, names, values)
 	}
 
+	var pkgName = ""
 	var name = tokenizer.Fetch().str
-	_, ok = source.FindPackage(name)
+	pkgName, ok = source.FindPackage(name)
 
 	if ok {
 		tokenizer.expectIdentifier()
@@ -731,6 +765,10 @@ func primary() *Node {
 			continue
 		}
 		break
+	}
+	if ok {
+		n = NewNode(NodePackageDot, []*Node{n})
+		n.Label = pkgName
 	}
 	return n
 }

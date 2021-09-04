@@ -81,14 +81,14 @@ func pop(fmt string, args ...interface{}) {
 	depth--
 }
 
-func call(fmt string, args ...interface{}) {
+func call(format string, args ...interface{}) {
 	var modified = false
 	if depth%2 == 0 {
 		emit("sub rsp, 8")
 		modified = true
 		depth++
 	}
-	emit("call "+fmt, args...)
+	emit("call "+format, args...)
 	if modified {
 		emit("add rsp, 8")
 		depth--

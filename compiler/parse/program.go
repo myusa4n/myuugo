@@ -7,6 +7,7 @@ import (
 )
 
 type Program struct {
+	Name              string // パッケージ名
 	TopLevelVariables []*lang.Variable
 	Functions         []*lang.Function
 	Sources           []*Source
