@@ -14,135 +14,121 @@ var filename string
 
 // トークナイザ拡張
 
-// 文の終端記号であるトークンを1つ読み進めて真を返す。
-// それ以外の場合には偽を返す。
-func (t *Tokenizer) consumeEndLine() bool {
-	return t.Consume(TokenSemicolon) || t.Consume(TokenNewLine)
+// 文の終端記号であるトークンを1つ読み飛ばす。
+// 戻り値は実際に読み飛ばしたかどうか。
+func skipEndOfLine() bool {
+	return tokenizer.Consume(TokenSemicolon) || tokenizer.Consume(TokenNewLine)
 }
 
-func (t *Tokenizer) expectEndLine() {
-	if !t.consumeEndLine() {
-		BadToken(t.Fetch(), "文の終端記号ではありません")
+func endOfLine() string {
+	token := tokenizer.Fetch()
+	if !token.Test(TokenSemicolon) && !token.Test(TokenNewLine) {
+		BadToken(token, "This is not end of line symbol.")
 	}
+	if tokenizer.Consume(TokenSemicolon) {
+		return string(TokenSemicolon)
+	}
+	return string(TokenNewLine)
 }
 
-// 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
-// この時、返り値の二番目の値は真になる。
-// 逆に識別子でない場合は、偽になる。
-func (t *Tokenizer) consumeIdentifier() (Token, bool) {
-	token := t.Fetch()
-	if token.Test(TokenIdentifier) {
-		tokenizer.Succ()
-		return token, true
+func numberLiteral() int {
+	token := tokenizer.Fetch()
+	if !token.Test(TokenNumber) {
+		BadToken(token, "This is not number literal.")
 	}
-	return Token{}, false
-}
-
-// 次のトークンが識別子の時には、トークンを1つ読み進めてそのトークンを返す。
-// そうでない場合はエラーを報告する。
-func (t *Tokenizer) expectIdentifier() Token {
-	token, ok := t.consumeIdentifier()
-	if !ok {
-		BadToken(token, "識別子ではありません")
-	}
-	return token
-}
-
-// 次のトークンが数値の場合、トークンを1つ読み進めてその数値を返す。
-// それ以外の場合にはエラーを報告する。
-func (t *Tokenizer) expectNumber() int {
-	token := t.Fetch()
-	if !t.Test(TokenNumber) {
-		BadToken(token, "数ではありません")
-	}
-	var val = token.val
 	tokenizer.Succ()
-	return val
+	return token.val
 }
 
-// 次のトークンが真偽値の場合、トークンを1つ読み進めて1か0を返す。
-// それ以外の場合にはエラーを報告する。
-func (t *Tokenizer) expectBool() int {
-	token := t.Fetch()
-	if !t.Test(TokenBool) {
-		BadToken(token, "真偽値ではありません")
+func boolLiteral() int {
+	token := tokenizer.Fetch()
+	if !token.Test(TokenBool) {
+		BadToken(token, "This is not bool literal.")
 	}
-	var val = token.val
 	tokenizer.Succ()
-	return val
+	return token.val
 }
 
-// 次のトークンが文字列の場合、トークンを1つ読み進めてその文字列を返す。
-// それ以外の場合にはエラーを報告する。
-func (t *Tokenizer) expectString() string {
-	token := t.Fetch()
-	if !t.Test(TokenString) {
-		BadToken(token, "文字列ではありません")
+func stringLiteral() string {
+	token := tokenizer.Fetch()
+	if !token.Test(TokenString) {
+		BadToken(token, "This is not string literal.")
 	}
-	var val = token.str
 	tokenizer.Succ()
-	return val
+	return token.str
 }
 
-func (t *Tokenizer) atEof() bool {
-	return t.Test(TokenEof)
-}
-
-func (t *Tokenizer) expectType() lang.Type {
-	ty, ok := t.consumeType()
-	if !ok {
-		BadToken(t.Fetch(), "型ではありません")
+func identifier() string {
+	token := tokenizer.Fetch()
+	if !token.Test(TokenIdentifier) {
+		BadToken(token, "This is not identifier.")
 	}
-	return ty
+	tokenizer.Expect(TokenIdentifier)
+	return token.str
 }
 
-func (t *Tokenizer) consumeType() (lang.Type, bool) {
-	if t.Consume(TokenStar) {
-		ty := t.expectType()
-		return lang.NewPointerType(&ty), true
+func isType() bool {
+	if tokenizer.Test(TokenStar) || tokenizer.Test(TokenLSBrace) {
+		return true
 	}
-	if t.Consume(TokenLSBrace) {
-		if t.Consume(TokenRSBrace) {
+	if !tokenizer.Test(TokenIdentifier) {
+		return false
+	}
+
+	ident := tokenizer.Fetch().str
+	if ident == "int" || ident == "rune" || ident == "bool" || ident == "string" || ident == "struct" {
+		return true
+	}
+	_, ok := Env.program.FindType(ident)
+	return ok
+}
+
+func type_() lang.Type {
+	if tokenizer.Consume(TokenStar) {
+		ty := type_()
+		return lang.NewPointerType(&ty)
+	}
+	if tokenizer.Consume(TokenLSBrace) {
+		if tokenizer.Consume(TokenRSBrace) {
 			// スライス
-			ty := t.expectType()
-			return lang.NewSliceType(ty), true
+			ty := type_()
+			return lang.NewSliceType(ty)
 		}
-		var arraySize = t.expectNumber()
-		t.Expect(TokenRSBrace)
-		ty := t.expectType()
-		return lang.NewArrayType(ty, arraySize), true
+		var arraySize = numberLiteral()
+		tokenizer.Expect(TokenRSBrace)
+		ty := type_()
+		return lang.NewArrayType(ty, arraySize)
 	}
-	tok, ok := t.consumeIdentifier()
-	if !ok {
-		return lang.Type{}, false
+
+	ident := identifier()
+	if ident == "int" {
+		return lang.NewType(lang.TypeInt)
 	}
-	if tok.str == "int" {
-		return lang.NewType(lang.TypeInt), true
+	if ident == "rune" {
+		return lang.NewType(lang.TypeRune)
 	}
-	if tok.str == "rune" {
-		return lang.NewType(lang.TypeRune), true
+	if ident == "bool" {
+		return lang.NewType(lang.TypeBool)
 	}
-	if tok.str == "bool" {
-		return lang.NewType(lang.TypeBool), true
+	if ident == "string" {
+		return lang.NewType(lang.TypeString)
 	}
-	if tok.str == "string" {
-		return lang.NewType(lang.TypeString), true
-	}
-	if tok.str == "struct" {
+	if ident == "struct" {
 		tokenizer.Expect(TokenLbrace)
 		tokenizer.Expect(TokenNewLine)
 		names, types := []string{}, []lang.Type{}
 		for !tokenizer.Consume(TokenRbrace) {
-			name := tokenizer.expectIdentifier().str
-			ty := tokenizer.expectType()
+			name := identifier()
+			ty := type_()
 			tokenizer.Expect(TokenNewLine)
 
 			names = append(names, name)
 			types = append(types, ty)
 		}
-		return lang.NewStructType(names, types), true
+		return lang.NewStructType(names, types)
 	}
-	return Env.program.FindType(tok.str)
+	ty, _ := Env.program.FindType(ident)
+	return ty
 }
 
 var Env *Environment
@@ -197,13 +183,13 @@ func parseProgram(srcPrefix string, path string) *Program {
 		tokenizer = NewTokenizer()
 		tokenizer.Tokenize(p)
 
-		for tokenizer.consumeEndLine() {
+		for skipEndOfLine() {
 		}
 		source.Code = append(source.Code, packageStmt())
-		tokenizer.expectEndLine()
+		endOfLine()
 
 		for {
-			for tokenizer.consumeEndLine() {
+			for skipEndOfLine() {
 			}
 			if tokenizer.Test(TokenImport) {
 				source.Code = append(source.Code, importStmt())
@@ -284,7 +270,7 @@ func importStmt() *Node {
 		tokenizer.Expect(TokenNewLine)
 
 		for !tokenizer.Consume(TokenRparen) {
-			pkg := strings.Trim(tokenizer.expectString(), "\"")
+			pkg := strings.Trim(stringLiteral(), "\"")
 			packages = append(packages, pkg)
 			tokenizer.Expect(TokenNewLine)
 
@@ -292,7 +278,7 @@ func importStmt() *Node {
 		}
 		return NewImportStmtNode(packages)
 	}
-	packages = append(packages, strings.Trim(tokenizer.expectString(), "\""))
+	packages = append(packages, strings.Trim(stringLiteral(), "\""))
 	source.AddPackage(packages[0])
 	return NewImportStmtNode(packages)
 }
@@ -302,9 +288,9 @@ func packageStmt() *Node {
 
 	tokenizer.Expect(TokenPackage)
 	if sourcePrefix == "" {
-		n.Label = tokenizer.expectIdentifier().str
+		n.Label = identifier()
 	} else {
-		n.Label = sourcePrefix + "/" + tokenizer.expectIdentifier().str
+		n.Label = sourcePrefix + "/" + identifier()
 	}
 	Env.program.Name = n.Label
 
@@ -319,13 +305,13 @@ func localStmtList() *Node {
 		if endLineRequired {
 			BadToken(tokenizer.Fetch(), "文の区切り文字が必要です")
 		}
-		if tokenizer.consumeEndLine() {
+		if skipEndOfLine() {
 			continue
 		}
 		stmts = append(stmts, localStmt())
 
 		endLineRequired = true
-		if tokenizer.consumeEndLine() {
+		if skipEndOfLine() {
 			endLineRequired = false
 		}
 	}
@@ -338,17 +324,17 @@ func topLevelStmtList() *Node {
 	var stmts = make([]*Node, 0)
 	var endLineRequired = false
 
-	for !tokenizer.atEof() && !(tokenizer.Test(TokenRbrace)) {
+	for !tokenizer.Test(TokenEof) && !(tokenizer.Test(TokenRbrace)) {
 		if endLineRequired {
 			BadToken(tokenizer.Fetch(), "文の区切り文字が必要です")
 		}
-		if tokenizer.consumeEndLine() {
+		if skipEndOfLine() {
 			continue
 		}
 		stmts = append(stmts, topLevelStmt())
 
 		endLineRequired = true
-		if tokenizer.consumeEndLine() {
+		if skipEndOfLine() {
 			endLineRequired = false
 		}
 	}
@@ -359,8 +345,8 @@ func topLevelStmtList() *Node {
 
 func typeStmt() *Node {
 	tokenizer.Expect(TokenType)
-	typeName := tokenizer.expectIdentifier().str
-	entityType := tokenizer.expectType()
+	typeName := identifier()
+	entityType := type_()
 	definedType := lang.NewUserDefinedType(typeName, entityType)
 
 	Env.program.RegisterType(definedType)
@@ -449,22 +435,22 @@ func localStmt() *Node {
 func topLevelVarStmt() *Node {
 	tokenizer.Expect(TokenVar)
 	var v = topLevelVariableDeclaration()
-	v.Variable.Type = tokenizer.expectType()
+	v.Variable.Type = type_()
 	return NewNode(NodeTopLevelVarStmt, []*Node{v})
 }
 
 func localVarStmt() *Node {
 	tokenizer.Expect(TokenVar)
 	var v = localVariableDeclaration()
-	ty, ok := tokenizer.consumeType()
 
-	if !ok {
+	if !isType() {
 		// 型が明示されていないときは初期化が必須
 		tokenizer.Expect(TokenEqual)
 		return NewBinaryNode(NodeLocalVarStmt, v, expr())
-	} else {
-		v.Variable.Type = ty
 	}
+
+	ty := type_()
+	v.Variable.Type = ty
 	if tokenizer.Consume(TokenEqual) {
 		return NewBinaryNode(NodeLocalVarStmt, v, expr())
 	}
@@ -473,9 +459,9 @@ func localVarStmt() *Node {
 
 func funcDefinition() *Node {
 	tokenizer.Expect(TokenFunc)
-	identifier := tokenizer.expectIdentifier()
+	ident := identifier()
 
-	stepInFunction(identifier.str)
+	stepInFunction(ident)
 	var fn = lang.NewFunction(Env.FunctionName, []lang.Type{}, lang.NewUndefinedType())
 	Env.program.RegisterFunction(fn)
 
@@ -488,29 +474,26 @@ func funcDefinition() *Node {
 		}
 		lvarNode := localVariableDeclaration()
 		parameters = append(parameters, lvarNode)
-		lvarNode.Variable.Type = tokenizer.expectType()
+		lvarNode.Variable.Type = type_()
 		fn.ParameterTypes = append(fn.ParameterTypes, lvarNode.Variable.Type)
 	}
 
 	fn.ReturnValueType = lang.NewType(lang.TypeVoid)
 	if tokenizer.Consume(TokenLparen) { // 多値
-		var types = []lang.Type{tokenizer.expectType()}
+		var types = []lang.Type{type_()}
 		for tokenizer.Consume(TokenComma) {
-			types = append(types, tokenizer.expectType())
+			types = append(types, type_())
 		}
 		tokenizer.Expect(TokenRparen)
 		fn.ReturnValueType = lang.NewMultipleType(types)
-	} else {
-		var ty, ok = tokenizer.consumeType()
-		if ok {
-			fn.ReturnValueType = ty
-		}
+	} else if isType() {
+		fn.ReturnValueType = type_()
 	}
 
 	var node *Node
 
 	if tokenizer.Consume(TokenLbrace) {
-		var functionName = identifier.str
+		var functionName = ident
 		var body = localStmtList()
 
 		tokenizer.Expect(TokenRbrace)
@@ -725,10 +708,11 @@ func unary() *Node {
 }
 
 func structTypeLiteral() *Node {
-	tok := tokenizer.expectIdentifier()
-	ty, ok := Env.program.FindType(tok.str)
+	token := tokenizer.Fetch()
+	ident := identifier()
+	ty, ok := Env.program.FindType(ident)
 	if !ok {
-		BadToken(tok, "未定義の型のリテラルです")
+		BadToken(token, "未定義の型のリテラルです")
 	}
 	names, values := []string{}, []*Node{}
 	tokenizer.Expect(TokenLbrace)
@@ -736,7 +720,7 @@ func structTypeLiteral() *Node {
 		if len(names) > 0 {
 			tokenizer.Expect(TokenComma)
 		}
-		names = append(names, tokenizer.expectIdentifier().str)
+		names = append(names, identifier())
 		tokenizer.Expect(TokenColon)
 		values = append(values, expr())
 	}
@@ -751,10 +735,10 @@ func primary() *Node {
 		return n
 	}
 	if tokenizer.Test(TokenNumber) {
-		return NewNodeNum(tokenizer.expectNumber())
+		return NewNodeNum(numberLiteral())
 	}
 	if tokenizer.Test(TokenBool) {
-		return NewNodeBool(tokenizer.expectBool())
+		return NewNodeBool(boolLiteral())
 	}
 	if tokenizer.Test(TokenString) {
 		var n = NewLeafNode(NodeString)
@@ -764,7 +748,7 @@ func primary() *Node {
 	}
 
 	if tokenizer.Test(TokenLSBrace) {
-		ty := tokenizer.expectType()
+		ty := type_()
 
 		if ty.Kind == lang.TypeSlice {
 			elements := []*Node{}
@@ -785,13 +769,13 @@ func primary() *Node {
 	// struct型のリテラル
 	if ok {
 		names, values := []string{}, []*Node{}
-		tokenizer.expectType()
+		type_()
 		tokenizer.Expect(TokenLbrace)
 		for !tokenizer.Consume(TokenRbrace) {
 			if len(names) > 0 {
 				tokenizer.Expect(TokenComma)
 			}
-			names = append(names, tokenizer.expectIdentifier().str)
+			names = append(names, identifier())
 			tokenizer.Expect(TokenColon)
 			values = append(values, expr())
 		}
@@ -803,7 +787,7 @@ func primary() *Node {
 	pkgName, ok = source.FindPackage(name)
 
 	if ok {
-		tokenizer.expectIdentifier()
+		identifier()
 		tokenizer.Expect(TokenDot)
 	}
 
@@ -816,8 +800,7 @@ func primary() *Node {
 		}
 		if tokenizer.Consume(TokenDot) {
 			// メソッド呼び出しは一旦無視
-			name := tokenizer.expectIdentifier()
-			n = NewDotNode(n, name.str)
+			n = NewDotNode(n, identifier())
 			continue
 		}
 		break
@@ -852,9 +835,8 @@ func named() *Node {
 		}
 
 		// 関数呼び出し
-		var tok = tokenizer.expectIdentifier()
+		var functionName = identifier()
 		tokenizer.Expect(TokenLparen)
-		var functionName = tok.str
 		var arguments = []*Node{}
 		for !tokenizer.Consume(TokenRparen) {
 			if len(arguments) > 0 {
@@ -868,37 +850,39 @@ func named() *Node {
 }
 
 func variableRef() *Node {
-	var tok = tokenizer.expectIdentifier()
-	var v = Env.FindVar(tok.str)
+	ident := identifier()
+	var v = Env.FindVar(ident)
 	if v != nil && v.Kind == lang.VariableLocal {
 		var node = NewLeafNode(NodeLocalVariable)
 		node.Variable = v
 		return node
 	}
 	var node = NewLeafNode(NodeTopLevelVariable)
-	node.Label = tok.str
+	node.Label = ident
 	return node
 }
 
 func localVariableDeclaration() *Node {
-	var tok = tokenizer.expectIdentifier()
+	var token = tokenizer.Fetch()
+	var ident = identifier()
 	var node = NewLeafNode(NodeLocalVariable)
-	lvar := Env.FindLocalVar(tok.str)
+	lvar := Env.FindLocalVar(ident)
 	if lvar != nil {
-		BadToken(tok, "すでに定義済みの変数です")
+		BadToken(token, "すでに定義済みの変数です")
 	}
-	node.Variable = Env.AddLocalVar(lang.NewUndefinedType(), tok.str)
+	node.Variable = Env.AddLocalVar(lang.NewUndefinedType(), ident)
 	return node
 }
 
 func topLevelVariableDeclaration() *Node {
-	var tok = tokenizer.expectIdentifier()
+	var token = tokenizer.Fetch()
+	var ident = identifier()
 	var node = NewLeafNode(NodeTopLevelVariable)
-	tvar := Env.program.FindTopLevelVariable(tok.str)
+	tvar := Env.program.FindTopLevelVariable(ident)
 	if tvar != nil {
-		BadToken(tok, "すでに定義済みの変数です")
+		BadToken(token, "すでに定義済みの変数です")
 	}
-	node.Variable = Env.program.AddTopLevelVariable(lang.NewUndefinedType(), tok.str)
-	node.Label = tok.str
+	node.Variable = Env.program.AddTopLevelVariable(lang.NewUndefinedType(), ident)
+	node.Label = ident
 	return node
 }
