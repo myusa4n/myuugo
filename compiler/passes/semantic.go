@@ -1,9 +1,6 @@
 package passes
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/myuu222/myuugo/compiler/lang"
 	"github.com/myuu222/myuugo/compiler/parse"
 	"github.com/myuu222/myuugo/compiler/util"
@@ -40,7 +37,7 @@ func ready(p *parse.Program) bool {
 	}
 	for _, i := range imported {
 		for _, prog := range programs {
-			if prog.Name == i && !p.Traversed {
+			if prog.Name == i && !prog.Traversed {
 				return false
 			}
 		}
@@ -50,13 +47,14 @@ func ready(p *parse.Program) bool {
 
 func Semantic(ps []*parse.Program) {
 	programs = ps
-
 	for {
 		var ok = true
+
 		for _, p := range programs {
 			if p.Traversed {
 				continue
 			}
+
 			ok = false
 			if ready(p) {
 				program = p
@@ -250,13 +248,6 @@ func traverse(node *parse.Node) lang.Type {
 	}
 	if node.Kind == parse.NodeFunctionCall {
 		p := packageToProgram(node.In)
-
-		if p == nil {
-			for _, prog := range programs {
-				fmt.Fprintln(os.Stderr, prog.Name)
-			}
-			fmt.Fprintln(os.Stderr, node)
-		}
 
 		fn := p.FindFunction(node.Label)
 		if fn == nil {

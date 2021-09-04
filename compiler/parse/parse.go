@@ -239,13 +239,13 @@ func findNextPackageName(programs []*Program) (string, bool) {
 	for _, i := range imported {
 		var parsed = false
 		for _, p := range programs {
-			if p.Name == i[1:len(i)-1] {
+			if p.Name == i {
 				parsed = true
 				break
 			}
 		}
 		if !parsed {
-			return i[1 : len(i)-1], true
+			return i, true
 		}
 	}
 	return "", false
@@ -264,6 +264,7 @@ func Parse(path string) []*Program {
 			break
 		}
 		// 標準ライブラリだった場合
+
 		if includes(libraryPackageNames, nextPackageName) {
 			programs = append(programs, parseProgram("", "./library/"+nextPackageName))
 			continue
@@ -283,7 +284,7 @@ func importStmt() *Node {
 		tokenizer.Expect(TokenNewLine)
 
 		for !tokenizer.Consume(TokenRparen) {
-			pkg := tokenizer.expectString()
+			pkg := strings.Trim(tokenizer.expectString(), "\"")
 			packages = append(packages, pkg)
 			tokenizer.Expect(TokenNewLine)
 
@@ -291,7 +292,7 @@ func importStmt() *Node {
 		}
 		return NewImportStmtNode(packages)
 	}
-	packages = append(packages, tokenizer.expectString())
+	packages = append(packages, strings.Trim(tokenizer.expectString(), "\""))
 	source.AddPackage(packages[0])
 	return NewImportStmtNode(packages)
 }

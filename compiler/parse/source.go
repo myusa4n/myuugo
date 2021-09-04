@@ -1,6 +1,8 @@
 package parse
 
-import "strings"
+import (
+	"strings"
+)
 
 type Source struct {
 	FileName string
@@ -23,9 +25,9 @@ func (s *Source) AddPackage(name string) string {
 
 func (s *Source) FindPackage(name string) (string, bool) {
 	for _, pkg := range s.Packages {
-		sections := strings.Split(strings.Trim(pkg, "\""), "/")
+		sections := strings.Split(pkg, "/")
 		if sections[len(sections)-1] == name {
-			return pkg[1 : len(pkg)-1], true
+			return pkg, true
 		}
 	}
 	return "", false
