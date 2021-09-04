@@ -657,8 +657,8 @@ func gen(node *parse.Node) {
 	push("rax")
 }
 
-func GenX86_64(prog *parse.Program) {
-	program = prog
+func GenX86_64(programs []*parse.Program) {
+	program = programs[0]
 
 	// アセンブリの前半部分
 	p(".intel_syntax noprefix")
@@ -678,13 +678,13 @@ func GenX86_64(prog *parse.Program) {
 	p(".LFmtSS:")
 	emit("  .string \"%s\"", "%s%s")
 
-	for _, str := range prog.StringLiterals {
+	for _, str := range program.StringLiterals {
 		p(str.Label + ":")
 		emit(".string %s", str.Value)
 	}
 	p(".text")
 
-	for _, s := range prog.Sources {
+	for _, s := range program.Sources {
 		for _, c := range s.Code {
 			// 抽象構文木を下りながらコード生成
 			gen(c)

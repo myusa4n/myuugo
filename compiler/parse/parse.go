@@ -184,21 +184,21 @@ func readModuleNameIfExists(path string) string {
 
 var sourcePrefix string
 
-// Create an AST for all Go files directly under `path`.
-func Parse(path string) *Program {
-	sourcePrefix = readModuleNameIfExists(path)
+func parseProgram(srcPrefix string, path string) *Program {
+	sourcePrefix = srcPrefix
 
 	goFilePaths := util.EnumerateGoFilePaths(path)
 	Env = NewEnvironment()
 
 	for _, p := range goFilePaths {
+		stepIn()
+
 		source = NewSource(p)
 		tokenizer = NewTokenizer()
 		tokenizer.Tokenize(p)
 
 		for tokenizer.consumeEndLine() {
 		}
-		stepIn()
 		source.Code = append(source.Code, packageStmt())
 		tokenizer.expectEndLine()
 
@@ -217,6 +217,61 @@ func Parse(path string) *Program {
 	}
 
 	return Env.program
+}
+
+func includes(slice []string, e string) bool {
+	for _, s := range slice {
+		if s == e {
+			return true
+		}
+	}
+	return false
+}
+
+func findNextPackageName(programs []*Program) (string, bool) {
+	var imported = []string{}
+	for _, prog := range programs {
+		for _, s := range prog.Sources {
+			imported = append(imported, s.Packages...)
+		}
+	}
+
+	for _, i := range imported {
+		var parsed = false
+		for _, p := range programs {
+			if p.Name == i[1:len(i)-1] {
+				parsed = true
+				break
+			}
+		}
+		if !parsed {
+			return i[1 : len(i)-1], true
+		}
+	}
+	return "", false
+}
+
+// Create an AST for all Go files directly under `path`.
+func Parse(path string) []*Program {
+	srcPrefix := readModuleNameIfExists(path)
+	programs := []*Program{parseProgram(srcPrefix, path)}
+
+	libraryPackageNames := []string{"os", "fmt", "strconv"}
+
+	for {
+		nextPackageName, ok := findNextPackageName(programs)
+		if !ok {
+			break
+		}
+		// 標準ライブラリだった場合
+		if includes(libraryPackageNames, nextPackageName) {
+			programs = append(programs, parseProgram("", "./library/"+nextPackageName))
+			continue
+		}
+		// TODO: 自作パッケージだった場合
+		break
+	}
+	return programs
 }
 
 func importStmt() *Node {
@@ -767,6 +822,7 @@ func primary() *Node {
 		break
 	}
 	if ok {
+		n.In = pkgName
 		n = NewNode(NodePackageDot, []*Node{n})
 		n.Label = pkgName
 	}

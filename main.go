@@ -20,9 +20,9 @@ func main() {
 	}
 
 	var path = os.Args[1]
-	var program = parse.Parse(path)
+	var programs = parse.Parse(path)
 
-	passes.Semantic(program)
+	passes.Semantic(programs)
 
-	codegen.GenX86_64(program)
+	codegen.GenX86_64(programs)
 }

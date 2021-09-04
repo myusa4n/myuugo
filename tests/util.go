@@ -14,8 +14,6 @@ func boolToString(v bool) string {
 	}
 }
 
-func Itoa(arg int) string
-
 func testInt(name string, expected int, actual int) {
 	if expected == actual {
 		// printf("[%s]: %d => %d\n", name, expected, actual)

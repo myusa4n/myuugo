@@ -1,12 +1,25 @@
 package passes
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/myuu222/myuugo/compiler/lang"
 	"github.com/myuu222/myuugo/compiler/parse"
 	"github.com/myuu222/myuugo/compiler/util"
 )
 
+var programs []*parse.Program
 var program *parse.Program
+
+func packageToProgram(name string) *parse.Program {
+	for _, p := range programs {
+		if p.Name == name {
+			return p
+		}
+	}
+	return nil
+}
 
 func alignLocalVars(functionName string) {
 	fn := program.FindFunction(functionName)
@@ -20,11 +33,43 @@ func alignLocalVars(functionName string) {
 	}
 }
 
-func Semantic(p *parse.Program) {
-	program = p
-	for _, source := range p.Sources {
-		for _, node := range source.Code {
-			traverse(node)
+func ready(p *parse.Program) bool {
+	var imported = []string{}
+	for _, s := range p.Sources {
+		imported = append(imported, s.Packages...)
+	}
+	for _, i := range imported {
+		for _, prog := range programs {
+			if prog.Name == i && !p.Traversed {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func Semantic(ps []*parse.Program) {
+	programs = ps
+
+	for {
+		var ok = true
+		for _, p := range programs {
+			if p.Traversed {
+				continue
+			}
+			ok = false
+			if ready(p) {
+				program = p
+				for _, source := range p.Sources {
+					for _, node := range source.Code {
+						traverse(node)
+					}
+				}
+				p.Traversed = true
+			}
+		}
+		if ok {
+			break
 		}
 	}
 }
@@ -204,8 +249,16 @@ func traverse(node *parse.Node) lang.Type {
 		return *ty.PtrTo
 	}
 	if node.Kind == parse.NodeFunctionCall {
+		p := packageToProgram(node.In)
 
-		fn := program.FindFunction(node.Label)
+		if p == nil {
+			for _, prog := range programs {
+				fmt.Fprintln(os.Stderr, prog.Name)
+			}
+			fmt.Fprintln(os.Stderr, node)
+		}
+
+		fn := p.FindFunction(node.Label)
 		if fn == nil {
 			node.In = ""
 			for _, argument := range node.Arguments {

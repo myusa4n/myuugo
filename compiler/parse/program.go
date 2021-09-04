@@ -11,6 +11,7 @@ type Program struct {
 	TopLevelVariables []*lang.Variable
 	Functions         []*lang.Function
 	Sources           []*Source
+	Traversed         bool
 
 	// そのうち削除するかも
 	StringLiterals   []*lang.StringLiteral
@@ -19,6 +20,7 @@ type Program struct {
 
 func NewProgram() *Program {
 	return &Program{
+		Traversed:         false,
 		TopLevelVariables: []*lang.Variable{},
 		Functions:         []*lang.Function{},
 		StringLiterals:    []*lang.StringLiteral{},
