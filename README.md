@@ -5,7 +5,7 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/08/29更新)
+## 現状(2021/09/04更新)
 ```go
 package main
 
@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"strconv"
 )
-
-func Itoa(arg int) string
 
 var memo [11]int
 

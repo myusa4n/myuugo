@@ -5,8 +5,6 @@ import (
 	"strconv"
 )
 
-func Itoa(arg int) string
-
 var memo [11]int
 
 // フィボナッチ数をメモ化再帰で計算する
