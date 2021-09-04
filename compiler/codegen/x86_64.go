@@ -39,7 +39,7 @@ func declare(node *parse.Node) {
 
 	if variable.Kind == lang.VariableTopLevel {
 		p(".data")
-		p(variable.Name + ":")
+		p(getLabel(node.In, variable.Name) + ":")
 
 		emit(".zero %d\n", entitySizeOf(variable.Type))
 		p(".text")
@@ -121,7 +121,7 @@ func genLvalue(node *parse.Node) {
 		gen(node.Target)
 		return
 	} else if node.Kind == parse.NodeTopLevelVariable {
-		emit("mov rax, OFFSET FLAT:%s", node.Variable.Name)
+		emit("mov rax, OFFSET FLAT:%s", getLabel(node.In, node.Variable.Name))
 		push("rax")
 		return
 	} else if node.Kind == parse.NodeLocalVariable {
