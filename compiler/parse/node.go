@@ -118,55 +118,84 @@ func newNodeBase(kind NodeKind) *Node {
 }
 
 func NewFunctionDefNode(name string, parameters []*Node, body *Node) *Node {
-	return &Node{Kind: NodeFunctionDef, Label: name, Parameters: parameters, Body: body, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeFunctionDef)
+	node.Label = name
+	node.Parameters = parameters
+	node.Body = body
+	return node
 }
 
 func NewFunctionCallNode(name string, arguments []*Node) *Node {
-	return &Node{Kind: NodeFunctionCall, Label: name, Arguments: arguments, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeFunctionCall)
+	node.Label = name
+	node.Arguments = arguments
+	return node
 }
 
 func NewNode(kind NodeKind, children []*Node) *Node {
-	return &Node{Kind: kind, Children: children, Env: Env, In: Env.program.Name}
+	node := newNodeBase(kind)
+	node.Children = children
+	return node
 }
 
 func NewBinaryNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{Kind: kind, Children: []*Node{lhs, rhs}, Env: Env, In: Env.program.Name}
+	return NewNode(kind, []*Node{lhs, rhs})
 }
 
 func NewBinaryOperationNode(kind NodeKind, lhs *Node, rhs *Node) *Node {
-	return &Node{Kind: kind, Lhs: lhs, Rhs: rhs, Env: Env, In: Env.program.Name}
+	node := newNodeBase(kind)
+	node.Lhs = lhs
+	node.Rhs = rhs
+	return node
 }
 
 func NewUnaryOperationNode(kind NodeKind, target *Node) *Node {
-	return &Node{Kind: kind, Target: target, Env: Env, In: Env.program.Name}
+	node := newNodeBase(kind)
+	node.Target = target
+	return node
 }
 
 func NewIndexNode(seq *Node, index *Node) *Node {
-	return &Node{Kind: NodeIndex, Seq: seq, Index: index, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeIndex)
+	node.Seq = seq
+	node.Index = index
+	return node
 }
 
 func NewMetaIfNode(ifn *Node, elsen *Node) *Node {
-	return &Node{Kind: NodeMetaIf, If: ifn, Else: elsen, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeMetaIf)
+	node.If = ifn
+	node.Else = elsen
+	return node
 }
 
 func NewIfNode(cond *Node, body *Node) *Node {
-	return &Node{Kind: NodeIf, Condition: cond, Body: body, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeIf)
+	node.Condition = cond
+	node.Body = body
+	return node
 }
 
 func NewElseNode(body *Node) *Node {
-	return &Node{Kind: NodeElse, Body: body, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeElse)
+	node.Body = body
+	return node
 }
 
 func NewLeafNode(kind NodeKind) *Node {
-	return &Node{Kind: kind, Env: Env, In: Env.program.Name}
+	return NewNode(kind, []*Node{})
 }
 
 func NewNodeNum(val int) *Node {
-	return &Node{Kind: NodeNum, Val: val, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeNum)
+	node.Val = val
+	return node
 }
 
 func NewNodeBool(val int) *Node {
-	return &Node{Kind: NodeBool, Val: val, Env: Env, In: Env.program.Name}
+	node := newNodeBase(NodeBool)
+	node.Val = val
+	return node
 }
 
 func NewTypeStmtNode() *Node {
