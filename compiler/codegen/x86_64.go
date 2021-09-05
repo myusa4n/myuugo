@@ -38,11 +38,11 @@ func declare(node *parse.Node) {
 	var variable = node.Variable
 
 	if variable.Kind == lang.VariableTopLevel {
-		p(".data")
-		p(getLabel(node.In, variable.Name) + ":")
+		println(".data")
+		println(getLabel(node.In, variable.Name) + ":")
 
 		emit(".zero %d\n", entitySizeOf(variable.Type))
-		p(".text")
+		println(".text")
 		return
 	}
 	// 基本的に何もしないが配列または構造体の場合は動的にメモリを確保し、あらかじめ割り当てる
@@ -264,12 +264,12 @@ func gen(node *parse.Node) {
 		var elseLabel = ".Lelse" + strconv.Itoa(labelNumber)
 
 		gen(node.If)
-		p("%s:", elseLabel)
+		println("%s:", elseLabel)
 
 		if node.Else != nil {
 			gen(node.Else)
 		}
-		p("%s:", endLabel)
+		println("%s:", endLabel)
 		return
 	}
 	if node.Kind == parse.NodeIf {
@@ -297,7 +297,7 @@ func gen(node *parse.Node) {
 		if node.Init != nil {
 			gen(node.Init)
 		}
-		p("%s:", beginLabel)
+		println("%s:", beginLabel)
 		if node.Condition != nil {
 			gen(node.Condition) // 条件
 			pop("rax")
@@ -309,7 +309,7 @@ func gen(node *parse.Node) {
 			gen(node.Update)
 		}
 		emit("jmp %s", beginLabel)
-		p("%s:", endLabel)
+		println("%s:", endLabel)
 		return
 	}
 	if node.Kind == parse.NodeFunctionCall {
@@ -340,7 +340,7 @@ func gen(node *parse.Node) {
 	}
 	if node.Kind == parse.NodeFunctionDef {
 		depth = 0
-		p("%s:", getLabel(node.In, node.Label))
+		println("%s:", getLabel(node.In, node.Label))
 
 		// プロローグ
 		push("rbp")
@@ -477,7 +477,7 @@ func gen(node *parse.Node) {
 		emit("movzb rax, al")
 		push("rax")
 
-		p("%s:", label)
+		println("%s:", label)
 
 		return
 	}
@@ -502,7 +502,7 @@ func gen(node *parse.Node) {
 		emit("movzb rax, al")
 		push("rax")
 
-		p("%s:", label)
+		println("%s:", label)
 
 		return
 	}
@@ -661,28 +661,28 @@ func GenX86_64(programs []*parse.Program) {
 	program = programs[0]
 
 	// アセンブリの前半部分
-	p(".intel_syntax noprefix")
+	println(".intel_syntax noprefix")
 
 	for _, fn := range program.Functions {
 		if fn.IsDefined && (fn.Label == "main" || unicode.IsUpper(util.RuneAt(fn.Label, 0))) {
-			p(".globl %s", getLabel(program.Name, fn.Label))
+			println(".globl %s", getLabel(program.Name, fn.Label))
 		}
 	}
 
-	p(".data")
+	println(".data")
 
-	p(".LBuffer:")
+	println(".LBuffer:")
 	emit(".zero 1024") // 1024バイトだけsprintf用のバッファを用いる
-	p(".LFmtD:")
+	println(".LFmtD:")
 	emit("  .string \"%s\"", "%d")
-	p(".LFmtSS:")
+	println(".LFmtSS:")
 	emit("  .string \"%s\"", "%s%s")
 
 	for _, str := range program.StringLiterals {
-		p(str.Label + ":")
+		println(str.Label + ":")
 		emit(".string %s", str.Value)
 	}
-	p(".text")
+	println(".text")
 
 	for _, s := range program.Sources {
 		for _, c := range s.Code {

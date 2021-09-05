@@ -66,7 +66,7 @@ func emit(format string, args ...interface{}) {
 	fmt.Printf("\n")
 }
 
-func p(format string, args ...interface{}) {
+func println(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 	fmt.Printf("\n")
 }
