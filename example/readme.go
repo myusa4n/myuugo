@@ -52,4 +52,5 @@ func main() {
 		fibs = append(fibs, FibonacciNumber{Nth: n, Value: fib(n)})
 		fmt.Println(strconv.Itoa(n) + ": " + strconv.Itoa(fibs[n-1].Value))
 	}
+	fmt.Println("fib's len is " + strconv.Itoa(len(fibs)))
 }

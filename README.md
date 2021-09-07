@@ -5,7 +5,7 @@
 
 当面の目的はセルフホストできるようにすることです。
 
-## 現状(2021/09/04更新)
+## 現状(2021/09/07更新)
 ```go
 package main
 
@@ -61,6 +61,6 @@ func main() {
 		fibs = append(fibs, FibonacciNumber{Nth: n, Value: fib(n)})
 		fmt.Println(strconv.Itoa(n) + ": " + strconv.Itoa(fibs[n-1].Value))
 	}
+	fmt.Println("fib's len is " + strconv.Itoa(len(fibs)))
 }
-
 ```
