@@ -599,6 +599,28 @@ func gen(node *parse.Node) {
 		}
 		panic("string関数の引数として許可されていない型です")
 	}
+	if node.Kind == parse.NodeLenCall {
+		gen(node.Arguments[0])
+		pop("rax")
+
+		argType := node.Arguments[0].ExprType
+		if argType.Kind == lang.TypeArray {
+			push("%d", argType.ArraySize)
+			return
+		}
+		if argType.Kind == lang.TypeSlice {
+			emit("mov rax, [rax]")
+			push("rax")
+			return
+		}
+		if argType.Kind == lang.TypeString {
+			emit("mov rdi, rax")
+			call("strlen")
+			emit("push rax")
+			return
+		}
+		panic("Unreachable.")
+	}
 
 	gen(node.Lhs)
 	gen(node.Rhs)

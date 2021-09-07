@@ -833,6 +833,14 @@ func named() *Node {
 			tokenizer.Expect(TokenRparen)
 			return NewStringCallNode(arg)
 		}
+		// len関数の呼び出し
+		if tokenizer.Fetch().str == "len" {
+			tokenizer.Expect(TokenIdentifier)
+			tokenizer.Expect(TokenLparen)
+			var arg = expr()
+			tokenizer.Expect(TokenRparen)
+			return NewLenCallNode(arg)
+		}
 
 		// 関数呼び出し
 		var functionName = identifier()

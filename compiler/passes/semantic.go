@@ -91,6 +91,14 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = stmtType
 		return stmtType
 	}
+	if node.Kind == parse.NodeLenCall {
+		argType := traverse(node.Arguments[0])
+		if argType.Kind == lang.TypeArray || argType.Kind == lang.TypeSlice || argType.Kind == lang.TypeString {
+			node.ExprType = lang.NewType(lang.TypeInt)
+			return node.ExprType
+		}
+		panic("len関数の引数の型として許されているのは、配列、スライス、文字列のいずれかです")
+	}
 	if node.Kind == parse.NodePackageDot {
 		node.ExprType = traverse(node.Children[0])
 		node.Children[0].In = node.Label

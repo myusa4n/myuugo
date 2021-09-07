@@ -47,6 +47,7 @@ const (
 	NodeDot                          NodeKind = "[NODE] DOT"                            // A.B
 	NodeAppendCall                   NodeKind = "[NODE] APPEND CALL"                    // append(..., ...)
 	NodeStringCall                   NodeKind = "[NODE] STRING CALL"                    // append(..., ...)
+	NodeLenCall                      NodeKind = "[NODE] LEN CALL"                       // len(...)
 	NodeSliceLiteral                 NodeKind = "[NODE] SLICE LITERAL"                  // []type{...}
 	NodeStructLiteral                NodeKind = "[NODE] STRUCT LITERAL"                 // typeName{...}
 	NodeTypeStmt                     NodeKind = "[NODE] TYPE STMT"                      // type A struct{}
@@ -239,10 +240,15 @@ func NewImportStmtNode(packages []string) *Node {
 	return n
 }
 
-// interface{}を実装したくないので、一旦appendだけ特別扱いする
 func NewAppendCallNode(arg1 *Node, arg2 *Node) *Node {
 	n := newNodeBase(NodeAppendCall)
 	n.Arguments = []*Node{arg1, arg2}
+	return n
+}
+
+func NewLenCallNode(arg *Node) *Node {
+	n := newNodeBase(NodeLenCall)
+	n.Arguments = []*Node{arg}
 	return n
 }
 

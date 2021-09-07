@@ -101,7 +101,9 @@ func main() {
 	testInt("struct test 2", 200, structTest2())
 	testInt("struct test 3", 300, structTest3())
 
-	testInt("multiple test 1", 10, multipleFileTest1())
+	testInt("multiple file test 1", 10, multipleFileTest1())
+
+	testInt("len test 1", 7, lenTest1())
 
 	fmt.Println("OK")
 }
@@ -486,4 +488,11 @@ func structTest3() int {
 func multipleFileTest1() int {
 	test2 = 10
 	return test2
+}
+
+func lenTest1() int {
+	var x = []int{1, 2, 3}
+	var y = "he"
+	var z [2]int
+	return len(x) + len(y) + len(z)
 }
