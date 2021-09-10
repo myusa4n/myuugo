@@ -593,15 +593,6 @@ func gen(node *parse.Node) {
 			push("rax")
 			return
 		}
-		if argType.Kind == lang.TypeInt {
-			emit("mov al, 0") // 可変長引数の関数を呼び出すためのルール
-			emit("mov rdi, OFFSET FLAT:.LBuffer")
-			emit("mov rsi, OFFSET FLAT:.LFmtD")
-			pop("rdx")
-			call("sprintf")
-			fromBuffer()
-			return
-		}
 		panic("string関数の引数として許可されていない型です")
 	}
 	if node.Kind == parse.NodeLenCall {
