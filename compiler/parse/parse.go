@@ -682,6 +682,8 @@ func mul() *Node {
 			n = NewBinaryOperationNode(NodeMul, n, unary())
 		} else if tokenizer.Consume(TokenSlash) {
 			n = NewBinaryOperationNode(NodeDiv, n, unary())
+		} else if tokenizer.Consume(TokenPercent) {
+			n = NewBinaryOperationNode(NodeMod, n, unary())
 		} else {
 			return n
 		}

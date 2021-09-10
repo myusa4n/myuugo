@@ -418,7 +418,11 @@ func traverse(node *parse.Node) lang.Type {
 	}
 
 	switch node.Kind {
-	case parse.NodeSub, parse.NodeMul, parse.NodeDiv:
+	case parse.NodeSub, parse.NodeMul, parse.NodeDiv, parse.NodeMod:
+		// 両辺がintであることを期待
+		if lhsType.Kind != lang.TypeInt {
+			util.Alarm(string(node.Kind) + "の両辺の値はint型の値でなくてはなりません")
+		}
 		node.ExprType = lang.NewType(lang.TypeInt)
 	case parse.NodeAdd:
 		node.ExprType = lhsType

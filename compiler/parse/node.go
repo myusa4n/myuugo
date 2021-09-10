@@ -11,6 +11,7 @@ const (
 	NodeSub                          NodeKind = "SUB"                                   // -
 	NodeMul                          NodeKind = "MUL"                                   // *
 	NodeDiv                          NodeKind = "DIV"                                   // /
+	NodeMod                          NodeKind = "[NODE] MOD"                            // %
 	NodeEql                          NodeKind = "EQL"                                   // ==
 	NodeNotEql                       NodeKind = "NOT EQL"                               // !=
 	NodeLess                         NodeKind = "LESS"                                  // <

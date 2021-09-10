@@ -13,6 +13,7 @@ func main() {
 	testInt("arithmetic operation test 5", 4, (3+5)/2)
 	testInt("arithmetic operation test 6", 5, 10+-5)
 	testInt("arithmetic operation test 7", 4, -10+-7*-2)
+	testInt("arithmetic operation test 8", 0, 10%3-1)
 
 	testBool("boolean operation test 1", true, 1+1 == 2)
 	testBool("boolean operation test 2", true, 1-5*2 == -9)

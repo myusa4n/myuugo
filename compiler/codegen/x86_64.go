@@ -651,6 +651,10 @@ func gen(node *parse.Node) {
 	case parse.NodeDiv:
 		emit("cqo")
 		emit("idiv rdi")
+	case parse.NodeMod:
+		emit("cqo")
+		emit("idiv rdi")
+		emit("mov rax, rdx")
 	case parse.NodeEql:
 		emit("cmp rax, rdi")
 		emit("sete al")
