@@ -579,7 +579,8 @@ func gen(node *parse.Node) {
 		emit("add rax, rdi") // 代入するべき要素のアドレス
 
 		pop("rdi") // 追加する要素の値
-		emit("mov %s PTR [rax], rdi", word(lang.Sizeof(elemType)))
+		size := lang.Sizeof(elemType)
+		emit("mov %s PTR [rax], %s", word(size), register(1, size))
 		push("r10")
 		return
 	}
