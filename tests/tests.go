@@ -118,7 +118,6 @@ func localVarTest2() int { var z = 20; var a = 13; var x = z - a; return x }
 
 func localVarTest3() int {
 	var a = 5
-	a + 3
 	return 4*a + 1
 }
 
@@ -327,7 +326,7 @@ func arrayTest5() int {
 	return memo2[2]
 }
 
-func runeTest1() rune {
+func runeTest1() int {
 	var c1 rune = 40
 	var c2 rune = 51
 	return c1 + c2
@@ -337,8 +336,6 @@ func runeTest2() int {
 	var x [3]rune
 	x[0] = -1
 	x[1] = 2
-	var y int
-	y = 4
 	return 3
 }
 
@@ -353,8 +350,6 @@ func stringTest1() int {
 }
 
 func stringTest2() int {
-	var a = 3
-	var b = 2
 	fmt.Println(strconv.Itoa(334))
 	return 0
 }
@@ -374,7 +369,6 @@ func stringTest4() int {
 }
 
 func commentTest1() {
-	var comment = 0
 	// ok?
 	/*
 	  comment = 10
