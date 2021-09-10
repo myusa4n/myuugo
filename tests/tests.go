@@ -74,6 +74,7 @@ func main() {
 	testInt("rune test 1", 91, runeTest1())
 	testInt("rune test 2", 3, runeTest2())
 	testInt("rune test 3", 2, runeTest3())
+	testBool("rune test 4", true, runeTest4())
 
 	testInt("string test 1", 0, stringTest1())
 	testInt("string test 2", 0, stringTest2())
@@ -326,7 +327,7 @@ func arrayTest5() int {
 	return memo2[2]
 }
 
-func runeTest1() int {
+func runeTest1() rune {
 	var c1 rune = 40
 	var c2 rune = 51
 	return c1 + c2
@@ -341,6 +342,11 @@ func runeTest2() int {
 
 func runeTest3() int {
 	return 'c' - 'a'
+}
+
+func runeTest4() bool {
+	var r = rune('a' + 3)
+	return r == 'd'
 }
 
 func stringTest1() int {

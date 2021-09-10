@@ -835,6 +835,14 @@ func named() *Node {
 			tokenizer.Expect(TokenRparen)
 			return NewStringCallNode(arg)
 		}
+		// rune関数の呼び出し
+		if tokenizer.Fetch().str == "rune" {
+			tokenizer.Expect(TokenIdentifier)
+			tokenizer.Expect(TokenLparen)
+			var arg = expr()
+			tokenizer.Expect(TokenRparen)
+			return NewRuneCallNode(arg)
+		}
 		// len関数の呼び出し
 		if tokenizer.Fetch().str == "len" {
 			tokenizer.Expect(TokenIdentifier)

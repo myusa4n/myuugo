@@ -312,6 +312,10 @@ func gen(node *parse.Node) {
 		println("%s:", endLabel)
 		return
 	}
+	if node.Kind == parse.NodeRuneCall {
+		gen(node.Arguments[0])
+		return
+	}
 	if node.Kind == parse.NodeFunctionCall {
 		// TODO: rune型と配列型の扱いについて考える
 		for _, argument := range node.Arguments {

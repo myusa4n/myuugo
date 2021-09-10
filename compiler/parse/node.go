@@ -47,7 +47,8 @@ const (
 	NodeLogicalOr                    NodeKind = "[NODE] LOGICAL OR"                     // 論理和
 	NodeDot                          NodeKind = "[NODE] DOT"                            // A.B
 	NodeAppendCall                   NodeKind = "[NODE] APPEND CALL"                    // append(..., ...)
-	NodeStringCall                   NodeKind = "[NODE] STRING CALL"                    // append(..., ...)
+	NodeStringCall                   NodeKind = "[NODE] STRING CALL"                    // string(...)
+	NodeRuneCall                     NodeKind = "[NODE] RUNE CALL"                      // rune(...)
 	NodeLenCall                      NodeKind = "[NODE] LEN CALL"                       // len(...)
 	NodeSliceLiteral                 NodeKind = "[NODE] SLICE LITERAL"                  // []type{...}
 	NodeStructLiteral                NodeKind = "[NODE] STRUCT LITERAL"                 // typeName{...}
@@ -255,6 +256,12 @@ func NewLenCallNode(arg *Node) *Node {
 
 func NewStringCallNode(arg *Node) *Node {
 	n := newNodeBase(NodeStringCall)
+	n.Arguments = []*Node{arg}
+	return n
+}
+
+func NewRuneCallNode(arg *Node) *Node {
+	n := newNodeBase(NodeRuneCall)
 	n.Arguments = []*Node{arg}
 	return n
 }

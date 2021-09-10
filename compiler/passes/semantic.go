@@ -357,6 +357,14 @@ func traverse(node *parse.Node) lang.Type {
 		node.ExprType = lang.NewType(lang.TypeString)
 		return node.ExprType
 	}
+	if node.Kind == parse.NodeRuneCall {
+		ty := traverse(node.Arguments[0])
+		if !lang.IsKindOfNumber(ty) {
+			panic("runeの引数は整数型でなくてはいけません")
+		}
+		node.ExprType = lang.NewType(lang.TypeRune)
+		return node.ExprType
+	}
 	if node.Kind == parse.NodeSliceLiteral {
 		node.ExprType = node.LiteralType
 		for _, c := range node.Children {
